@@ -1,0 +1,6 @@
+faster-whisper
+numpy
+scipy
+librosa
+soundfile
+websockets>=13
