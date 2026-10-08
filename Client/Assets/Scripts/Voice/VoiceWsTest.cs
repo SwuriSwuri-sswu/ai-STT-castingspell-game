@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -52,26 +53,31 @@ public class VoiceWsTest : MonoBehaviour
         Debug.Log("[WS] hello 전송");
     }
 
-    // ── 2) WAV 전송: 헤더(텍스트) -> WAV(바이너리) 순서 ──
+    // ── 2) 파일 WAV 전송 (기존 버튼용) ──
     public async void SendWav()
     {
-        if (!IsOpen()) return;
-
         string path = Path.Combine(Application.streamingAssetsPath, wavFileName);
         if (!File.Exists(path))
         {
             Debug.LogError("[WS] WAV 파일이 없습니다: " + path);
             return;
         }
-        byte[] wav = File.ReadAllBytes(path);
+        await SendWavBytes(File.ReadAllBytes(path), "file");
+    }
 
-        string id = "unity-" + (++requestCounter);
+    // ── WAV 바이트 전송 (파일, 마이크 공용): 헤더(텍스트) -> WAV(바이너리) ──
+    public async Task<string> SendWavBytes(byte[] wav, string tag = "mic")
+    {
+        if (!IsOpen()) return null;
+
+        string id = $"unity-{tag}-{++requestCounter}";
         string header = JsonConvert.SerializeObject(new { type = "cast_header", request_id = id });
 
         sentAt[id] = Time.realtimeSinceStartup;
         await ws.SendText(header);
         await ws.Send(wav);
         Debug.Log($"[WS] 전송 {id}: {wav.Length} bytes");
+        return id;
     }
 
     // ── 수신 처리: type 으로 먼저 분기한 뒤 클래스로 변환 ──
