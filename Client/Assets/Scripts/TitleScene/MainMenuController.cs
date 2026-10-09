@@ -13,9 +13,6 @@ public class MainMenuController : MonoBehaviour
     public GameObject settingsPanel;
 
     [Header("Music Settings")]
-    public Image musicButtonImage;
-    public Sprite musicOnSprite;
-    public Sprite musicOffSprite;
     private bool isMusicOn = true;
 
     [Header("System Settings")]
@@ -28,7 +25,6 @@ public class MainMenuController : MonoBehaviour
     {
         // 초기 UI 상태 설정
         if (settingsPanel != null) settingsPanel.SetActive(false);
-        if (musicButtonImage != null && musicOnSprite != null) musicButtonImage.sprite = musicOnSprite;
         if (fullscreenToggle != null) fullscreenToggle.isOn = Screen.fullScreen;
     }
 
@@ -56,9 +52,6 @@ public class MainMenuController : MonoBehaviour
 
     public void OnClickMusicToggle()
     {
-        isMusicOn = !isMusicOn;
-        musicButtonImage.sprite = isMusicOn ? musicOnSprite : musicOffSprite;
-
         if (settingManager != null) settingManager.SetMusicToggle(isMusicOn);
     }
 
