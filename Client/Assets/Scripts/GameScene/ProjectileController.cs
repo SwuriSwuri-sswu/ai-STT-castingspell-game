@@ -36,7 +36,12 @@ public class ProjectileController : MonoBehaviour
     {
         if (other.CompareTag("Enemy"))
         {
-            // TODO: EnemyController를 불러와 상성 계산 및 데미지 전달하는 함수 호출 예정
+            // 부딪힌 대상의 EnemyController를 가져와서 데미지 전달
+            EnemyController enemy = other.GetComponent<EnemyController>();
+            if (enemy != null)
+            {
+                enemy.TakeDamage(mySpellData);
+            }
 
             // 적중 시 폭발 이펙트 생성
             if (mySpellData.explosionPrefab != null)
@@ -44,8 +49,7 @@ public class ProjectileController : MonoBehaviour
                 Instantiate(mySpellData.explosionPrefab, transform.position, Quaternion.identity);
             }
 
-            // 발사체 자신은 파괴
-            Destroy(gameObject);
+            Destroy(gameObject); // 투사체 파괴
         }
     }
 }

@@ -8,21 +8,50 @@ public class SkillManager : MonoBehaviour
 
     public void CastSpell(string recognizedText)
     {
-        // 공백이나 불필요한 기호 제거 후 정확히 일치(==)하는지 확인
         string cleanedInput = recognizedText.Trim();
-
-        // 데이터베이스에서 이름이 같고, 해금된 스펠 찾기
         SpellData foundSpell = spellDatabase.Find(s => s.spellName == cleanedInput && s.isUnlocked);
 
         if (foundSpell != null)
         {
-            // 지팡이 끝 좌표와 회전값을 기준으로 프리팹 생성
-            GameObject projectile = Instantiate(foundSpell.projectilePrefab, wandTip.position, wandTip.rotation);
+            // 1:1 상황이므로 씬에 있는 적을 찾습니다.
+            GameObject targetEnemy = GameObject.FindGameObjectWithTag("Enemy");
 
-            // 발사체 스크립트에 마법 정보 전달
-            projectile.GetComponent<ProjectileController>().Initialize(foundSpell);
+            // --- [1] 투사체형 (Projectile) 마법 처리 ---
+            if (foundSpell.castType == CastType.Projectile)
+            {
+                // 지팡이 끝에서 생성
+                GameObject projectile = Instantiate(foundSpell.projectilePrefab, wandTip.position, wandTip.rotation);
+                projectile.GetComponent<ProjectileController>().Initialize(foundSpell);
+                Debug.Log($"[마법 시전] {foundSpell.spellName} 발사!");
+            }
+            // --- [2] 즉발/장판형 (TargetInstant) 마법 처리 ---
+            else if (foundSpell.castType == CastType.TargetInstant)
+            {
+                if (targetEnemy != null)
+                {
+                    // 적의 바닥(또는 중심) 좌표 계산
+                    Vector3 spawnPosition = targetEnemy.transform.position;
 
-            Debug.Log($"[마법 시전 성공] {foundSpell.spellName} 발사!");
+                    // (선택) 몹의 머리 위에서 떨어지는 형태(메테오)라면 Y축을 조금 높여줍니다.
+                    // spawnPosition.y += 5f; 
+
+                    // 몹의 위치에 이펙트를 즉시 생성
+                    GameObject instantEffect = Instantiate(foundSpell.explosionPrefab, spawnPosition, Quaternion.identity);
+
+                    // 즉발형 마법은 이동 로직이 필요 없으므로 바로 데미지 처리 (구현 예정)
+                    // targetEnemy.GetComponent<EnemyController>().TakeDamage(foundSpell);
+
+                    // 이펙트 프리팹 자체에 수명(Lifetime)이 다하면 파괴되는 파티클 세팅을 해두거나,
+                    // 스크립트로 n초 후 파괴시킵니다.
+                    Destroy(instantEffect, 3f); // 3초 후 삭제
+
+                    Debug.Log($"[마법 시전] {foundSpell.spellName} 타겟 위치에 즉시 발동!");
+                }
+                else
+                {
+                    Debug.Log("타겟이 없어 즉발형 마법을 시전할 수 없습니다.");
+                }
+            }
         }
         else
         {

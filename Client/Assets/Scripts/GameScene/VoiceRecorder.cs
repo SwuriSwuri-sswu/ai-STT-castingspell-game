@@ -86,6 +86,7 @@ public class VoiceRecorder : MonoBehaviour
         return trimmed;
     }
 
+    /*
     // 통신 코루틴
     private IEnumerator SendAudioToBackend(AudioClip clip)
     {
@@ -117,6 +118,25 @@ public class VoiceRecorder : MonoBehaviour
                 DisplayRecognizedSpell(responseData.raw_text, responseData.mapped_spell);
             }
         }
+    }
+    */
+
+    // 백엔드 미연결 UI/스킬 연출 테스트용 임시 코루틴
+    private IEnumerator SendAudioToBackend(AudioClip clip)
+    {
+        // 1. 서버 통신에 걸리는 시간을 가상으로 시뮬레이션 (1초 대기)
+        yield return new WaitForSeconds(1.0f);
+
+        // 2. 가짜(Mock) 응답 데이터 생성
+        // 유저가 발음했다고 가정할 '날것의 텍스트' (타이핑 연출용)
+        string mockRawText = "매직 미샤일";
+
+        // 백엔드가 보정해줬다고 가정할 '확정 텍스트' (팝업 연출 및 스킬 시전용)
+        // 주의: 이 텍스트는 SpellData에 적어둔 Spell Name과 정확히 일치해야 마법이 나갑니다.
+        string mockMappedSpell = "매직 미사일";
+
+        // 3. 통신 과정을 건너뛰고 바로 자막 및 스킬 호출 함수 실행
+        DisplayRecognizedSpell(mockRawText, mockMappedSpell);
     }
 
     // STT 결과를 받아 자막 출력을 준비하는 함수
