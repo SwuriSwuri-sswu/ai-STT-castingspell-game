@@ -6,7 +6,7 @@ using UnityEngine;
 /// 스페이스바를 누르는 동안 마이크로 녹음하고, 떼면 PCM16 WAV로 변환해 서버로 전송한다.
 /// (VAD 적용 전 단계: 누르고 말하기 방식)
 /// </summary>
-public class VoiceRecorder : MonoBehaviour
+public class MicRecorder : MonoBehaviour
 {
     [SerializeField] VoiceWsTest wsClient;      // Inspector에서 같은 씬의 VoiceWsTest 연결
     [SerializeField] bool saveDebugWav = true;  // 보낸 WAV를 파일로도 저장 (문제 확인용)
