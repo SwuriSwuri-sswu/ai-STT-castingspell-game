@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class CameraTransitionManager : MonoBehaviour
 {
@@ -11,14 +12,32 @@ public class CameraTransitionManager : MonoBehaviour
     public Transform throneZoomTarget;
     public Transform firstPersonTarget;
 
-    [Header("오브젝트 제어 (새로 추가됨)")]
-    public GameObject playerCharacter; // 숨길 주인공 캐릭터 전체 (최상위 부모)
-    public Renderer wandRenderer;      // 페이드인 할 마법 지팡이의 렌더러
+    [Header("UI 제어")]
+    public CanvasGroup titleUIGroup;
+    public Image blackFadeScreen;
 
-    [Header("연출 시간 설정")]
+    [Header("카메라 연출 시간 설정")]
+    public float uiFadeDuration = 0.5f;
     public float zoomDuration = 2.0f;
     public float holdDuration = 1.0f;
     public float firstPersonDuration = 1.5f;
+
+    [Header("화면 페이드 연출 시간 (요청하신 타이밍)")]
+    public float delayBeforeFadeOut = 0.5f;      // 1. 1인칭 전환 후 대기 시간 (0.5초)
+    public float screenFadeOutDuration = 1.5f;   // 2. 화면 페이드 아웃 시간 (1.5초)
+    public float blackScreenHoldDuration = 1.0f; // 3. 검은 화면 유지 시간 (1.0초)
+
+    private void Start()
+    {
+        // 타이틀 씬 시작 시 검은 화면을 완벽하게 숨김 (시작 시 페이드인 방지)
+        if (blackFadeScreen != null)
+        {
+            Color c = blackFadeScreen.color;
+            c.a = 0f;
+            blackFadeScreen.color = c;
+            blackFadeScreen.gameObject.SetActive(false);
+        }
+    }
 
     public void StartGameTransition()
     {
@@ -27,20 +46,13 @@ public class CameraTransitionManager : MonoBehaviour
 
     private IEnumerator TransitionSequence()
     {
-        // [초기 설정] 지팡이를 투명하게 만들고 시작
-        if (wandRenderer != null)
-        {
-            Color initColor = wandRenderer.material.GetColor("_BaseColor");
-            initColor.a = 0f;
-            wandRenderer.material.SetColor("_BaseColor", initColor);
-            wandRenderer.gameObject.SetActive(false);
-        }
+        if (titleUIGroup != null) StartCoroutine(FadeOutUI());
 
         Vector3 startPos = mainCamera.transform.position;
         Quaternion startRot = mainCamera.transform.rotation;
         float elapsedTime = 0f;
 
-        // 1단계: 타이틀 뷰 -> 왕좌 줌인 연출
+        // 줌인 연출
         while (elapsedTime < zoomDuration)
         {
             float t = Mathf.SmoothStep(0f, 1f, elapsedTime / zoomDuration);
@@ -49,46 +61,66 @@ public class CameraTransitionManager : MonoBehaviour
             elapsedTime += Time.deltaTime;
             yield return null;
         }
-
         mainCamera.transform.position = throneZoomTarget.position;
         mainCamera.transform.rotation = throneZoomTarget.rotation;
 
-        // 2단계: 왕좌 뷰에서 잠시 대기
+        // 왕좌 앞 대기
         yield return new WaitForSeconds(holdDuration);
-
-        // 3단계: 1인칭 전환 시작 (캐릭터 끄기, 지팡이 켜기)
-        if (playerCharacter != null) playerCharacter.SetActive(false);
-        if (wandRenderer != null) wandRenderer.gameObject.SetActive(true);
 
         elapsedTime = 0f;
         Vector3 zoomPos = mainCamera.transform.position;
         Quaternion zoomRot = mainCamera.transform.rotation;
 
-        // 4단계: 1인칭 시점 진입 및 지팡이 페이드인
+        // 1인칭 회전 연출
         while (elapsedTime < firstPersonDuration)
         {
             float t = Mathf.SmoothStep(0f, 1f, elapsedTime / firstPersonDuration);
-
-            // 카메라 이동
             mainCamera.transform.position = Vector3.Lerp(zoomPos, firstPersonTarget.position, t);
             mainCamera.transform.rotation = Quaternion.Slerp(zoomRot, firstPersonTarget.rotation, t);
-
-            // URP 머티리얼 알파값 서서히 증가 (페이드인)
-            if (wandRenderer != null)
-            {
-                Color currentWandColor = wandRenderer.material.GetColor("_BaseColor");
-                currentWandColor.a = Mathf.Lerp(0f, 1f, t);
-                wandRenderer.material.SetColor("_BaseColor", currentWandColor);
-            }
-
             elapsedTime += Time.deltaTime;
             yield return null;
         }
-
         mainCamera.transform.position = firstPersonTarget.position;
         mainCamera.transform.rotation = firstPersonTarget.rotation;
 
-        // 5단계: 연출 완료 후 GameScene 로드
+        // 1. 1인칭 완료 후 잠깐 대기 (0.5초)
+        yield return new WaitForSeconds(delayBeforeFadeOut);
+
+        // 2. 검은 화면으로 페이드 아웃 (1.5초)
+        if (blackFadeScreen != null)
+        {
+            blackFadeScreen.gameObject.SetActive(true);
+            elapsedTime = 0f;
+            Color fadeColor = blackFadeScreen.color;
+
+            while (elapsedTime < screenFadeOutDuration)
+            {
+                fadeColor.a = Mathf.Lerp(0f, 1f, elapsedTime / screenFadeOutDuration);
+                blackFadeScreen.color = fadeColor;
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+            fadeColor.a = 1f;
+            blackFadeScreen.color = fadeColor;
+        }
+
+        // 3. 완전히 까매진 상태로 대기 (1.0초)
+        yield return new WaitForSeconds(blackScreenHoldDuration);
+
+        // 4. 게임 씬 로드
         SceneManager.LoadScene("GameScene");
+    }
+
+    private IEnumerator FadeOutUI()
+    {
+        float elapsedTime = 0f;
+        while (elapsedTime < uiFadeDuration)
+        {
+            titleUIGroup.alpha = Mathf.Lerp(1f, 0f, elapsedTime / uiFadeDuration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        titleUIGroup.alpha = 0f;
+        titleUIGroup.gameObject.SetActive(false);
     }
 }
