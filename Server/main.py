@@ -11,6 +11,13 @@ from sqlalchemy.orm import Session
 from routers.websocket import router as voice_router
 import uvicorn
 
+# 음성 판정 로그(INFO)를 콘솔에 출력한다
+import logging
+from contextlib import asynccontextmanager
+from services import voice_runtime
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+
 import database
 import schemas_fin as schemas  # 최적화한 스키마 파일 import
 from database import Base, engine
@@ -22,7 +29,13 @@ from handlers import app_exception_handler, validation_exception_handler, global
 Base.metadata.create_all(bind=engine)
 
 # 2. FastAPI 앱 실행 및 핸들러 등록
-app = FastAPI(title="Magic Spell Game Backend")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 서버 시작 시 한 번: 음성 판정 모델 로드
+    await voice_runtime.startup()
+    yield
+
+app = FastAPI(title="Magic Spell Game Backend", lifespan=lifespan)
 
 app.include_router(voice_router)
 

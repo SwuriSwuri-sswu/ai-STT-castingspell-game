@@ -1,8 +1,39 @@
 # websocket.py
+import asyncio
+import json
+import logging
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+
+from services import voice_runtime
+from services.cast_service import CastError, build_error
+
+log = logging.getLogger("voice.ws")
 
 # APIRouter 인스턴스 생성
 router = APIRouter(prefix="/ws/voice", tags=["Voice WebSocket"])
+
+
+async def send_json(ws: WebSocket, obj: dict) -> None:
+    # 한글이 \uXXXX 로 바뀌지 않도록 ensure_ascii=False
+    await ws.send_text(json.dumps(obj, ensure_ascii=False))
+
+
+async def judge(wav: bytes, request_id) -> dict:
+    """WAV 하나를 판정해 cast_result 또는 error dict 를 반환한다."""
+    if voice_runtime.service is None or voice_runtime.sem is None:
+        return build_error("NOT_READY", "음성 판정 모델이 아직 준비되지 않았습니다", request_id)
+
+    # 동시 판정 수 제한
+    async with voice_runtime.sem:
+        try:
+            return await asyncio.to_thread(voice_runtime.service.process, wav, request_id)
+        except CastError as e:   # 길이 초과, 잘못된 WAV 등 처리할 수 없는 입력
+            return build_error(e.code, str(e), request_id)
+        except Exception as e:
+            log.exception("처리 중 예외")
+            return build_error("INTERNAL", f"{type(e).__name__}: {e}", request_id)
+
 
 # ---------------------------------------------------------
 # [1] 실시간 오디오 스트리밍 (화면 자막)
@@ -13,9 +44,7 @@ async def voice_streaming(websocket: WebSocket):
     print("[WS] 자막용 스트리밍 연결됨")
     try:
         while True:
-            # 클라이언트가 보낸 오디오 데이터를 서버가 받음
             data = await websocket.receive_bytes()
-            # STT로 인식 중인 중간 결과를 텍스트로만 쏴줌
 
             # TODO: 실제 STT 실시간 파이프라인 연동 위치
             await websocket.send_json({
@@ -28,27 +57,61 @@ async def voice_streaming(websocket: WebSocket):
         print(f"[WS Error] 자막 스트리밍 오류: {e}")
         await websocket.close()
 
+
 # ---------------------------------------------------------
 # [2] 마법 스펠 분석 요청 (스킬 발사용)
+#
+# 프로토콜 (Pipeline_v2/ws_server.py 와 동일)
+#   요청: (선택) 텍스트 {"type": "cast_header", "request_id": "..."} → 바이너리 WAV 1개 = 발화 1개
+#   응답: 텍스트 JSON 1개 ("cast_result" 또는 "error")
 # ---------------------------------------------------------
 @router.websocket("/analyzing")
 async def voice_analyzing(websocket: WebSocket):
     await websocket.accept()
-    print("[WS] 스킬 분석용 연결됨")
+    log.info("[WS] 스킬 분석용 연결됨")
+    pending_id = None   # cast_header 로 받은 request_id. 다음 WAV 에 한 번만 쓴다
+
     try:
         while True:
-            # 클라이언트가 보낸 오디오 데이터를 서버가 받음
-            data = await websocket.receive_bytes()
-            # 최종 분석된 스펠 ID를 함께 쏴줌
+            # receive() 는 텍스트와 바이너리를 모두 받는다 (receive_bytes 는 텍스트가 오면 오류)
+            msg = await websocket.receive()
+            if msg["type"] == "websocket.disconnect":
+                break
 
-            # TODO: 오디오 파일 분석 및 마법 스펠 매칭 로직
-            await websocket.send_json({
-                "status": "success",
-                "text": "파이어 볼!",
-                "spell_id": "fire_1"
-            })
+            text = msg.get("text")
+            data = msg.get("bytes")
+
+            # ── 텍스트 프레임: 헤더 ──
+            if text is not None:
+                try:
+                    header = json.loads(text)
+                except json.JSONDecodeError:
+                    await send_json(websocket, build_error("BAD_HEADER", "JSON 이 아닌 텍스트 프레임입니다"))
+                    continue
+                if not isinstance(header, dict) or header.get("type") != "cast_header":
+                    await send_json(websocket, build_error("UNKNOWN_TYPE", "알 수 없는 텍스트 메시지입니다"))
+                    continue
+                pending_id = header.get("request_id")
+                continue
+
+            if data is None:
+                continue
+
+            # ── 바이너리 프레임: WAV ──
+            rid, pending_id = pending_id, None
+            result = await judge(data, rid)
+
+            if result["type"] == "cast_result":
+                log.info("%s %s \"%s\" (%dms)",
+                         "발동" if result["success"] else "불발",
+                         result["skill"]["name"] if result["success"] else result["reject_reason"],
+                         result["stt"]["text"], result["timing_ms"]["total"])
+            else:
+                log.info("오류 %s: %s", result["code"], result["message"])
+
+            await send_json(websocket, result)
+
     except WebSocketDisconnect:
-        print("[WS] 스킬 분석 정상 종료")
-    except Exception as e:
-        print(f"[WS Error] 스킬 분석 오류: {e}")
-        await websocket.close()
+        pass
+    finally:
+        log.info("[WS] 스킬 분석 연결 종료")

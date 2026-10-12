@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +11,9 @@ using UnityEngine;
 
 public class VoiceWsTest : MonoBehaviour
 {
+    public event Action<CastResult> CastResultReceived;
+    public event Action<ErrorResponse> ErrorReceived;
+
     [SerializeField] string serverUrl = "ws://localhost:8765";
     [SerializeField] string wavFileName = "test.wav";   // Assets/StreamingAssets 안의 파일
 
@@ -103,6 +107,8 @@ public class VoiceWsTest : MonoBehaviour
         {
             var err = obj.ToObject<ErrorResponse>(Serializer);
             Debug.LogWarning($"[WS] 오류 응답 {err.Code}: {err.Message} (request_id={err.RequestId})");
+            if (err.RequestId != null) sentAt.Remove(err.RequestId);   // 왕복 시간 기록 정리
+            ErrorReceived?.Invoke(err);
         }
         else
         {
@@ -130,6 +136,8 @@ public class VoiceWsTest : MonoBehaviour
             Debug.Log($"   성량 {r.Audio.VolumeDb:F1}dB, 피치 {pitch}, 발화 {r.Audio.SpeechSec:F2}s / 전체 {r.Audio.DurationSec:F2}s ({r.Audio.SampleRate}Hz)");
         }
         Debug.Log($"   서버 처리 {r.TimingMs.Total}ms (STT {r.TimingMs.Stt}ms), 왕복 {roundTrip}, damage={(r.Damage.HasValue ? r.Damage.Value.ToString() : "null")}");
+
+        CastResultReceived?.Invoke(r);
     }
 
     // ── 테스트용 버튼 (Game 뷰 왼쪽 위) ──
@@ -145,5 +153,12 @@ public class VoiceWsTest : MonoBehaviour
     async void OnApplicationQuit()
     {
         if (ws != null && ws.State == WebSocketState.Open) await ws.Close();
+    }
+
+    void Update()
+    {
+#if !UNITY_WEBGL || UNITY_EDITOR
+        ws?.DispatchMessageQueue();
+#endif
     }
 }

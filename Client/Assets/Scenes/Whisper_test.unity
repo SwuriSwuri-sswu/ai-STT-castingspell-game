@@ -130,6 +130,8 @@ GameObject:
   - component: {fileID: 349662464}
   - component: {fileID: 349662463}
   - component: {fileID: 349662462}
+  - component: {fileID: 349662465}
+  - component: {fileID: 349662466}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -149,8 +151,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7b8a7dd225ea1b4b8af03242dc94294, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceRecorder
+  micStream: {fileID: 349662465}
   wsClient: {fileID: 349662463}
+  inputMode: 1
+  recordKey: 32
+  vadSettings:
+    frameMs: 30
+    calibrationSec: 1
+    thresholdAboveNoiseDb: 10
+    minNoiseFloorDb: -60
+    startFrames: 3
+    endSilenceSec: 0.4
+    prerollSec: 0.25
+    maxUtteranceSec: 4.8
+    adaptNoiseFloor: 1
+    noiseAdaptRate: 0.02
+  resultTimeoutSec: 6
+  keepTrailingSilenceSec: 0.1
   saveDebugWav: 1
+  showDebugGui: 1
 --- !u!114 &349662463
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -163,7 +182,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f334a38489baeb542943df082a69aff0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceWsTest
-  serverUrl: ws://localhost:8765
+  serverUrl: ws://127.0.0.1:8000/ws/voice/analyzing
   wavFileName: test.wav
 --- !u!4 &349662464
 Transform:
@@ -180,6 +199,51 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &349662465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 349662461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38b64766c9a3e6a4a97b8f669ef42ca2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MicStream
+  deviceName: Microphone Array (AMD Audio Device)
+  source: 0
+  requestedSampleRate: 16000
+  loopBufferSec: 10
+  testWavFileName: test.wav
+  leadingSilenceSec: 1.5
+  gapSilenceSec: 1
+  fillerNoiseDb: -60
+  loopWavFile: 1
+--- !u!114 &349662466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 349662461}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd65006f5338cf34a88aef639bed8469, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MicScope
+  micStream: {fileID: 349662465}
+  micRecorder: {fileID: 349662462}
+  show: 1
+  screenPosition: {x: 10, y: 260}
+  width: 480
+  waveHeight: 100
+  dbHeight: 120
+  waveformSec: 0.5
+  historySec: 6
+  dbMin: -80
+  dbMax: 0
+  clipLevel: 0.99
 --- !u!1 &1815723622
 GameObject:
   m_ObjectHideFlags: 0
