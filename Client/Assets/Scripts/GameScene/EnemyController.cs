@@ -1,59 +1,115 @@
+using System.Collections;
 using UnityEngine;
 
 public class EnemyController : MonoBehaviour
 {
-    [Header("¸÷ ¼³Á¤")]
-    public ElementType enemyType = ElementType.Normal; // ÀÌ ¸÷ÀÇ °íÀ¯ ¼Ó¼º
-    public float currentHP = 100f; // ÇöÀç Ã¼·Â
+    [Header("ëª¹ ì„¤ì •")]
+    public MagicElement enemyType = MagicElement.Normal; // ì´ ëª¹ì˜ ê³ ìœ  ì†ì„±
+    public string enemyRank = "í•˜ê¸‰"; // í•˜ê¸‰, ì¤‘ê¸‰, ìƒê¸‰ (ì¸ìŠ¤í™í„°ì—ì„œ ì„¤ì •)
+    public float currentHP = 20f; // ì´ˆê¸° ì²´ë ¥ (í•˜ê¸‰ 20, ì¤‘ê¸‰ 50, ìƒê¸‰ 100)
+
+    [Header("ì»´í¬ë„ŒíŠ¸ ë° ì—ì…‹")]
+    public Animator anim;
+    public GameObject dropItemPrefab; // ë°˜ì§ì´ í”„ë¦¬íŒ¹
+
+    private bool isDead = false;
+
+    private void Start()
+    {
+        if (anim == null) anim = GetComponent<Animator>();
+    }
 
     public void TakeDamage(SpellData spell)
     {
-        // 1. »ó¼º ¹èÀ² °è»ê
+        if (isDead) return;
+
+        // 1. ìƒì„± ë°°ìœ¨ ê³„ì‚°
         float multiplier = GetTypeMultiplier(spell.elementType, this.enemyType);
 
-        // 2. ÃÖÁ¾ µ¥¹ÌÁö Àû¿ë
+        // 2. ìµœì¢… ë°ë¯¸ì§€ ì ìš©
         float finalDamage = spell.baseDamage * multiplier;
         currentHP -= finalDamage;
 
-        Debug.Log($"[{gameObject.name}] {spell.spellName} ÀûÁß! µ¥¹ÌÁö: {finalDamage} (¹èÀ²: {multiplier}x)");
+        Debug.Log($"[{gameObject.name}] {spell.spellName} ì ì¤‘! ë°ë¯¸ì§€: {finalDamage} (ë°°ìœ¨: {multiplier}x)");
 
-        // 3. UI ÅØ½ºÆ® Ãâ·Â È£Ãâ
+        // 3. UI í…ìŠ¤íŠ¸ ì¶œë ¥ í˜¸ì¶œ
         if (BattleUIManager.Instance != null)
         {
             BattleUIManager.Instance.ShowEffectiveness(multiplier);
         }
 
-        // 4. »ç¸Á ÆÇÁ¤
+        // 4. ìŠ¤í  í­ë°œ ì´í™íŠ¸ ìƒì„± (SpellDataì˜ í­ë°œ ì´í™íŠ¸ ì°¸ì¡°)
+        if (spell.explosionPrefab != null)
+        {
+            Instantiate(spell.explosionPrefab, transform.position, Quaternion.identity);
+        }
+
+        // 5. ì‚¬ë§ íŒì •
         if (currentHP <= 0)
         {
             Die();
         }
     }
 
-    // °ø°İ ¼Ó¼º°ú ¹æ¾î(¸÷) ¼Ó¼ºÀ» ºñ±³ÇÏ¿© ¹èÀ² ¹İÈ¯
-    private float GetTypeMultiplier(ElementType attackType, ElementType defendType)
+    // ê³µê²© ì†ì„±ê³¼ ë°©ì–´(ëª¹) ì†ì„±ì„ ë¹„êµí•˜ì—¬ ë°°ìœ¨ ë°˜í™˜
+    private float GetTypeMultiplier(MagicElement attackType, MagicElement defendType)
     {
-        // ³ë¸» ¼Ó¼ºÀÌ °³ÀÔµÇ°Å³ª, °°Àº ¼Ó¼º³¢¸®ÀÇ °ø°İÀº ¹«Á¶°Ç 1¹è
-        if (attackType == ElementType.Normal || defendType == ElementType.Normal || attackType == defendType)
+        if (attackType == MagicElement.Normal || defendType == MagicElement.Normal || attackType == defendType)
             return 1.0f;
 
-        // °­Á¡ (¹°->ºÒ, ºÒ->Ç®, Ç®->¹°)
-        if (attackType == ElementType.Water && defendType == ElementType.Fire) return 1.5f;
-        if (attackType == ElementType.Fire && defendType == ElementType.Grass) return 1.5f;
-        if (attackType == ElementType.Grass && defendType == ElementType.Water) return 1.5f;
+        // ê°•ì  (ë¬¼->ë¶ˆ, ë¶ˆ->í’€, í’€->ë¬¼)
+        if (attackType == MagicElement.Water && defendType == MagicElement.Fire) return 1.5f;
+        if (attackType == MagicElement.Fire && defendType == MagicElement.Grass) return 1.5f;
+        if (attackType == MagicElement.Grass && defendType == MagicElement.Water) return 1.5f;
 
-        // ¾àÁ¡ (¹°->Ç®, ºÒ->¹°, Ç®->ºÒ)
-        if (attackType == ElementType.Water && defendType == ElementType.Grass) return 0.5f;
-        if (attackType == ElementType.Fire && defendType == ElementType.Water) return 0.5f;
-        if (attackType == ElementType.Grass && defendType == ElementType.Fire) return 0.5f;
+        // ì•½ì  (ë¬¼->í’€, ë¶ˆ->ë¬¼, í’€->ë¶ˆ)
+        if (attackType == MagicElement.Water && defendType == MagicElement.Grass) return 0.5f;
+        if (attackType == MagicElement.Fire && defendType == MagicElement.Water) return 0.5f;
+        if (attackType == MagicElement.Grass && defendType == MagicElement.Fire) return 0.5f;
 
         return 1.0f;
     }
 
     private void Die()
     {
-        Debug.Log("¸÷ Ã³Ä¡µÊ!");
-        // TODO: ½ºÆç µå¶ø ·ÎÁ÷ ¹× Ã³Ä¡ Ä«¿îÆ® Áõ°¡ ·ÎÁ÷ Ãß°¡ ¿¹Á¤
+        isDead = true;
+        Debug.Log("ëª¹ ì²˜ì¹˜ë¨!");
+
+        // ì¶”ê°€ í”¼ê²©ì„ ë§‰ê¸° ìœ„í•´ ì½œë¼ì´ë” ë¹„í™œì„±í™”
+        Collider2D coll = GetComponent<Collider2D>();
+        if (coll != null) coll.enabled = false;
+
+        // Death ì• ë‹ˆë©”ì´ì…˜ ì¬ìƒ
+        if (anim != null)
+        {
+            anim.SetTrigger("Die"); // ì• ë‹ˆë©”ì´í„°ì˜ Trigger ì´ë¦„ê³¼ ì¼ì¹˜ì‹œì¼œì•¼ í•¨
+        }
+
+        // TODO: GameSessionManager ë“±ì— ì²˜ì¹˜ ì¹´ìš´íŠ¸ ì¦ê°€ ì‹ í˜¸ ë³´ë‚´ê¸°
+        // ì˜ˆ: GameSessionManager.Instance.AddMonsterKillCount(enemyType, enemyRank);
+
+        // ì• ë‹ˆë©”ì´ì…˜ ëŒ€ê¸° í›„ ì•„ì´í…œ ë“œë ë° ì‚­ì œ
+        StartCoroutine(HandleDeathAnimationAndDrop());
+    }
+
+    private IEnumerator HandleDeathAnimationAndDrop()
+    {
+        // Death ì• ë‹ˆë©”ì´ì…˜ì˜ ê¸¸ì´ë¥¼ ê°€ì ¸ì˜¤ê±°ë‚˜ ì„ì˜ì˜ ëŒ€ê¸° ì‹œê°„(ì˜ˆ: 1ì´ˆ) ì„¤ì •
+        float animLength = 1.0f;
+        if (anim != null)
+        {
+            animLength = anim.GetCurrentAnimatorStateInfo(0).length;
+        }
+
+        yield return new WaitForSeconds(animLength);
+
+        // ì•„ì´í…œ(ë°˜ì§ì´) ë“œë
+        if (dropItemPrefab != null)
+        {
+            Instantiate(dropItemPrefab, transform.position, Quaternion.identity);
+        }
+
+        // ëª¹ í”„ë¦¬íŒ¹ ë§µì—ì„œ ì‚­ì œ
         Destroy(gameObject);
     }
 }
