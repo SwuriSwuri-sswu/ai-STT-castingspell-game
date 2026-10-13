@@ -33406,6 +33406,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameSettingManager
   audioMixer: {fileID: 0}
+  masterVolume: 1
+  bgmVolume: 1
+  sfxVolume: 1
+  isMuted: 0
+  isWindowed: 0
+  resolutionOp: 1920x1080
+  selectedMicName: 
 --- !u!1 &1816074455
 GameObject:
   m_ObjectHideFlags: 0
@@ -35025,7 +35032,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -2317110199934127957, guid: 863875a649209eb47a4e04202db60e02, type: 3}
+  - {fileID: -2317110199934127957, guid: 694b70b34927daa4ea60f995a5ce770d, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -35138,7 +35145,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2143221751
 RectTransform:
   m_ObjectHideFlags: 0

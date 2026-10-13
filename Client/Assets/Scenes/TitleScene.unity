@@ -32693,6 +32693,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1089477716}
     m_Modifications:
+    - target: {fileID: -6524026693598376720, guid: 863875a649209eb47a4e04202db60e02, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: -2317110199934127957, guid: 694b70b34927daa4ea60f995a5ce770d, type: 3}
     - target: {fileID: -3910990755373119420, guid: 863875a649209eb47a4e04202db60e02, type: 3}
       propertyPath: m_LocalPosition.x
       value: -4.761
@@ -32741,6 +32745,26 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1487339714146347372, guid: 863875a649209eb47a4e04202db60e02, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: -2317110199934127957, guid: 694b70b34927daa4ea60f995a5ce770d, type: 3}
+    - target: {fileID: 2628443261192872255, guid: 863875a649209eb47a4e04202db60e02, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: -2317110199934127957, guid: 694b70b34927daa4ea60f995a5ce770d, type: 3}
+    - target: {fileID: 3285203770088331358, guid: 863875a649209eb47a4e04202db60e02, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: -2317110199934127957, guid: 694b70b34927daa4ea60f995a5ce770d, type: 3}
+    - target: {fileID: 6355682897824868874, guid: 863875a649209eb47a4e04202db60e02, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: -2317110199934127957, guid: 694b70b34927daa4ea60f995a5ce770d, type: 3}
+    - target: {fileID: 6441623194056809472, guid: 863875a649209eb47a4e04202db60e02, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: -2317110199934127957, guid: 694b70b34927daa4ea60f995a5ce770d, type: 3}
     - target: {fileID: 8771091787928289351, guid: 863875a649209eb47a4e04202db60e02, type: 3}
       propertyPath: m_Name
       value: fox
