@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using UnityEngine;
 
 /// <summary>
@@ -7,14 +9,21 @@ using UnityEngine;
 ///  - 아래 그래프: VAD 음량(dB) 기록. 최근 historySec 초를 가로 픽셀 수만큼의 칸으로 나눠,
 ///               칸마다 그 시간 동안의 최대 dB 를 막대로 그린다. 막대 색은 그 시점의 상태.
 ///               노란 가로선 = 말소리 기준, 회색 가로선 = 소음 기준.
-/// MicStream 의 샘플과 MicRecorder 의 VAD 값을 읽기만 하며, 감지·전송 동작에는 영향을 주지 않는다.
-/// 빌드 시에는 이 컴포넌트를 끄거나 제거한다.
+///  - 맨 위 한 줄: 서버 연결 상태, 녹음·판정 대기 상태, 마지막 발화 정보.
+///  - 디버그 WAV 저장: VoiceSender 가 서버로 보낸 WAV 를 persistentDataPath/mic_debug 에 저장한다 (판정 문제 확인용).
+/// VoiceInput·VoiceSender·VoiceSocket 의 값을 읽기만 하며, 감지·전송 동작에는 영향을 주지 않는다.
+/// 테스트용 컴포넌트이므로 게임 씬에는 붙이지 않는다.
 /// </summary>
-public class MicScope : MonoBehaviour
+public class VoiceDebug : MonoBehaviour
 {
     [Header("연결")]
-    [SerializeField] MicStream micStream;
-    [SerializeField] MicRecorder micRecorder;
+    [SerializeField] VoiceInput voiceInput;
+    [SerializeField] VoiceSender voiceSender;
+    [SerializeField] VoiceSocket voiceSocket;
+
+    [Header("디버그 WAV 저장")]
+    [Tooltip("켜면 서버로 보낸 발화 WAV 를 persistentDataPath/mic_debug 에 저장한다")]
+    [SerializeField] bool saveDebugWav = true;
 
     [Header("표시")]
     [SerializeField] bool show = true;
@@ -59,15 +68,18 @@ public class MicScope : MonoBehaviour
     float peakDbInColumn = float.NegativeInfinity;   // 현재 칸 시간 동안의 최대 dB
 
     string statusText = "";
+    string headerText = "";   // 맨 위 한 줄 (연결·녹음 상태)
 
     void OnEnable()
     {
-        if (micStream != null) micStream.SamplesAvailable += OnSamples;
+        if (voiceInput != null) voiceInput.SamplesAvailable += OnSamples;
+        if (voiceSender != null) voiceSender.UtteranceSent += SaveDebugWav;
     }
 
     void OnDisable()
     {
-        if (micStream != null) micStream.SamplesAvailable -= OnSamples;
+        if (voiceInput != null) voiceInput.SamplesAvailable -= OnSamples;
+        if (voiceSender != null) voiceSender.UtteranceSent -= SaveDebugWav;
     }
 
     void Start()
@@ -98,7 +110,7 @@ public class MicScope : MonoBehaviour
     // ── 샘플 수신: 파형 원형 버퍼에 복사 (배열은 재사용되므로 즉시 복사) ──
     void OnSamples(float[] samples, int count)
     {
-        int rate = micStream.SampleRate;
+        int rate = voiceInput.SampleRate;
         if (waveRing == null || rate != waveRate)   // 처음 또는 장치 변경으로 샘플레이트가 바뀐 경우
         {
             waveRate = rate;
@@ -117,7 +129,7 @@ public class MicScope : MonoBehaviour
         if (!show || dbHist == null) return;
 
         // ── dB 기록: VAD 의 현재 값을 읽어 칸 단위로 쌓는다 ──
-        VoiceActivityDetector vad = micRecorder != null ? micRecorder.Vad : null;
+        VoiceActivityDetector vad = voiceSender != null ? voiceSender.Vad : null;
         if (vad != null) peakDbInColumn = Mathf.Max(peakDbInColumn, vad.CurrentDb);
 
         float columnSec = historySec / width;
@@ -139,12 +151,20 @@ public class MicScope : MonoBehaviour
         statusText = vad == null
             ? "VAD: not ready"
             : $"dB {vad.CurrentDb:F1}  |  noise {vad.NoiseFloorDb:F1}  |  threshold {vad.ThresholdDb:F1}  |  " +
-              (micRecorder.IsWaitingForResult ? "Waiting (blocked)" : vad.State.ToString());
+              (voiceSender.IsWaitingForResult ? "Waiting (blocked)" : vad.State.ToString());
+
+        // 맨 위 한 줄: 서버 연결, 녹음·판정 대기 상태, 마지막 발화 정보
+        string server = voiceSocket == null ? "-" : voiceSocket.IsConnected ? "Connected" : "Disconnected";
+        string rec = voiceSender == null ? "-"
+            : voiceSender.IsRecording ? "● REC"
+            : voiceSender.IsWaitingForResult ? "Waiting for result (blocked)"
+            : "Ready";
+        headerText = $"Server: {server}   |   {rec}   |   Last: {(voiceSender != null ? voiceSender.LastInfo : "-")}";
     }
 
     byte CurrentStateCode(VoiceActivityDetector vad)
     {
-        if (micRecorder != null && micRecorder.IsWaitingForResult) return StWaiting;   // 판정 대기(막기)를 우선 표시
+        if (voiceSender != null && voiceSender.IsWaitingForResult) return StWaiting;   // 판정 대기(막기)를 우선 표시
         if (vad == null) return StIdle;
         switch (vad.State)
         {
@@ -228,10 +248,24 @@ public class MicScope : MonoBehaviour
 
     static void HLine(Color32[] px, int w, int y, Color32 c) { for (int x = 0; x < w; x++) px[y * w + x] = c; }
 
+    // ── 디버그 WAV 저장: VoiceSender 가 서버로 보낸 WAV 를 그대로 파일로 남긴다 ──
+    void SaveDebugWav(byte[] wav)
+    {
+        if (!saveDebugWav) return;
+        string dir = Path.Combine(Application.persistentDataPath, "mic_debug");
+        Directory.CreateDirectory(dir);
+        string path = Path.Combine(dir, $"mic_{DateTime.Now:yyyyMMdd_HHmmss_fff}.wav");
+        File.WriteAllBytes(path, wav);
+        Debug.Log($"[DEBUG] 디버그 WAV 저장: {path}");
+    }
+
     void OnGUI()
     {
         if (!show || waveTex == null) return;
         float x = screenPosition.x, y = screenPosition.y;
+
+        GUI.Label(new Rect(x, y, width, 20), headerText);
+        y += 22;
 
         GUI.Label(new Rect(x, y, width, 20), "Waveform (last " + waveformSec + "s)");
         GUI.DrawTexture(new Rect(x, y + 20, width, waveHeight), waveTex);

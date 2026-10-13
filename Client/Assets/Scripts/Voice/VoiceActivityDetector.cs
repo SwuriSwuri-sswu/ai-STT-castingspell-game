@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-/// <summary>VAD 설정. MicRecorder 의 Inspector 에서 조정한다. 값은 모두 시작값이며 테스트하며 바꾼다.</summary>
+/// <summary>VAD 설정. VoiceSender 의 Inspector 에서 조정한다. 값은 모두 시작값이며 테스트하며 바꾼다.</summary>
 [Serializable]
 public class VadSettings
 {
@@ -81,15 +81,6 @@ public class VoiceActivityDetector
         frame = new float[frameSize];
 
         NoiseFloorDb = s.minNoiseFloorDb;
-    }
-
-    /// <summary>주변 소음을 다시 잰다 (환경이 크게 바뀌었을 때).</summary>
-    public void Recalibrate()
-    {
-        State = VadState.Calibrating;
-        calibCount = 0; calibSum = 0;
-        voicedRun = 0; silentSamples = 0; utteranceSamples = 0;
-        prerollHead = 0; prerollCount = 0;
     }
 
     /// <summary>샘플을 넣는다. 30ms 프레임이 찰 때마다 판정한다.</summary>

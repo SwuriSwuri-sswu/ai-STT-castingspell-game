@@ -4,8 +4,8 @@ using UnityEngine;
 
 /// <summary>
 /// 음성 주문 결과를 자막으로 보여 주고 스펠 발동을 요청한다.
-/// 녹음·통신은 MicRecorder / VoiceWsTest 가 하고, 이 클래스는 그 이벤트만 받는다.
-/// 발동은 VoiceSpellBook(가상의 SkillManager)에 요청한다.
+/// 녹음·통신은 VoiceSender / VoiceSocket 이 하고, 이 클래스는 그 이벤트만 받는다.
+/// 발동은 VoiceSkillBridge(지금은 가상의 SkillManager)에 요청한다.
 /// subtitleText / typingSpeed 이름은 기존과 같게 유지했다 (씬 연결값 유지).
 /// </summary>
 public class VoiceRecorder : MonoBehaviour
@@ -13,9 +13,9 @@ public class VoiceRecorder : MonoBehaviour
     public TextMeshProUGUI subtitleText;
     public float typingSpeed = 0.05f;   // 글자당 출력 시간 (초)
 
-    [SerializeField] MicRecorder micRecorder;
-    [SerializeField] VoiceWsTest wsClient;
-    [SerializeField] VoiceSpellBook spellBook;
+    [SerializeField] VoiceSender voiceSender;
+    [SerializeField] VoiceSocket voiceSocket;
+    [SerializeField] VoiceSkillBridge skillBridge;
 
     Coroutine sequence;
     Vector3 baseScale = Vector3.one;   // 자막 원래 크기 (연출이 끊겨도 크기가 누적되지 않게 한 번만 저장)
@@ -31,15 +31,15 @@ public class VoiceRecorder : MonoBehaviour
 
     void Subscribe(bool on)
     {
-        if (micRecorder != null)
+        if (voiceSender != null)
         {
-            if (on) { micRecorder.RecordingStarted += OnStarted; micRecorder.RecordingSubmitted += OnSubmitted; micRecorder.RecordingRejected += Show; }
-            else { micRecorder.RecordingStarted -= OnStarted; micRecorder.RecordingSubmitted -= OnSubmitted; micRecorder.RecordingRejected -= Show; }
+            if (on) { voiceSender.RecordingStarted += OnStarted; voiceSender.RecordingSubmitted += OnSubmitted; voiceSender.RecordingRejected += Show; }
+            else { voiceSender.RecordingStarted -= OnStarted; voiceSender.RecordingSubmitted -= OnSubmitted; voiceSender.RecordingRejected -= Show; }
         }
-        if (wsClient != null)
+        if (voiceSocket != null)
         {
-            if (on) { wsClient.CastResultReceived += OnResult; wsClient.ErrorReceived += OnError; }
-            else { wsClient.CastResultReceived -= OnResult; wsClient.ErrorReceived -= OnError; }
+            if (on) { voiceSocket.CastResultReceived += OnResult; voiceSocket.ErrorReceived += OnError; }
+            else { voiceSocket.CastResultReceived -= OnResult; voiceSocket.ErrorReceived -= OnError; }
         }
     }
 
@@ -56,7 +56,7 @@ public class VoiceRecorder : MonoBehaviour
     void OnResult(CastResult r)
     {
         // 결과가 늦게 와서 이미 다음 주문을 말하는 중이면 덮어쓰지 않는다
-        if (r == null || (micRecorder != null && micRecorder.IsRecording)) return;
+        if (r == null || (voiceSender != null && voiceSender.IsRecording)) return;
 
         Show(null);
         sequence = StartCoroutine(ResultSequence(r.Stt?.Text, r.Success ? r.Skill?.Name : null));
@@ -88,7 +88,7 @@ public class VoiceRecorder : MonoBehaviour
         subtitleText.text = $"<color=#FFD700><b>{spellName}!</b></color>";
         yield return Pop();
 
-        if (spellBook != null && !spellBook.TryCast(spellName))
+        if (skillBridge != null && !skillBridge.TryCast(spellName))
             subtitleText.text = "<color=#888888>아직 다룰 수 없는 주문입니다.</color>";
     }
 

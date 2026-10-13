@@ -255,10 +255,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7b8a7dd225ea1b4b8af03242dc94294, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceRecorder
-  micStream: {fileID: 349662465}
-  wsClient: {fileID: 349662463}
-  inputMode: 1
-  recordKey: 32
+  voiceInput: {fileID: 349662465}
+  voiceSocket: {fileID: 349662463}
   vadSettings:
     frameMs: 30
     calibrationSec: 1
@@ -272,8 +270,6 @@ MonoBehaviour:
     noiseAdaptRate: 0.02
   resultTimeoutSec: 6
   keepTrailingSilenceSec: 0.1
-  saveDebugWav: 1
-  showDebugGui: 1
 --- !u!114 &349662463
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -287,8 +283,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceWsTest
   serverUrl: ws://127.0.0.1:8000/ws/voice/analyzing
-  wavFileName: test.wav
-  spellBook: {fileID: 349662468}
+  skillBridge: {fileID: 349662468}
 --- !u!4 &349662464
 Transform:
   m_ObjectHideFlags: 0
@@ -317,14 +312,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MicStream
   deviceName: Microphone Array (AMD Audio Device)
-  source: 0
   requestedSampleRate: 16000
   loopBufferSec: 10
-  testWavFileName: test.wav
-  leadingSilenceSec: 1.5
-  gapSilenceSec: 1
-  fillerNoiseDb: -60
-  loopWavFile: 1
 --- !u!114 &349662466
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -337,8 +326,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd65006f5338cf34a88aef639bed8469, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MicScope
-  micStream: {fileID: 349662465}
-  micRecorder: {fileID: 349662462}
+  voiceInput: {fileID: 349662465}
+  voiceSender: {fileID: 349662462}
+  voiceSocket: {fileID: 349662463}
+  saveDebugWav: 1
   show: 1
   screenPosition: {x: 10, y: 260}
   width: 480
@@ -363,9 +354,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VoiceRecorder
   subtitleText: {fileID: 382808711}
   typingSpeed: 0.05
-  micRecorder: {fileID: 349662462}
-  wsClient: {fileID: 349662463}
-  spellBook: {fileID: 349662468}
+  voiceSender: {fileID: 349662462}
+  voiceSocket: {fileID: 349662463}
+  skillBridge: {fileID: 349662468}
 --- !u!114 &349662468
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -10,9 +10,9 @@ using UnityEngine;
 ///   - 해금: Tier 1 → 3 순서로, 그 단계의 잠긴 스펠 중 하나를 랜덤 (게임에서는 5마리 처치마다)
 ///   - 시전: 공백을 뺀 이름이 같고 해금된 스펠만 성공
 /// 연동: GetCastableSpells / TryCast 안쪽만 진짜 SkillManager 를 쓰도록 바꾸면 된다.
-///       이 클래스를 쓰는 VoiceRecorder, VoiceWsTest 는 수정하지 않는다.
+///       이 클래스를 쓰는 VoiceRecorder, VoiceSocket 는 수정하지 않는다.
 /// </summary>
-public class VoiceSpellBook : MonoBehaviour
+public class VoiceSkillBridge : MonoBehaviour
 {
     [Serializable]
     public class Spell
@@ -24,7 +24,7 @@ public class VoiceSpellBook : MonoBehaviour
         public List<string> aliases = new List<string>();   // 자주 틀리게 인식되는 표기
     }
 
-    /// <summary>해금·초기화로 목록이 바뀌면 호출된다. VoiceWsTest 가 서버로 다시 보낸다.</summary>
+    /// <summary>해금·초기화로 목록이 바뀌면 호출된다. VoiceSocket 가 서버로 다시 보낸다.</summary>
     public event Action SpellsChanged;
 
     [SerializeField] List<Spell> spells = DefaultSpells();

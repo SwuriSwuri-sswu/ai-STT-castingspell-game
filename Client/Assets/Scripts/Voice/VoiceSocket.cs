@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using NativeWebSocket;
@@ -10,14 +9,16 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 using UnityEngine;
 
-public class VoiceWsTest : MonoBehaviour
+public class VoiceSocket : MonoBehaviour
 {
     public event Action<CastResult> CastResultReceived;
     public event Action<ErrorResponse> ErrorReceived;
 
     [SerializeField] string serverUrl = "ws://localhost:8765";
-    [SerializeField] string wavFileName = "test.wav";   // Assets/StreamingAssets 안의 파일
-    [SerializeField] VoiceSpellBook spellBook;          // 서버로 보낼 스펠 목록 (비어 있으면 서버 기본 스킬로 판정)
+    [SerializeField] VoiceSkillBridge skillBridge;          // 서버로 보낼 스펠 목록 (비어 있으면 서버 기본 스킬로 판정)
+
+    /// <summary>서버와 연결되어 있는지 (디버그 표시용)</summary>
+    public bool IsConnected => ws != null && ws.State == WebSocketState.Open;
 
     WebSocket ws;
     int requestCounter;
@@ -35,13 +36,13 @@ public class VoiceWsTest : MonoBehaviour
 
         ws = new WebSocket(serverUrl);
         ws.OnOpen += () => { Debug.Log("[WS] 연결됨"); SendSkillList(); };   // 연결될 때마다 스펠 목록 전송
-        if (spellBook != null) spellBook.SpellsChanged += SendSkillList;     // 해금, 초기화 때 재전송
+        if (skillBridge != null) skillBridge.SpellsChanged += SendSkillList;     // 해금, 초기화 때 재전송
         ws.OnError += e => Debug.LogError("[WS] 오류: " + e);
         ws.OnClose += code => Debug.Log("[WS] 연결 종료: " + code);
         ws.OnMessage += bytes => HandleMessage(Encoding.UTF8.GetString(bytes));
 
         // 주의: Connect() 는 연결이 유지되는 동안 반환되지 않을 수 있다(내부 수신 루프).
-        // 이 줄 뒤에 코드를 두지 말고, 연결 후 작업은 OnOpen 이나 버튼에서 할 것.
+        // 이 줄 뒤에 코드를 두지 말고, 연결 후 작업은 OnOpen 에서 할 것.
         await ws.Connect();
     }
 
@@ -52,27 +53,7 @@ public class VoiceWsTest : MonoBehaviour
         return false;
     }
 
-    // ── 1) 연결 확인: 기대 응답은 error / BAD_HEADER ──
-    public async void SendHello()
-    {
-        if (!IsOpen()) return;
-        await ws.SendText("hello");
-        Debug.Log("[WS] hello 전송");
-    }
-
-    // ── 2) 파일 WAV 전송 (기존 버튼용) ──
-    public async void SendWav()
-    {
-        string path = Path.Combine(Application.streamingAssetsPath, wavFileName);
-        if (!File.Exists(path))
-        {
-            Debug.LogError("[WS] WAV 파일이 없습니다: " + path);
-            return;
-        }
-        await SendWavBytes(File.ReadAllBytes(path), "file");
-    }
-
-    // ── WAV 바이트 전송 (파일, 마이크 공용): 헤더(텍스트) -> WAV(바이너리) ──
+    // ── 발화 WAV 전송: 헤더(텍스트) -> WAV(바이너리) ──
     public async Task<string> SendWavBytes(byte[] wav, string tag = "mic")
     {
         if (!IsOpen()) return null;
@@ -91,8 +72,8 @@ public class VoiceWsTest : MonoBehaviour
     // 같은 연결의 메시지는 순서대로 처리되므로 이후 발화는 새 목록으로 판정된다.
     public async void SendSkillList()
     {
-        if (spellBook == null || ws == null || ws.State != WebSocketState.Open) return;
-        var spells = spellBook.GetCastableSpells();
+        if (skillBridge == null || ws == null || ws.State != WebSocketState.Open) return;
+        var spells = skillBridge.GetCastableSpells();
         if (spells.Count == 0) return;
 
         await ws.SendText(JsonConvert.SerializeObject(new
@@ -105,7 +86,7 @@ public class VoiceWsTest : MonoBehaviour
 
     void OnDestroy()
     {
-        if (spellBook != null) spellBook.SpellsChanged -= SendSkillList;
+        if (skillBridge != null) skillBridge.SpellsChanged -= SendSkillList;
     }
 
     // ── 수신 처리: type 으로 먼저 분기한 뒤 클래스로 변환 ──
@@ -167,16 +148,6 @@ public class VoiceWsTest : MonoBehaviour
         Debug.Log($"   서버 처리 {r.TimingMs.Total}ms (STT {r.TimingMs.Stt}ms), 왕복 {roundTrip}, damage={(r.Damage.HasValue ? r.Damage.Value.ToString() : "null")}");
 
         CastResultReceived?.Invoke(r);
-    }
-
-    // ── 테스트용 버튼 (Game 뷰 왼쪽 위) ──
-    void OnGUI()
-    {
-        GUILayout.BeginArea(new Rect(10, 10, 280, 120));
-        GUILayout.Label("WS state: " + (ws == null ? "none" : ws.State.ToString()));
-        if (GUILayout.Button("1) Send hello  (expect BAD_HEADER)")) SendHello();
-        if (GUILayout.Button("2) Send WAV")) SendWav();
-        GUILayout.EndArea();
     }
 
     async void OnApplicationQuit()
