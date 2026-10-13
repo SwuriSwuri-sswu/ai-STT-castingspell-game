@@ -41,13 +41,16 @@ class SpeechRecognizer:
         )
         self.initial_prompt = initial_prompt
 
-    def transcribe(self, audio: np.ndarray) -> SttResult:
+    def transcribe(self, audio: np.ndarray, initial_prompt: str | None = None) -> SttResult:
+        # 요청마다 힌트를 바꿀 수 있다. 주지 않으면 생성할 때 정한 기본 힌트를 쓴다.
+        prompt = self.initial_prompt if initial_prompt is None else initial_prompt
+
         segments, _info = self.model.transcribe(
             audio,
             language=LANGUAGE,
             beam_size=BEAM_SIZE,
             word_timestamps=True,
-            initial_prompt=self.initial_prompt,
+            initial_prompt=prompt,
             condition_on_previous_text=False,
             vad_filter=USE_VAD_FILTER,
         )

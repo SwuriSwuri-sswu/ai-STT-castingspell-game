@@ -52,7 +52,7 @@ def build_error(code: str, message: str, request_id=None) -> dict:
     }
 
 
-def _judge(stt: SttResult) -> tuple[str | None, sm.MatchResult | None]:
+def _judge(stt: SttResult, skills: dict) -> tuple[str | None, sm.MatchResult | None]:
     """게이트 판정. 비용이 낮고 차단률이 높은 것부터 검사한다.
 
     반환: (불발 사유 또는 None, 매칭 결과 또는 None)
@@ -61,7 +61,7 @@ def _judge(stt: SttResult) -> tuple[str | None, sm.MatchResult | None]:
         return "EMPTY", None
     if stt.no_speech > MAX_NO_SPEECH_PROB:
         return "NOISE", None
-    m = sm.match_skill(stt.text)  # EMPTY_TEXT / NO_MATCH / AMBIGUOUS
+    m = sm.match_skill(stt.text, skills)  # EMPTY_TEXT / NO_MATCH / AMBIGUOUS
     if not m.ok:
         return m.reject_reason, m
     return None, m
@@ -88,11 +88,13 @@ class CastService:
         t = np.arange(TARGET_SR, dtype=np.float32) / TARGET_SR
         analyze_array((0.1 * np.sin(2 * np.pi * 220 * t)).astype(np.float32), TARGET_SR)
 
-    def process(self, wav: bytes, request_id=None) -> dict:
+    def process(self, wav: bytes, request_id=None, skills: dict | None = None) -> dict:
         """동기 함수. 서버에서는 asyncio.to_thread 로 호출한다.
 
+        skills: 이 연결에서 Unity 가 보낸 스킬 목록. None 이면 기본 SKILLS.
         입력이 잘못됐으면 CastError 를 던진다.
         """
+        skills = sm.SKILLS if skills is None else skills
         t0 = time.perf_counter()
 
         # ① 디코딩 (한 번만)
@@ -107,9 +109,9 @@ class CastService:
         if dur > MAX_AUDIO_SEC:
             raise CastError("TOO_LONG", f"{dur:.3f}s > {MAX_AUDIO_SEC}s")
 
-        # ② 받아쓰기
+        # ② 받아쓰기: 이 연결의 스킬 이름을 힌트로 준다
         t1 = time.perf_counter()
-        stt = self.stt.transcribe(audio)
+        stt = self.stt.transcribe(audio, initial_prompt=sm.build_initial_prompt(skills))
 
         # ③ 음향 분석 (같은 배열 사용)
         t2 = time.perf_counter()
@@ -118,12 +120,12 @@ class CastService:
 
         # ④ 판정
         t3 = time.perf_counter()
-        reason, m = _judge(stt)
+        reason, m = _judge(stt, skills)
         success = reason is None
 
         skill = None
         if success:
-            skill = {"id": m.skill_id, "name": sm.SKILLS[m.skill_id]["name"]}
+            skill = {"id": m.skill_id, "name": skills[m.skill_id]["name"]}
 
         t4 = time.perf_counter()
         return {

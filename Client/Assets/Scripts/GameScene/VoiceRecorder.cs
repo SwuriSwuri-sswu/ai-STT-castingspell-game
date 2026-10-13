@@ -1,258 +1,115 @@
-using UnityEngine;
-using TMPro;
 using System.Collections;
-using System.IO;
-using UnityEngine.Networking;
+using TMPro;
+using UnityEngine;
 
+/// <summary>
+/// 음성 주문 결과를 자막으로 보여 주고 스펠 발동을 요청한다.
+/// 녹음·통신은 MicRecorder / VoiceWsTest 가 하고, 이 클래스는 그 이벤트만 받는다.
+/// 발동은 VoiceSpellBook(가상의 SkillManager)에 요청한다.
+/// subtitleText / typingSpeed 이름은 기존과 같게 유지했다 (씬 연결값 유지).
+/// </summary>
 public class VoiceRecorder : MonoBehaviour
 {
-    [Header("UI 설정")]
     public TextMeshProUGUI subtitleText;
+    public float typingSpeed = 0.05f;   // 글자당 출력 시간 (초)
 
-    [Header("네트워크 설정")]
-    // 백엔드 API 주소 (FastAPI 서버의 엔드포인트 입력)
-    public string backendUrl = "http://localhost:8000/transcribe";
+    [SerializeField] MicRecorder micRecorder;
+    [SerializeField] VoiceWsTest wsClient;
+    [SerializeField] VoiceSpellBook spellBook;
 
-    private string selectedDevice;
-    private AudioClip recordingClip;
-    private const int SampleRate = 16000;
-    private const int MaxRecordingTime = 10;
+    Coroutine sequence;
+    Vector3 baseScale = Vector3.one;   // 자막 원래 크기 (연출이 끊겨도 크기가 누적되지 않게 한 번만 저장)
 
-    [Header("자막 연출 설정")]
-    public float typingSpeed = 0.05f; // 글자당 출력 대기 시간 (초)
-    private Coroutine typingCoroutine; // 현재 실행 중인 코루틴 추적용
-
-    [Header("매니저 연결")]
-    public SkillManager skillManager;
-
-    void Start()
+    void Awake()
     {
-        if (Microphone.devices.Length > 0)
+        if (subtitleText != null) baseScale = subtitleText.transform.localScale;
+    }
+
+    void OnEnable() => Subscribe(true);
+    void OnDisable() { Subscribe(false); Show(null); }
+    void Start() => Show("주문을 영창하세요.");
+
+    void Subscribe(bool on)
+    {
+        if (micRecorder != null)
         {
-            selectedDevice = Microphone.devices[0];
+            if (on) { micRecorder.RecordingStarted += OnStarted; micRecorder.RecordingSubmitted += OnSubmitted; micRecorder.RecordingRejected += Show; }
+            else { micRecorder.RecordingStarted -= OnStarted; micRecorder.RecordingSubmitted -= OnSubmitted; micRecorder.RecordingRejected -= Show; }
         }
-        else
+        if (wsClient != null)
         {
-            Debug.LogError("마이크 장치가 없습니다.");
-            if (subtitleText != null) subtitleText.text = "마이크를 확인할 수 없습니다.";
-        }
-
-        if (subtitleText != null) subtitleText.text = "스페이스바를 누른 채로 주문을 영창하세요.";
-    }
-
-    void Update()
-    {
-        if (string.IsNullOrEmpty(selectedDevice)) return;
-
-        if (Input.GetKeyDown(KeyCode.Space)) StartRecording();
-        if (Input.GetKeyUp(KeyCode.Space)) StopRecording();
-    }
-
-    private void StartRecording()
-    {
-        if (Microphone.IsRecording(selectedDevice)) Microphone.End(selectedDevice);
-
-        recordingClip = Microphone.Start(selectedDevice, false, MaxRecordingTime, SampleRate);
-        if (subtitleText != null) subtitleText.text = "[ 마법 영창 중... ]";
-    }
-
-    private void StopRecording()
-    {
-        if (!Microphone.IsRecording(selectedDevice)) return;
-
-        int recordingLength = Microphone.GetPosition(selectedDevice);
-        Microphone.End(selectedDevice);
-
-        if (recordingLength <= 0)
-        {
-            if (subtitleText != null) subtitleText.text = "주문이 들리지 않았습니다.";
-            return;
-        }
-
-        AudioClip trimmedClip = TrimClip(recordingClip, recordingLength);
-        if (subtitleText != null) subtitleText.text = "[ 마나 흐름 해석 중... ]";
-
-        // 녹음 완료 직후 서버로 WAV 데이터 전송 코루틴 시작
-        StartCoroutine(SendAudioToBackend(trimmedClip));
-    }
-
-    private AudioClip TrimClip(AudioClip clip, int samplesRecorded)
-    {
-        float[] soundData = new float[samplesRecorded * clip.channels];
-        clip.GetData(soundData, 0);
-
-        AudioClip trimmed = AudioClip.Create("RecordedSpell", samplesRecorded, clip.channels, clip.frequency, false);
-        trimmed.SetData(soundData, 0);
-        return trimmed;
-    }
-
-    /*
-    // 통신 코루틴
-    private IEnumerator SendAudioToBackend(AudioClip clip)
-    {
-        // 1. AudioClip을 WAV 바이트 배열로 인코딩
-        byte[] wavData = EncodeToWAV(clip);
-
-        // 2. HTTP 전송용 폼(Form) 데이터 생성
-        WWWForm form = new WWWForm();
-        // 백엔드 API에서 받을 파일 파라미터 이름("file"), 바이트 데이터, 임시 파일명, MIME 타입
-        form.AddBinaryData("file", wavData, "spell.wav", "audio/wav");
-
-        // 3. 서버로 POST 요청 전송
-        using (UnityWebRequest www = UnityWebRequest.Post(backendUrl, form))
-        {
-            yield return www.SendWebRequest();
-
-            if (www.result == UnityWebRequest.Result.ConnectionError || www.result == UnityWebRequest.Result.ProtocolError)
-            {
-                Debug.LogError($"통신 에러: {www.error}");
-                if (subtitleText != null) subtitleText.text = "주문 해석에 실패했습니다. (통신 오류)";
-            }
-            else
-            {
-                // 4. 성공 시 JSON 응답 파싱 및 자막 출력
-                string jsonResponse = www.downloadHandler.text;
-                WhisperResponse responseData = JsonUtility.FromJson<WhisperResponse>(jsonResponse);
-
-                // 자막용 날것의 텍스트와 마법 시전용 확정 텍스트를 인자로 각각 넘김
-                DisplayRecognizedSpell(responseData.raw_text, responseData.mapped_spell);
-            }
+            if (on) { wsClient.CastResultReceived += OnResult; wsClient.ErrorReceived += OnError; }
+            else { wsClient.CastResultReceived -= OnResult; wsClient.ErrorReceived -= OnError; }
         }
     }
-    */
 
-    // 백엔드 미연결 UI/스킬 연출 테스트용 임시 코루틴
-    private IEnumerator SendAudioToBackend(AudioClip clip)
+    // ── 상태 표시 ──
+    void OnStarted() => Show("[ 마법 영창 중... ]");
+    void OnSubmitted() => Show("[ 마나 흐름 해석 중... ]");
+
+    void OnError(ErrorResponse e)
     {
-        // 1. 서버 통신에 걸리는 시간을 가상으로 시뮬레이션 (1초 대기)
-        yield return new WaitForSeconds(1.0f);
-
-        // 2. 가짜(Mock) 응답 데이터 생성
-        // 유저가 발음했다고 가정할 '날것의 텍스트' (타이핑 연출용)
-        string mockRawText = "매직 미샤일";
-
-        // 백엔드가 보정해줬다고 가정할 '확정 텍스트' (팝업 연출 및 스킬 시전용)
-        // 주의: 이 텍스트는 SpellData에 적어둔 Spell Name과 정확히 일치해야 마법이 나갑니다.
-        string mockMappedSpell = "매직 미사일";
-
-        // 3. 통신 과정을 건너뛰고 바로 자막 및 스킬 호출 함수 실행
-        DisplayRecognizedSpell(mockRawText, mockMappedSpell);
+        // request_id 없는 오류(스펠 목록 오류 등)는 플레이어에게 보여 주지 않는다 (Console 에는 출력됨)
+        if (!string.IsNullOrEmpty(e?.RequestId)) Show("주문 해석에 실패했습니다. (서버 오류)");
     }
 
-    // STT 결과를 받아 자막 출력을 준비하는 함수
-    private void DisplayRecognizedSpell(string rawText, string mappedSpell)
+    void OnResult(CastResult r)
     {
-        if (typingCoroutine != null)
-        {
-            StopCoroutine(typingCoroutine);
-        }
+        // 결과가 늦게 와서 이미 다음 주문을 말하는 중이면 덮어쓰지 않는다
+        if (r == null || (micRecorder != null && micRecorder.IsRecording)) return;
 
-        // 1. 자막 타이핑 및 팝업 효과 연출 코루틴 시작
-        typingCoroutine = StartCoroutine(SpellTextSequence(rawText, mappedSpell));
+        Show(null);
+        sequence = StartCoroutine(ResultSequence(r.Stt?.Text, r.Success ? r.Skill?.Name : null));
     }
 
-    // 순차적 자막 연출 코루틴 (타이핑 -> 팝업 효과 -> 스킬 시전)
-    private IEnumerator SpellTextSequence(string rawText, string mappedSpell)
+    // ── 연출: 들린 발음 타이핑 → (발동) 스펠 이름 팝업 + 발동 요청 / (불발) 실패 문구 ──
+    IEnumerator ResultSequence(string rawText, string spellName)
     {
         if (subtitleText == null) yield break;
 
-        // ----------------------------------------------------
-        // 1단계: 날것의 텍스트 타이핑 연출
-        // ----------------------------------------------------
-        subtitleText.text = "\"";
-        foreach (char c in rawText)
+        if (!string.IsNullOrEmpty(rawText))
         {
-            subtitleText.text += c;
-            yield return new WaitForSeconds(typingSpeed);
-        }
-        subtitleText.text += "\"";
-
-        // 유저가 날것의 텍스트를 인식할 수 있도록 0.5초 대기
-        yield return new WaitForSeconds(0.5f);
-
-        // ----------------------------------------------------
-        // 2단계: 확정된 스펠로 덮어씌우기 + 팝(Pop) 애니메이션
-        // ----------------------------------------------------
-        // TextMeshPro Rich Text를 사용해 텍스트를 노란색 굵은 글씨로 변경
-        subtitleText.text = $"<color=#FFD700><b>{mappedSpell}!</b></color>";
-
-        Vector3 originalScale = subtitleText.transform.localScale;
-        Vector3 targetScale = originalScale * 1.5f; // 1.5배로 확대
-        float popDuration = 0.15f;
-        float elapsed = 0f;
-
-        // 텍스트 커지기
-        while (elapsed < popDuration)
-        {
-            subtitleText.transform.localScale = Vector3.Lerp(originalScale, targetScale, elapsed / popDuration);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        elapsed = 0f;
-        // 텍스트 원래 크기로 돌아오기
-        while (elapsed < popDuration)
-        {
-            subtitleText.transform.localScale = Vector3.Lerp(targetScale, originalScale, elapsed / popDuration);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        // 크기 오차 보정
-        subtitleText.transform.localScale = originalScale;
-
-        // ----------------------------------------------------
-        // 3단계: 연출이 끝난 직후 실제 마법 시전
-        // ----------------------------------------------------
-        if (skillManager != null)
-        {
-            skillManager.CastSpell(mappedSpell);
-        }
-    }
-
-    // AudioClip -> WAV 헤더 및 16-bit PCM 데이터 바이트 변환기
-    private byte[] EncodeToWAV(AudioClip clip)
-    {
-        float[] samples = new float[clip.samples * clip.channels];
-        clip.GetData(samples, 0);
-
-        short[] intData = new short[samples.Length];
-        for (int i = 0; i < samples.Length; i++)
-        {
-            // float(-1.0f ~ 1.0f) 데이터를 16비트 정수(-32768 ~ 32767)로 변환
-            intData[i] = (short)(samples[i] * 32767f);
-        }
-
-        using (MemoryStream memoryStream = new MemoryStream())
-        using (BinaryWriter writer = new BinaryWriter(memoryStream))
-        {
-            writer.Write("RIFF".ToCharArray());
-            writer.Write(36 + intData.Length * 2);
-            writer.Write("WAVE".ToCharArray());
-            writer.Write("fmt ".ToCharArray());
-            writer.Write(16);
-            writer.Write((short)1); // PCM 포맷
-            writer.Write((short)clip.channels);
-            writer.Write(clip.frequency);
-            writer.Write(clip.frequency * clip.channels * 2);
-            writer.Write((short)(clip.channels * 2));
-            writer.Write((short)16);
-            writer.Write("data".ToCharArray());
-            writer.Write(intData.Length * 2);
-
-            foreach (short sample in intData)
+            subtitleText.text = "\"";
+            foreach (char c in rawText)
             {
-                writer.Write(sample);
+                subtitleText.text += c;
+                yield return new WaitForSeconds(typingSpeed);
             }
-            return memoryStream.ToArray();
+            subtitleText.text += "\"";
+            yield return new WaitForSeconds(0.5f);
         }
+
+        if (spellName == null)
+        {
+            subtitleText.text = "<color=#888888>주문이 흩어졌습니다...</color>";
+            yield break;
+        }
+
+        subtitleText.text = $"<color=#FFD700><b>{spellName}!</b></color>";
+        yield return Pop();
+
+        if (spellBook != null && !spellBook.TryCast(spellName))
+            subtitleText.text = "<color=#888888>아직 다룰 수 없는 주문입니다.</color>";
     }
 
-    // JSON 응답을 파싱하기 위한 데이터 클래스
-    [System.Serializable]
-    public class WhisperResponse
+    IEnumerator Pop()   // 0.15초 동안 1.5배로 커졌다가 0.15초 동안 원래 크기로
     {
-        public string raw_text;     // 화면 자막에 띄울 날것의 발음
-        public string mapped_spell; // 스킬 매니저로 넘길 확정된 마법 이름
+        Transform t = subtitleText.transform;
+        for (float e = 0f; e < 0.3f; e += Time.deltaTime)
+        {
+            float k = e < 0.15f ? e / 0.15f : (0.3f - e) / 0.15f;
+            t.localScale = baseScale * (1f + 0.5f * k);
+            yield return null;
+        }
+        t.localScale = baseScale;
+    }
+
+    /// <summary>진행 중인 연출을 끊고, text 가 있으면 표시한다</summary>
+    void Show(string text)
+    {
+        if (sequence != null) { StopCoroutine(sequence); sequence = null; }
+        if (subtitleText == null) return;
+        subtitleText.transform.localScale = baseScale;
+        if (text != null) subtitleText.text = text;
     }
 }

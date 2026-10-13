@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using NativeWebSocket;
 using Newtonsoft.Json;
@@ -16,6 +17,7 @@ public class VoiceWsTest : MonoBehaviour
 
     [SerializeField] string serverUrl = "ws://localhost:8765";
     [SerializeField] string wavFileName = "test.wav";   // Assets/StreamingAssets 안의 파일
+    [SerializeField] VoiceSpellBook spellBook;          // 서버로 보낼 스펠 목록 (비어 있으면 서버 기본 스킬로 판정)
 
     WebSocket ws;
     int requestCounter;
@@ -32,7 +34,8 @@ public class VoiceWsTest : MonoBehaviour
         Application.runInBackground = true;
 
         ws = new WebSocket(serverUrl);
-        ws.OnOpen += () => Debug.Log("[WS] 연결됨");
+        ws.OnOpen += () => { Debug.Log("[WS] 연결됨"); SendSkillList(); };   // 연결될 때마다 스펠 목록 전송
+        if (spellBook != null) spellBook.SpellsChanged += SendSkillList;     // 해금, 초기화 때 재전송
         ws.OnError += e => Debug.LogError("[WS] 오류: " + e);
         ws.OnClose += code => Debug.Log("[WS] 연결 종료: " + code);
         ws.OnMessage += bytes => HandleMessage(Encoding.UTF8.GetString(bytes));
@@ -84,6 +87,27 @@ public class VoiceWsTest : MonoBehaviour
         return id;
     }
 
+    // ── 스펠 목록 전송: 연결 직후, 해금·초기화 때 ──
+    // 같은 연결의 메시지는 순서대로 처리되므로 이후 발화는 새 목록으로 판정된다.
+    public async void SendSkillList()
+    {
+        if (spellBook == null || ws == null || ws.State != WebSocketState.Open) return;
+        var spells = spellBook.GetCastableSpells();
+        if (spells.Count == 0) return;
+
+        await ws.SendText(JsonConvert.SerializeObject(new
+        {
+            type = "skill_list",
+            skills = spells.Select(s => new { s.id, name = s.spellName, s.aliases }),
+        }));
+        Debug.Log($"[WS] 스펠 목록 전송: {string.Join(", ", spells.Select(s => s.spellName))}");
+    }
+
+    void OnDestroy()
+    {
+        if (spellBook != null) spellBook.SpellsChanged -= SendSkillList;
+    }
+
     // ── 수신 처리: type 으로 먼저 분기한 뒤 클래스로 변환 ──
     void HandleMessage(string json)
     {
@@ -102,6 +126,11 @@ public class VoiceWsTest : MonoBehaviour
         if (type == "cast_result")
         {
             OnCastResult(obj.ToObject<CastResult>(Serializer));
+        }
+        else if (type == "skill_list_ack")
+        {
+            Debug.Log($"[WS] 스펠 목록 적용: {obj["count"]}개");
+            foreach (var w in obj["warnings"] ?? new JArray()) Debug.LogWarning("[WS] 비슷한 스펠 이름: " + w);
         }
         else if (type == "error")
         {

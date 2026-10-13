@@ -123,7 +123,10 @@ public class MicRecorder : MonoBehaviour
     {
         // [막기] 안전장치: 서버가 응답하지 않아도 정해진 시간이 지나면 대기를 푼다
         if (waitingForResult && Time.unscaledTime >= waitDeadline)
+        {
             ReleaseWait("응답 시간 초과");
+            RecordingRejected?.Invoke("주문 해석 시간이 초과되었습니다.");   // 자막이 '해석 중'에 멈추지 않게 알린다
+        }
 
         if (inputMode != InputMode.PushToTalk) return;
 

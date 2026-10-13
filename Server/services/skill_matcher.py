@@ -34,7 +34,6 @@ LEADING_FILLERS = ("어", "아", "음", "그", "저")
 # ─────────────────────────────────────────────────────────────
 
 # aliases 에는 테스트 중 반복 관측된 오인식 표기를 추가한다.
-# 알고리즘을 손보는 것보다 여기에 한 줄 넣는 편이 훨씬 효과적이다.
 SKILLS = {
     "strike": {
         "name": "때리기",
@@ -54,13 +53,15 @@ SKILLS = {
 }
 
 
-def build_initial_prompt() -> str:
+def build_initial_prompt(skills: dict | None = None) -> str:
     """Whisper 에 넘길 initial_prompt.
 
     프롬프트에 등장한 어휘 쪽으로 디코딩이 편향되므로 고유 스킬명 인식률이 오른다.
     다만 엉뚱한 소리에도 스킬명을 갖다 붙일 수 있다는 부작용이 있다.
+    skills 를 주지 않으면 기본 SKILLS 를 사용한다.
     """
-    return ", ".join(info["name"] for info in SKILLS.values())
+    skills = SKILLS if skills is None else skills
+    return ", ".join(info["name"] for info in skills.values())
 
 
 # ─────────────────────────────────────────────────────────────
@@ -124,12 +125,15 @@ class MatchResult:
 # ─────────────────────────────────────────────────────────────
 
 
-def match_skill(text: str) -> MatchResult:
+def match_skill(text: str, skills: dict | None = None) -> MatchResult:
     """인식 텍스트에서 스킬을 판별한다.
 
     match 값은 게이트 통과 여부와 무관하게 항상 채워지므로
     불발 원인을 확인하는 데 쓸 수 있다.
+    skills 를 주지 않으면 기본 SKILLS 를 사용한다.
     """
+    skills = SKILLS if skills is None else skills
+
     norm = normalize(text)
     if not norm:
         return MatchResult(None, 0.0, 0.0, "EMPTY_TEXT")
@@ -137,7 +141,7 @@ def match_skill(text: str) -> MatchResult:
     # 스킬별 최고점 (별칭 중 가장 잘 맞는 것)
     scores = [
         (skill_id, max(_ratio(norm, normalize(a)) for a in info["aliases"]))
-        for skill_id, info in SKILLS.items()
+        for skill_id, info in skills.items()
     ]
     scores.sort(key=lambda x: x[1], reverse=True)
 
@@ -161,6 +165,69 @@ def normalized_match(match: float) -> float:
     """
     m = (match - MATCH_THRESHOLD) / (1.0 - MATCH_THRESHOLD)
     return min(max(m, 0.0), 1.0)
+
+
+# ─────────────────────────────────────────────────────────────
+# 스킬 목록 (Unity 에서 받기)
+# ─────────────────────────────────────────────────────────────
+
+# 한 번에 받을 수 있는 최대 스킬 수.
+# Whisper initial_prompt 는 길이 한계(약 223 토큰)가 있다. 30개 기준 136 토큰으로 측정됨.
+MAX_SKILLS = 50
+
+
+class SkillListError(ValueError):
+    """Unity 가 보낸 스킬 목록의 형식이 잘못됨."""
+
+
+def parse_skill_list(items) -> dict:
+    """Unity 가 보낸 skills 배열을 검사해 SKILLS 와 같은 형태의 dict 로 바꾼다.
+
+    입력: [{"id": "...", "name": "...", "aliases": ["..."]}, ...]
+    출력: {id: {"name": ..., "aliases": [name, 별칭...]}}
+    매칭은 aliases 로만 하므로 name 을 항상 aliases 맨 앞에 넣는다.
+    """
+    if not isinstance(items, list) or not items:
+        raise SkillListError("skills 는 비어 있지 않은 배열이어야 합니다")
+    if len(items) > MAX_SKILLS:
+        raise SkillListError(f"스킬이 너무 많습니다 ({len(items)} > {MAX_SKILLS})")
+
+    skills: dict = {}
+    for i, item in enumerate(items):
+        if not isinstance(item, dict):
+            raise SkillListError(f"{i}번째 항목이 객체가 아닙니다")
+
+        sid = str(item.get("id") or "").strip()
+        name = str(item.get("name") or "").strip()
+        if not sid or not name:
+            raise SkillListError(f"{i}번째 항목에 id 또는 name 이 없습니다")
+        if sid in skills:
+            raise SkillListError(f"id 가 중복됩니다: {sid}")
+        if not normalize(name):
+            raise SkillListError(f"비교할 수 있는 글자가 없는 이름입니다: {name}")
+
+        raw_aliases = item.get("aliases") or []
+        if not isinstance(raw_aliases, list):
+            raise SkillListError(f"{name} 의 aliases 가 배열이 아닙니다")
+        aliases = [str(a).strip() for a in raw_aliases if normalize(str(a))]
+
+        # name 을 맨 앞에 두고 중복 제거 (순서 유지)
+        skills[sid] = {"name": name, "aliases": list(dict.fromkeys([name, *aliases]))}
+
+    return skills
+
+
+def find_collisions(skills: dict, warn_at: float = 0.6) -> list[str]:
+    """이름이 서로 비슷한 스킬 쌍을 돌려준다. 비슷한 쌍은 실제 발화에서 AMBIGUOUS(불발)가 나기 쉽다."""
+    ids = list(skills)
+    out = []
+    for i in range(len(ids)):
+        for j in range(i + 1, len(ids)):
+            a, b = skills[ids[i]]["name"], skills[ids[j]]["name"]
+            s = _ratio(normalize(a), normalize(b))
+            if s >= warn_at:
+                out.append(f"{a} <-> {b} 유사도 {s:.2f}")
+    return out
 
 
 # ─────────────────────────────────────────────────────────────
