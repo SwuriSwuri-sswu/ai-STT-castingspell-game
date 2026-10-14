@@ -88,6 +88,19 @@ class CastService:
         t = np.arange(TARGET_SR, dtype=np.float32) / TARGET_SR
         analyze_array((0.1 * np.sin(2 * np.pi * 220 * t)).astype(np.float32), TARGET_SR)
 
+    def partial_text(self, audio: np.ndarray, skills: dict | None = None) -> str:
+        """중간 자막(/streaming)용 받아쓰기. 판정·음향 분석 없이 들린 글자만 돌려준다.
+
+        audio: 16kHz 모노 float32 (stream_session.to_16k 의 출력)
+        잡음으로 판단되면(no_speech 가 높으면) 빈 문자열을 돌려줘, 엉뚱한 글자가 자막에 뜨지 않게 한다.
+        나중에 중간 자막만 다른 엔진(혼합 방식)으로 바꿀 때는 이 함수만 교체한다.
+        """
+        skills = sm.SKILLS if skills is None else skills
+        stt = self.stt.transcribe(audio, initial_prompt=sm.build_initial_prompt(skills))
+        if stt.no_speech > MAX_NO_SPEECH_PROB:
+            return ""
+        return stt.text
+
     def process(self, wav: bytes, request_id=None, skills: dict | None = None) -> dict:
         """동기 함수. 서버에서는 asyncio.to_thread 로 호출한다.
 
