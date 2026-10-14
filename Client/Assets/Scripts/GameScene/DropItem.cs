@@ -1,71 +1,108 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 
+// ëª¹ì´ ë“œëí•˜ëŠ” ë°˜ì§ì´ (3D)
+// í†¡ íŠ€ì–´ì˜¤ë¦„ â†’ ì ì‹œ í›„ í”Œë ˆì´ì–´ì—ê²Œ ë‚ ì•„ê° â†’ ë‹¿ìœ¼ë©´ ìŠ¤í  í•´ê¸ˆ + íšë“ UI
 public class DropItem : MonoBehaviour
 {
-    [Header("ÀÚ¼® È¿°ú ¼³Á¤")]
-    public float popForce = 5f;       // À§·Î Æ¢¾î¿À¸£´Â Èû
-    public float waitBeforeMagnet = 0.5f; // ³¯¾Æ°¡±â Àü ´ë±â ½Ã°£
-    public float flySpeed = 10f;      // ÇÃ·¹ÀÌ¾î¿¡°Ô ³¯¾Æ°¡´Â ¼Óµµ
+    [Header("íŠ€ì–´ì˜¤ë¥´ê¸°")]
+    public float popForce = 4f;
+    [Tooltip("ì¢Œìš°/ì•ë’¤ë¡œ í¼ì§€ëŠ” ì •ë„")]
+    public float popSpread = 0.5f;
+    public float waitBeforeMagnet = 0.5f;
 
-    private Transform playerTransform;
-    private Rigidbody2D rb;
-    private bool isFlyingToPlayer = false;
+    [Header("ìì„ íš¨ê³¼")]
+    public float flySpeed = 6f;
+    [Tooltip("ë‚ ì•„ê°€ë©´ì„œ ì ì  ë¹¨ë¼ì§€ëŠ” ì •ë„ (ì´ˆë‹¹ ì†ë„ ì¦ê°€ëŸ‰)")]
+    public float flyAcceleration = 20f;
+    public float pickupDistance = 0.5f;
+    [Tooltip("í˜¹ì‹œ í”Œë ˆì´ì–´ì—ê²Œ ë‹¿ì§€ ëª»í•´ë„ ì´ ì‹œê°„ì´ ì§€ë‚˜ë©´ ìë™ íšë“")]
+    public float maxLifetime = 4f;
+
+    [Header("ë‚ ì•„ê°ˆ ëŒ€ìƒ")]
+    [Tooltip("ë¹„ìš°ë©´ 'Player' íƒœê·¸ ì˜¤ë¸Œì íŠ¸ â†’ ì—†ìœ¼ë©´ ë©”ì¸ ì¹´ë©”ë¼")]
+    public Transform target;
+
+    private SpellData spell;
+    private Rigidbody rb;
+    private bool isFlying;
+    private bool collected;
+    private float currentSpeed;
+
+    // EnemyControllerê°€ ìƒì„± ì§í›„ í˜¸ì¶œ
+    public void Initialize(SpellData spellData)
+    {
+        spell = spellData;
+    }
 
     private void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
-
-        // ÅÂ±×¸¦ ÀÌ¿ëÇØ ¾À¿¡ ÀÖ´Â ÇÃ·¹ÀÌ¾î¸¦ Ã£À½ ("Player" ÅÂ±×°¡ ºÙ¾îÀÖ¾î¾ß ÇÔ)
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        if (target == null)
         {
-            playerTransform = player.transform;
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null) target = player.transform;
+            else if (Camera.main != null) target = Camera.main.transform;
         }
 
-        // 1. À§ÂÊ + ¾à°£ÀÇ ·£´ı ÁÂ¿ì ¹æÇâÀ¸·Î Åå Æ¢¾î¿À¸£±â
-        if (rb != null)
-        {
-            float randomX = Random.Range(-0.5f, 0.5f);
-            Vector2 forceDir = new Vector2(randomX, 1f).normalized;
-            rb.AddForce(forceDir * popForce, ForceMode2D.Impulse);
-        }
+        rb = GetComponent<Rigidbody>();
+        if (rb == null) rb = gameObject.AddComponent<Rigidbody>();
+        rb.isKinematic = false;
+        rb.useGravity = true;
 
-        // 2. ÀÏÁ¤ ½Ã°£ µÚ ÇÃ·¹ÀÌ¾î¿¡°Ô ³¯¾Æ°¡±â ½ÃÀÛ
-        StartCoroutine(StartMagnetEffect());
+        // 1. ìœ„ìª½ + ì•½ê°„ ëœë¤í•œ ë°©í–¥ìœ¼ë¡œ íŠ€ì–´ì˜¤ë¥´ê¸°
+        Vector3 dir = new Vector3(Random.Range(-popSpread, popSpread), 1f, Random.Range(-popSpread, popSpread)).normalized;
+        rb.AddForce(dir * popForce, ForceMode.Impulse);
+
+        StartCoroutine(StartMagnet());
     }
 
-    private IEnumerator StartMagnetEffect()
+    private IEnumerator StartMagnet()
     {
         yield return new WaitForSeconds(waitBeforeMagnet);
 
-        // Áß·Â ¿µÇâÀ» ¾ø¾Ö¼­ Á÷¼±À¸·Î ³¯¾Æ°¥ ¼ö ÀÖ°Ô ÇÔ
-        if (rb != null) rb.gravityScale = 0f;
+        // ë¬¼ë¦¬ ë„ê³  ì§ì ‘ ì´ë™
+        rb.isKinematic = true;
+        rb.useGravity = false;
 
-        isFlyingToPlayer = true;
+        currentSpeed = flySpeed;
+        isFlying = true;
     }
 
     private void Update()
     {
-        if (isFlyingToPlayer && playerTransform != null)
-        {
-            // ÇÃ·¹ÀÌ¾îÀÇ À§Ä¡·Î ºü¸£°Ô ÀÌµ¿
-            transform.position = Vector3.MoveTowards(transform.position, playerTransform.position, flySpeed * Time.deltaTime);
+        if (collected) return;
 
-            // ÇÃ·¹ÀÌ¾î¿Í ¾ÆÁÖ °¡±î¿öÁö¸é È¹µæ Ã³¸®
-            if (Vector3.Distance(transform.position, playerTransform.position) < 0.5f)
-            {
-                GetItem();
-            }
+        maxLifetime -= Time.deltaTime;
+        if (maxLifetime <= 0f)
+        {
+            Collect();
+            return;
+        }
+
+        if (!isFlying || target == null) return;
+
+        currentSpeed += flyAcceleration * Time.deltaTime;
+        transform.position = Vector3.MoveTowards(transform.position, target.position, currentSpeed * Time.deltaTime);
+
+        if ((transform.position - target.position).sqrMagnitude < pickupDistance * pickupDistance)
+        {
+            Collect();
         }
     }
 
-    private void GetItem()
+    private void Collect()
     {
-        // È¹µæ UI ¶ç¿ì±â (º°µµ UI ¸Å´ÏÀú ½ºÅ©¸³Æ® ÇÊ¿ä)
-        Debug.Log("½ºÆç È¹µæ!");
+        collected = true;
 
-        // ¹İÂ¦ÀÌ ÆÄ±«
+        if (spell != null)
+        {
+            bool isNew = SkillManager.Instance != null && SkillManager.Instance.UnlockSpell(spell);
+            if (isNew && BattleUIManager.Instance != null)
+            {
+                BattleUIManager.Instance.ShowNotice($"{spell.spellName} ìŠ¤í ì„ íšë“í–ˆìŠµë‹ˆë‹¤!");
+            }
+        }
+
         Destroy(gameObject);
     }
 }

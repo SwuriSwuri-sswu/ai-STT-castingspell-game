@@ -1,103 +1,295 @@
+ï»¿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// ìŒì„± ì¸ì‹ ê²°ê³¼ â†’ ë§ˆë²• ì‹œì „, ìŠ¤í  í•´ê¸ˆ ìƒíƒœ, ë“œëí•  ìŠ¤í  ì„ íƒì„ ë‹´ë‹¹
 public class SkillManager : MonoBehaviour
 {
-    // º¸ÀÌ½º ¸Å´ÏÀú¿¡¼­ ½±°Ô ºÎ¸¦ ¼ö ÀÖµµ·Ï ½Ì±ÛÅæ Ã³¸®
     public static SkillManager Instance { get; private set; }
 
     [Header("Magic Casting Setup")]
-    public Transform wandTip; // ÁöÆÎÀÌ ³¡ ºó ¿ÀºêÁ§Æ® ¿¬°á
-    public List<SpellData> spellDatabase; // »ı¼ºÇÑ SpellData(ScriptableObject) ÆÄÀÏµéÀ» ¿©±â¿¡ ³ÖÀ½
+    [Tooltip("ì§€íŒ¡ì´ ë ë¹ˆ ì˜¤ë¸Œì íŠ¸")]
+    public Transform wandTip;
+    [Tooltip("ê²Œì„ì— ì¡´ì¬í•˜ëŠ” ëª¨ë“  SpellData ì—ì…‹")]
+    public List<SpellData> spellDatabase = new List<SpellData>();
+
+    [Header("ì¦‰ë°œí˜•(ì¥íŒ) ì´í™íŠ¸ ìœ„ì¹˜ ë³´ì •")]
+    [Tooltip("ëª¹ ë°œë°‘ ê¸°ì¤€ ë†’ì´ ë³´ì • (ë©”í…Œì˜¤ì²˜ëŸ¼ ìœ„ì—ì„œ ë–¨ì–´ì§€ëŠ” ì´í™íŠ¸ë©´ ê°’ì„ ì˜¬ë¦¬ì„¸ìš”)")]
+    public float instantSpawnHeightOffset = 0f;
+
+    // ìŠ¤í ì´ ìƒˆë¡œ í•´ê¸ˆë  ë•Œ (UI ê°±ì‹ ìš©)
+    public event Action<SpellData> OnSpellUnlocked;
+
+    // í”Œë ˆì´ ì¤‘ í•´ê¸ˆ ìƒíƒœ (ì—ì…‹ íŒŒì¼ì„ ì§ì ‘ ë°”ê¾¸ì§€ ì•Šê¸° ìœ„í•´ ëŸ°íƒ€ì„ì—ì„œë§Œ ê´€ë¦¬)
+    private readonly HashSet<SpellData> unlockedSpells = new HashSet<SpellData>();
+
+    public IReadOnlyCollection<SpellData> UnlockedSpells => unlockedSpells;
+
+    // ëª¹ì´ ìŠ¤í°í¬ì¸íŠ¸ì— ë„ì°©í•´ ìˆì–´ì•¼ ì‹œì „ ê°€ëŠ¥ (VoiceRecorderì—ì„œ ë…¹ìŒ ì‹œì‘ ì „ì— í™•ì¸)
+    public static bool CanCast => EnemyController.AnyReady;
 
     private void Awake()
     {
-        if (Instance == null) { Instance = this; ResetSpellUnlocks(); }
-        else Destroy(gameObject);
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+        ResetSpellUnlocks();
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
 
-    // [1] º¸ÀÌ½º ¸Å´ÏÀú(STT)¿¡¼­ ÅØ½ºÆ®¸¦ ³Ñ°Ü¹ŞÀ¸¸é ½ÇÇàµÇ´Â ÇÔ¼ö
+    // =========================================================
+    // [1] ë§ˆë²• ì‹œì „ (VoiceRecorder â†’ ì—¬ê¸°)
+    // =========================================================
     public void CastSpell(string recognizedText)
     {
-        if (string.IsNullOrEmpty(recognizedText)) return;
+        if (string.IsNullOrWhiteSpace(recognizedText)) return;
 
-        // 1. STT »à»ç¸® ¿Ïº® ¹æÁö: Áß°£ ¶ç¾î¾²±â±îÁö ÀüºÎ Á¦°Å (¿¹: "¾óÀ½ °¡½Ã" -> "¾óÀ½°¡½Ã")
-        string cleanedInput = recognizedText.Replace(" ", "");
-
-        // 2. µ¥ÀÌÅÍº£ÀÌ½º¿¡¼­ ½ºÆç Ã£±â 
-        // (SpellDataÀÇ ÀÌ¸§µµ °ø¹éÀ» »« »óÅÂ·Î ºñ±³ÇØ¼­ ¿Ïº®ÇÏ°Ô ¸ÅÄªµÇ°Ô ÇÔ)
-        SpellData foundSpell = spellDatabase.Find(s =>
-            s.spellName.Replace(" ", "") == cleanedInput && s.isUnlocked
-        );
-
-        if (foundSpell != null)
+        SpellData spell = FindSpell(recognizedText);
+        if (spell == null)
         {
-            // 3. ÁöÆÎÀÌ ³¡ ÁÂÇ¥¿Í È¸Àü°ªÀ» ±âÁØÀ¸·Î ÆÄÆ¼Å¬/¹ß»çÃ¼ ÇÁ¸®ÆÕ »ı¼º
-            if (foundSpell.projectilePrefab != null)
-            {
-                GameObject projectile = Instantiate(foundSpell.projectilePrefab, wandTip.position, wandTip.rotation);
+            Debug.Log($"[ì‹œì „ ì‹¤íŒ¨] ì•Œ ìˆ˜ ì—†ëŠ” ì£¼ë¬¸ì…ë‹ˆë‹¤: {recognizedText}");
+            return;
+        }
+        if (!IsUnlocked(spell))
+        {
+            Debug.Log($"[ì‹œì „ ì‹¤íŒ¨] ì•„ì§ ë°°ìš°ì§€ ì•Šì€ ì£¼ë¬¸ì…ë‹ˆë‹¤: {spell.spellName}");
+            return;
+        }
 
-                // ¹ß»çÃ¼ ½ºÅ©¸³Æ®¿¡ ¸¶¹ı Á¤º¸ Àü´Ş (µ¥¹ÌÁö, ¼Ó¼º µî)
-                projectile.GetComponent<ProjectileController>().Initialize(foundSpell);
-            }
+        Vector3 origin = wandTip != null ? wandTip.position : transform.position;
+        EnemyController target = EnemyController.GetNearest(origin);
 
-            // 4. GameManager¿¡ Á¡¼ö ¹× UI °»½Å ¿äÃ» (¿¹: Æ¼¾î * 50Á¡)
-            GameManager.Instance.OnSpellRecognized(foundSpell.spellName, foundSpell.tier * 50);
+        bool casted;
+        switch (spell.castType)
+        {
+            case CastType.Projectile: casted = CastProjectile(spell, target, origin); break;
+            case CastType.WandCharge: casted = CastCharge(spell, target, origin); break;
+            default: casted = CastInstant(spell, target); break;
+        }
 
-            Debug.Log($"[¸¶¹ı ½ÃÀü ¼º°ø] {foundSpell.spellName} ¹ß»ç!");
+        if (!casted) return;
+
+        // ì ìˆ˜ ì²˜ë¦¬ (GameManagerê°€ ì”¬ì— ì—†ì„ ìˆ˜ë„ ìˆìœ¼ë¯€ë¡œ null ì²´í¬)
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnSpellRecognized(spell.spellName, Mathf.Max(1, spell.tier) * 50);
+        }
+    }
+
+    private bool CastProjectile(SpellData spell, EnemyController target, Vector3 origin)
+    {
+        if (spell.projectilePrefab == null)
+        {
+            Debug.LogWarning($"[{spell.spellName}] projectilePrefabì´ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤.");
+            return false;
+        }
+
+        // 1:1 êµ¬ì¡°: ëª¹ì´ ì—†ê±°ë‚˜ ì´ë¯¸ ì“°ëŸ¬ì§€ëŠ” ì¤‘ì´ë©´ ì‹œì „í•˜ì§€ ì•ŠìŒ (ë‹¤ìŒ ëª¹ ë“±ì¥ ì „)
+        if (target == null)
+        {
+            Debug.Log($"[ì‹œì „ ì‹¤íŒ¨] íƒ€ê²Ÿì´ ì—†ì–´ {spell.spellName}ì„(ë¥¼) ì‹œì „í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+            return false;
+        }
+
+        Quaternion rotation = wandTip != null ? wandTip.rotation : transform.rotation;
+        Vector3 dir = target.AimPoint - origin;
+        if (dir.sqrMagnitude > 0.0001f) rotation = Quaternion.LookRotation(dir);
+
+        GameObject projectile = Instantiate(spell.projectilePrefab, origin, rotation);
+
+        // ì—ì…‹ íŒ© ì´í™íŠ¸ì—ëŠ” ìŠ¤í¬ë¦½íŠ¸ê°€ ì—†ì„ ìˆ˜ ìˆìœ¼ë¯€ë¡œ ì—†ìœ¼ë©´ ë¶™ì—¬ì¤Œ
+        ProjectileController controller = projectile.GetComponent<ProjectileController>();
+        if (controller == null) controller = projectile.AddComponent<ProjectileController>();
+        controller.Initialize(spell, target);
+
+        Debug.Log($"[ë§ˆë²• ì‹œì „] {spell.spellName} ë°œì‚¬!");
+        return true;
+    }
+
+    private bool CastInstant(SpellData spell, EnemyController target)
+    {
+        if (target == null)
+        {
+            Debug.Log($"[ì‹œì „ ì‹¤íŒ¨] íƒ€ê²Ÿì´ ì—†ì–´ {spell.spellName}ì„(ë¥¼) ì‹œì „í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+            return false;
+        }
+
+        Vector3 spawnPos = target.GroundPoint + Vector3.up * instantSpawnHeightOffset;
+        float effectLength = EffectUtil.SpawnAndAutoDestroy(spell.explosionPrefab, spawnPos, Quaternion.identity,
+                                                            spell.effectDuration, this);
+
+        // ê¸°ë³¸ê°’: ì¥íŒ ì—°ì¶œì´ ëë‚œ ë’¤ ë°ë¯¸ì§€ â†’ ì‚¬ë§ ì• ë‹ˆë©”ì´ì…˜
+        target.ReceiveSpell(spell, spell.ResolveDamageDelay(effectLength));
+
+        Debug.Log($"[ë§ˆë²• ì‹œì „] {spell.spellName} íƒ€ê²Ÿ ìœ„ì¹˜ì— ë°œë™!");
+        return true;
+    }
+
+    // ì°¨ì§€í˜•: ì§€íŒ¡ì´ ëì— ì´í™íŠ¸ê°€ ë¶™ì–´ì„œ ì¬ìƒ â†’ í•œ ë²ˆ ëë‚˜ë©´ ëª¹ì—ê²Œ ë°ë¯¸ì§€ (â†’ ì“°ëŸ¬ì§)
+    private bool CastCharge(SpellData spell, EnemyController target, Vector3 origin)
+    {
+        if (spell.chargePrefab == null)
+        {
+            Debug.LogWarning($"[{spell.spellName}] chargePrefabì´ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤.");
+            return false;
+        }
+        if (target == null)
+        {
+            Debug.Log($"[ì‹œì „ ì‹¤íŒ¨] íƒ€ê²Ÿì´ ì—†ì–´ {spell.spellName}ì„(ë¥¼) ì‹œì „í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+            return false;
+        }
+
+        // ì§€íŒ¡ì´ ëì˜ ìì‹ìœ¼ë¡œ ìƒì„± â†’ ì§€íŒ¡ì´ê°€ ì›€ì§ì—¬ë„ ë”°ë¼ë‹¤ë‹˜
+        Transform parent = wandTip != null ? wandTip : transform;
+        GameObject charge = Instantiate(spell.chargePrefab, origin, parent.rotation, parent);
+
+        // ì—°ì¶œ ì‹œê°„
+        // - Effect Durationì´ ìˆìœ¼ë©´: ê·¸ ì‹œê°„ ë™ì•ˆ (ë£¨í”„ë©´ ë°˜ë³µ) ì¬ìƒ
+        // - ì—†ìœ¼ë©´: ë£¨í”„ë¥¼ ë„ê³  í•œ ì‚¬ì´í´ë§Œ ì¬ìƒ, ê¸¸ì´ ìë™ ê³„ì‚°
+        float chargeLength;
+        if (spell.effectDuration > 0f)
+        {
+            chargeLength = spell.effectDuration;
         }
         else
         {
-            // ½ºÆçÀÌ ¾Æ´Ï°Å³ª ÇØ±İ ¾È µÈ °æ¿ì
-            Debug.Log($"[½ÃÀü ½ÇÆĞ] ¾Ë ¼ö ¾ø°Å³ª ÇØ±İµÇÁö ¾ÊÀº ÁÖ¹®ÀÔ´Ï´Ù: {recognizedText}");
+            EffectUtil.ForceSingleCycle(charge);
+            chargeLength = EffectUtil.GetDuration(charge);
         }
+
+        StartCoroutine(FinishCharge(charge, chargeLength, spell, target));
+
+        Debug.Log($"[ë§ˆë²• ì‹œì „] {spell.spellName} ì°¨ì§• ì‹œì‘! ({chargeLength:F1}ì´ˆ)");
+        return true;
     }
 
-    // [2] ÇØ±İ ½Ã½ºÅÛ
-    // GameManager¿¡¼­ ¸ó½ºÅÍ 5¸¶¸®¸¦ ÀâÀ» ¶§¸¶´Ù È£ÃâÇÏ´Â ÇÔ¼ö
-    public void UnlockRandomSpell()
+    private IEnumerator FinishCharge(GameObject charge, float chargeLength, SpellData spell, EnemyController target)
     {
-        // 1´Ü°è(Tier 1)ºÎÅÍ 3´Ü°è(Tier 3)±îÁö ¼øÂ÷ÀûÀ¸·Î È®ÀÎ
-        for (int currentTier = 1; currentTier <= 3; currentTier++)
+        float damageDelay = spell.ResolveDamageDelay(chargeLength);
+
+        // ë°ë¯¸ì§€ê°€ ì°¨ì§€ë³´ë‹¤ ë¨¼ì € ë“¤ì–´ê°€ë„ë¡ ì„¤ì •í–ˆë‹¤ë©´ ê·¸ ì‹œì ì— ì²˜ë¦¬
+        if (damageDelay < chargeLength)
         {
-            // ÇöÀç È®ÀÎ ÁßÀÎ ´Ü°è(Tier)¿¡¼­ ¾ÆÁ÷ ÇØ±İ ¾È µÈ(!isUnlocked) ½ºÆçµé¸¸ ½Ï ¸ğÀ½
-            // (³ë¸» ¼Ó¼ºÀº ÀÌ¹Ì ´Ù ÇØ±İµÇ¾î ÀÖÀ¸¹Ç·Î Á¦¿Ü)
-            List<SpellData> lockedSpells = spellDatabase.FindAll(s => s.tier == currentTier && !s.isUnlocked);
-
-            if (lockedSpells.Count > 0)
-            {
-                // ¾ÆÁ÷ ÇØ±İÇÒ ½ºÆçÀÌ ³²¾ÆÀÖ´Ù¸é ±× Áß ·£´ıÀ¸·Î ÇÏ³ª »Ì±â
-                int randomIndex = Random.Range(0, lockedSpells.Count);
-                SpellData spellToUnlock = lockedSpells[randomIndex];
-
-                // ÇØ±İ Ã³¸®
-                spellToUnlock.isUnlocked = true;
-
-                Debug.Log($"[½ºÆç ÇØ±İ] »õ·Î¿î ¸¶¹ıÀ» ¹è¿ü½À´Ï´Ù!: {spellToUnlock.spellName} (Tier {spellToUnlock.tier})");
-
-                // TODO: ¿©±â¼­ È­¸é¿¡ "OOO ¸¶¹ıÀÌ ÇØ±İµÇ¾ú½À´Ï´Ù!" ¶ç¿ì´Â UI ÇÔ¼ö È£ÃâÇÏ¸é ÁÁ½À´Ï´Ù.
-
-                return; // ÇÏ³ª ÇØ±İÇßÀ¸´Ï ¹İº¹¹® ¸ØÃß°í ÇÔ¼ö Á¾·á (´ÙÀ½ 5¸¶¸® ÀâÀ» ¶§±îÁö ´ë±â)
-            }
-            // lockedSpells.Count == 0ÀÌ¸é ÀüºÎ ÇØ±İ > ´ÙÀ½ ÇØ±İ ´Ü°è·Î ³Ñ¾î°¨
+            yield return new WaitForSeconds(damageDelay);
+            HitAfterCharge(spell, target);
+            yield return new WaitForSeconds(chargeLength - damageDelay);
+        }
+        else
+        {
+            yield return new WaitForSeconds(chargeLength);
         }
 
-        Debug.Log("¸ğµç ½ºÆçÀ» ¸¶½ºÅÍÇß½À´Ï´Ù!");
+        // ì°¨ì§€ ì´í™íŠ¸ ì¢…ë£Œ (ë£¨í”„ ì´í™íŠ¸ì—¬ë„ ì—¬ê¸°ì„œ ë©ˆì¶¤)
+        float tail = EffectUtil.StopEmitting(charge);
+        if (charge != null) Destroy(charge, tail + 0.1f);
+
+        // ê¸°ë³¸ê°’: ì°¨ì§€ê°€ ëë‚˜ëŠ” ìˆœê°„ ë°ë¯¸ì§€ â†’ (HP 0ì´ë©´) ì“°ëŸ¬ì§
+        if (damageDelay >= chargeLength)
+        {
+            if (damageDelay > chargeLength) yield return new WaitForSeconds(damageDelay - chargeLength);
+            HitAfterCharge(spell, target);
+        }
     }
 
-    // °ÔÀÓ ´Ù½Ã ½ÃÀÛÇÒ ¶§ ±âÁ¸¿¡ ÇØ±İµÈ ½ºÆçµéÀ» ´Ù½Ã Àá±×´Â ÇÔ¼ö
-    // Awake()¿¡¼­ È£Ãâ
+    private void HitAfterCharge(SpellData spell, EnemyController target)
+    {
+        if (target == null || target.IsDying) return;
+
+        // (ì„ íƒ) ëª¹ ìœ„ì¹˜ì— í„°ì§€ëŠ” ì´í™íŠ¸
+        if (spell.explosionPrefab != null)
+        {
+            EffectUtil.SpawnAndAutoDestroy(spell.explosionPrefab, target.AimPoint, Quaternion.identity);
+        }
+        target.TakeDamage(spell);
+    }
+
+    // ë„ì–´ì“°ê¸°Â·ëŒ€ì†Œë¬¸ìë¥¼ ë¬´ì‹œí•˜ê³  ìŠ¤í  ì´ë¦„ ë¹„êµ
+    public SpellData FindSpell(string text)
+    {
+        string key = Normalize(text);
+        return spellDatabase.Find(s => s != null && Normalize(s.spellName) == key);
+    }
+
+    private static string Normalize(string s)
+    {
+        return string.IsNullOrEmpty(s) ? string.Empty : s.Replace(" ", "").Trim().ToLowerInvariant();
+    }
+
+    // =========================================================
+    // [2] í•´ê¸ˆ ê´€ë¦¬
+    // =========================================================
+    public bool IsUnlocked(SpellData spell) => spell != null && unlockedSpells.Contains(spell);
+
+    // ë“œë ì•„ì´í…œ íšë“ ì‹œ í˜¸ì¶œ. ìƒˆë¡œ í•´ê¸ˆë˜ë©´ true
+    public bool UnlockSpell(SpellData spell)
+    {
+        if (spell == null || !unlockedSpells.Add(spell)) return false;
+
+        Debug.Log($"[ìŠ¤í  í•´ê¸ˆ] ìƒˆë¡œìš´ ë§ˆë²•ì„ ë°°ì› ìŠµë‹ˆë‹¤!: {spell.spellName} (Tier {spell.tier})");
+        OnSpellUnlocked?.Invoke(spell);
+        return true;
+    }
+
+    // ê²Œì„ ì‹œì‘/ì¬ì‹œì‘ ì‹œ ê¸°ë³¸ ìŠ¤í ë§Œ í•´ê¸ˆëœ ìƒíƒœë¡œ ì´ˆê¸°í™”
     public void ResetSpellUnlocks()
     {
-        foreach (var spell in spellDatabase)
+        unlockedSpells.Clear();
+        foreach (SpellData spell in spellDatabase)
         {
-            // ³ë¸» ¼Ó¼ºÀº ±âº» ½ºÆçÀÌ´Ï±î ÇØ±İ »óÅÂ(true) À¯Áö, ³ª¸ÓÁö´Â ÀüºÎ Àá±İ(false)
-            if (spell.elementType == MagicElement.Normal)
-                spell.isUnlocked = true;
-            else
-                spell.isUnlocked = false;
+            if (spell != null && spell.unlockedByDefault) unlockedSpells.Add(spell);
         }
-        Debug.Log("[SkillManager] ½ºÆç ÇØ±İ »óÅÂ ÃÊ±âÈ­ ¿Ï·á");
+        Debug.Log($"[SkillManager] ìŠ¤í  í•´ê¸ˆ ìƒíƒœ ì´ˆê¸°í™” ì™„ë£Œ (ê¸°ë³¸ í•´ê¸ˆ {unlockedSpells.Count}ê°œ)");
     }
+
+    // TODO(2íšŒì°¨): ì„¸ì´ë¸Œ ë°ì´í„°ì—ì„œ í•´ê¸ˆ ëª©ë¡ì„ ë¶ˆëŸ¬ì˜¬ ë•Œ ì‚¬ìš©
+    public void LoadUnlockedSpells(IEnumerable<string> spellNames)
+    {
+        foreach (string name in spellNames)
+        {
+            SpellData spell = FindSpell(name);
+            if (spell != null) unlockedSpells.Add(spell);
+        }
+    }
+
+    // =========================================================
+    // [3] ë“œëí•  ìŠ¤í  ì„ íƒ
+    // =========================================================
+    // í•´ë‹¹ ì†ì„±ì—ì„œ ì•„ì§ ë°°ìš°ì§€ ì•Šì€ ìŠ¤í  ì¤‘ ê°€ì¤‘ì¹˜ ëœë¤ìœ¼ë¡œ í•˜ë‚˜ ì„ íƒ.
+    // ì•½í•œ ìŠ¤í (ë‚®ì€ ë‹¨ê³„)ì¼ìˆ˜ë¡ ê°€ì¤‘ì¹˜ê°€ ì»¤ì„œ ìì£¼ ë‚˜ì˜µë‹ˆë‹¤. ë‚¨ì€ ê²Œ ì—†ìœ¼ë©´ null
+    public SpellData PickDropSpell(MagicElement element)
+    {
+        if (element == MagicElement.Normal) return null; // ë…¸ë§ ìŠ¤í ì€ ê¸°ë³¸ ì§€ê¸‰
+
+        float totalWeight = 0f;
+        List<SpellData> candidates = new List<SpellData>();
+        foreach (SpellData spell in spellDatabase)
+        {
+            if (spell == null || spell.elementType != element || IsUnlocked(spell)) continue;
+            candidates.Add(spell);
+            totalWeight += spell.ResolveDropWeight();
+        }
+        if (candidates.Count == 0) return null;
+
+        float roll = UnityEngine.Random.Range(0f, totalWeight);
+        foreach (SpellData spell in candidates)
+        {
+            roll -= spell.ResolveDropWeight();
+            if (roll <= 0f) return spell;
+        }
+        return candidates[candidates.Count - 1];
+    }
+
+    // ê¸°ì¡´ GameManager.AddMonsterKill()ì—ì„œ í˜¸ì¶œí•˜ë˜ í•¨ìˆ˜.
+    // ì´ì œ í•´ê¸ˆì€ 'ë“œë ì•„ì´í…œ íšë“'ìœ¼ë¡œë§Œ ì¼ì–´ë‚˜ë¯€ë¡œ ì•„ë¬´ ê²ƒë„ í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤.
+    // (GameManagerì˜ í˜¸ì¶œ ë¶€ë¶„ì„ ì§€ìš´ ë’¤ ì´ í•¨ìˆ˜ë„ ì‚­ì œí•´ë„ ë©ë‹ˆë‹¤)
+    [Obsolete("í•´ê¸ˆì€ DropItem íšë“ ì‹œ UnlockSpell()ë¡œ ì²˜ë¦¬ë©ë‹ˆë‹¤.")]
+    public void UnlockRandomSpell() { }
 }

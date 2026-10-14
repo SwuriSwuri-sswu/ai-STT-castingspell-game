@@ -1,49 +1,103 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using TMPro;
 using System.Collections;
 
 public class BattleUIManager : MonoBehaviour
 {
-    public static BattleUIManager Instance; // ½Ì±ÛÅæ Á¢±Ù¿ë
+    public static BattleUIManager Instance; // ì‹±ê¸€í†¤ ì ‘ê·¼ìš©
 
-    [Header("UI ¿¬°á")]
-    public TextMeshProUGUI effectivenessText; // "È¿°ú°¡ ±²ÀåÇß´Ù!"¸¦ ¶ç¿ï Text ¿ÀºêÁ§Æ®
+    [Header("UI ì—°ê²°")]
+    public TextMeshProUGUI effectivenessText; // "íš¨ê³¼ê°€ êµ‰ì¥í–ˆë‹¤!"ë¥¼ ë„ìš¸ Text ì˜¤ë¸Œì íŠ¸
+    [Tooltip("\"í•˜ê¸‰ ë¬¼ ì†ì„± ëª¬ìŠ¤í„° ì²˜ì¹˜!\" ìë§‰ (ì—†ìœ¼ë©´ ë¹„ì›Œë‘ê¸°)")]
+    public TextMeshProUGUI killText;
+    [Tooltip("\"OOO ìŠ¤í ì„ íšë“í–ˆìŠµë‹ˆë‹¤!\" ì•Œë¦¼ (ì—†ìœ¼ë©´ ë¹„ì›Œë‘ê¸°)")]
+    public TextMeshProUGUI noticeText;
+
+    [Header("í‘œì‹œ ì‹œê°„")]
+    public float effectivenessDuration = 2.0f;
+    public float killDuration = 1.5f;
+    public float noticeDuration = 2.0f;
+    [Tooltip("ì•Œë¦¼ì´ ì‚¬ë¼ì§ˆ ë•Œ í˜ì´ë“œì•„ì›ƒ ì‹œê°„")]
+    public float noticeFadeDuration = 0.5f;
+
+    // í…ìŠ¤íŠ¸ë§ˆë‹¤ ì½”ë£¨í‹´ì„ ë”°ë¡œ ê´€ë¦¬ (StopAllCoroutinesë¥¼ ì“°ë©´ ì„œë¡œ ëŠê¸°ê¸° ë•Œë¬¸)
+    private Coroutine effectivenessRoutine;
+    private Coroutine killRoutine;
+    private Coroutine noticeRoutine;
 
     void Awake()
     {
         Instance = this;
+        if (effectivenessText != null) effectivenessText.gameObject.SetActive(false);
+        if (killText != null) killText.gameObject.SetActive(false);
+        if (noticeText != null) noticeText.gameObject.SetActive(false);
     }
 
-    // ¿ÜºÎ¿¡¼­ »ó¼º ¹èÀ²À» Àü´Ş¹Ş¾Æ ÅØ½ºÆ®¸¦ Ãâ·ÂÇÏ´Â ÇÔ¼ö
+    void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
+    }
+
+    // ì™¸ë¶€ì—ì„œ ìƒì„± ë°°ìœ¨ì„ ì „ë‹¬ë°›ì•„ í…ìŠ¤íŠ¸ë¥¼ ì¶œë ¥í•˜ëŠ” í•¨ìˆ˜
     public void ShowEffectiveness(float multiplier)
     {
         if (effectivenessText == null) return;
 
-        // ±âÁ¸¿¡ ¶ç¿öÁ® ÀÖ´ø ÅØ½ºÆ® ÄÚ·çÆ¾À» ¸ØÃß°í »õ·Î ¶ç¿ò
-        StopAllCoroutines();
-        StartCoroutine(DisplayRoutine(multiplier));
+        string message;
+        if (multiplier >= 1.5f)
+            message = "<color=#FF5555>íš¨ê³¼ê°€ êµ‰ì¥í–ˆë‹¤!</color>";   // ë¹¨ê°„ìƒ‰ ê³„ì—´
+        else if (multiplier <= 0.5f)
+            message = "<color=#AAAAAA>íš¨ê³¼ê°€ ë³„ë¡œ ì—†ì—ˆë‹¤...</color>"; // íšŒìƒ‰ ê³„ì—´
+        else
+            message = "<color=#FFFFFF>íš¨ê³¼ê°€ ìˆì—ˆë‹¤.</color>";      // í°ìƒ‰
+
+        Restart(ref effectivenessRoutine, ShowFor(effectivenessText, message, effectivenessDuration, 0f));
     }
 
-    private IEnumerator DisplayRoutine(float multiplier)
+    // ëª¹ ì²˜ì¹˜ ìë§‰
+    public void ShowKill(string message)
     {
-        // ¹èÀ²¿¡ µû¸¥ ÅØ½ºÆ® ¹× »ö»ó ÁöÁ¤
-        if (multiplier >= 1.5f)
+        if (killText == null) return;
+        Restart(ref killRoutine, ShowFor(killText, message, killDuration, 0f));
+    }
+
+    // ìŠ¤í  íšë“ ë“± í™”ë©´ ì¤‘ì•™ ì•Œë¦¼ (í˜ì´ë“œì•„ì›ƒ)
+    public void ShowNotice(string message)
+    {
+        if (noticeText == null)
         {
-            effectivenessText.text = "<color=#FF5555>È¿°ú°¡ ±²ÀåÇß´Ù!</color>"; // »¡°£»ö °è¿­
+            Debug.Log($"[ì•Œë¦¼] {message}");
+            return;
         }
-        else if (multiplier <= 0.5f)
+        Restart(ref noticeRoutine, ShowFor(noticeText, message, noticeDuration, noticeFadeDuration));
+    }
+
+    private void Restart(ref Coroutine handle, IEnumerator routine)
+    {
+        if (handle != null) StopCoroutine(handle);
+        handle = StartCoroutine(routine);
+    }
+
+    private IEnumerator ShowFor(TextMeshProUGUI text, string message, float duration, float fadeDuration)
+    {
+        text.text = message;
+        text.alpha = 1f;
+        text.gameObject.SetActive(true);
+
+        yield return new WaitForSeconds(duration);
+
+        if (fadeDuration > 0f)
         {
-            effectivenessText.text = "<color=#AAAAAA>È¿°ú°¡ º°·Î ¾ø¾ú´Ù...</color>"; // È¸»ö °è¿­
-        }
-        else
-        {
-            effectivenessText.text = "<color=#FFFFFF>È¿°ú°¡ ÀÖ¾ú´Ù.</color>"; // Èò»ö
+            float t = 0f;
+            while (t < fadeDuration)
+            {
+                t += Time.deltaTime;
+                text.alpha = Mathf.Lerp(1f, 0f, t / fadeDuration);
+                yield return null;
+            }
         }
 
-        effectivenessText.gameObject.SetActive(true);
-
-        // 2ÃÊ°£ È­¸é¿¡ Ç¥½Ã ÈÄ ºñÈ°¼ºÈ­
-        yield return new WaitForSeconds(2.0f);
-        effectivenessText.gameObject.SetActive(false);
+        text.gameObject.SetActive(false);
+        text.alpha = 1f;
     }
 }
