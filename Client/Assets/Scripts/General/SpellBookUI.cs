@@ -6,11 +6,13 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // 스펠 도감 (SpellPanel에 붙이기)
-// 패널이 열릴 때마다 지금까지 배운 스펠을 속성 → 단계(1/2/3) 칸에 배운 순서대로 채웁니다.
+// 패널이 열릴 때마다 배운 스펠을 속성 → 단계(1/2/3) 칸에 배운 순서대로 채웁니다.
+//   - 게임 씬 (SkillManager 있음): 이번 판에서 배운 스펠
+//   - 타이틀 씬 (SkillManager 없음): 지금까지 한 번이라도 배운 스펠 (SpellCollection 누적 기록)
 //
 // 칸 자동 인식: 각 속성 묶음(Normal / Fire / Water / Grass) 아래에서
 //   이름에 "Spell_Tier1" / "Spell_Tier2" / "Spell_Tier3"이 들어간 오브젝트를 Hierarchy 순서대로 찾습니다.
-//   (예: Fire_Spell_Tier1, Fire_Spell_Tier1 (1) ... 이름 앞부분은 상관없음)
+//   (대소문자 무시: Spell_TIer1도 인식. 이름 앞부분은 상관없음)
 // 각 칸 안에 글자(TextMeshPro)가 없으면 Label Template을 복제해서 자동으로 만들어 줍니다.
 public class SpellBookUI : MonoBehaviour
 {
@@ -25,6 +27,20 @@ public class SpellBookUI : MonoBehaviour
 
         [NonSerialized] public List<Image>[] slots;
     }
+
+    public enum BookSource
+    {
+        Auto,        // 게임 씬이면 이번 판, 타이틀 씬이면 누적 기록
+        CurrentRun,  // 이번 판에서 배운 스펠
+        Collection,  // 지금까지 한 번이라도 배운 스펠 (누적)
+    }
+
+    [Header("보여 줄 기록")]
+    public BookSource source = BookSource.Auto;
+    [Tooltip("전체 스펠 목록. 타이틀 씬처럼 SkillManager가 없는 씬에서는 꼭 넣어 주세요.\n" +
+             "(Project 창 검색에 t:SpellData → 전부 선택 → 이 목록 이름 위로 드래그)\n" +
+             "SkillManager가 있는 씬에서는 비워 두면 SkillManager의 목록을 사용합니다.")]
+    public List<SpellData> allSpells = new List<SpellData>();
 
     [Header("속성 묶음 (Normal / Fire / Water / Grass)")]
     public List<ElementSection> sections = new List<ElementSection>();
@@ -92,6 +108,7 @@ public class SpellBookUI : MonoBehaviour
 
         // 한 번 본 스펠은 다음부터 NEW 아님
         foreach (SpellData s in newlyShown) seen.Add(s);
+        if (UseCollection) SpellCollection.MarkSeen(newlyShown);
         newlyShown.Clear();
     }
 
@@ -110,7 +127,7 @@ public class SpellBookUI : MonoBehaviour
             {
                 for (int t = 0; t < 3; t++)
                 {
-                    if (!child.name.Contains($"Spell_Tier{t + 1}")) continue;
+                    if (child.name.IndexOf($"Spell_Tier{t + 1}", StringComparison.OrdinalIgnoreCase) < 0) continue;
                     Image img = child.GetComponent<Image>();
                     if (img == null) continue;
                     section.slots[t].Add(img);
@@ -124,19 +141,71 @@ public class SpellBookUI : MonoBehaviour
         if (labelTemplate != null) labelTemplate.gameObject.SetActive(false);
 
         // 게임 시작 때 기본으로 주는 스펠은 NEW로 표시하지 않음
-        SkillManager sm = SkillManager.Instance;
-        if (sm != null)
+        foreach (SpellData s in AllSpells())
         {
-            foreach (SpellData s in sm.spellDatabase)
+            if (s != null && s.unlockedByDefault) seen.Add(s);
+        }
+
+        int slotCount = 0;
+        foreach (ElementSection section in sections)
+        {
+            if (section.slots != null) foreach (List<Image> l in section.slots) slotCount += l.Count;
+        }
+        Debug.Log($"[SpellBookUI] 칸 {slotCount}개 인식, 전체 스펠 {AllSpells().Count}개, 표시 기록: {(UseCollection ? "누적" : "이번 판")}");
+    }
+
+    private bool UseCollection =>
+        source == BookSource.Collection || (source == BookSource.Auto && SkillManager.Instance == null);
+
+    // 전체 스펠 목록 (Inspector 목록 → 없으면 SkillManager 목록)
+    private List<SpellData> AllSpells()
+    {
+        if (allSpells != null && allSpells.Count > 0) return allSpells;
+        SkillManager sm = SkillManager.Instance;
+        return sm != null ? sm.spellDatabase : new List<SpellData>();
+    }
+
+    // 배운 스펠 (배운 순서대로)
+    private List<SpellData> LearnedInOrder(List<SpellData> all)
+    {
+        List<SpellData> result = new List<SpellData>();
+        if (UseCollection)
+        {
+            // 누적 기록은 이름으로 저장되어 있으므로 전체 목록에서 찾아서 연결
+            foreach (string name in SpellCollection.CollectedNames)
             {
-                if (s != null && s.unlockedByDefault) seen.Add(s);
+                foreach (SpellData s in all)
+                {
+                    if (s == null || result.Contains(s)) continue;
+                    string key = string.IsNullOrEmpty(s.spellName) ? s.name : s.spellName;
+                    if (key == name) { result.Add(s); break; }
+                }
+            }
+            // 기본 스펠은 기록이 없어도 배운 것으로
+            foreach (SpellData s in all)
+            {
+                if (s != null && s.unlockedByDefault && !result.Contains(s)) result.Insert(0, s);
             }
         }
+        else if (SkillManager.Instance != null)
+        {
+            result.AddRange(SkillManager.Instance.UnlockedInOrder);
+        }
+        return result;
+    }
+
+    [ContextMenu("스펠 도감 누적 기록 초기화 (테스트용)")]
+    private void ClearCollection()
+    {
+        SpellCollection.Clear();
+        seen.Clear();
+        if (isActiveAndEnabled) Refresh();
     }
 
     public void Refresh()
     {
-        SkillManager sm = SkillManager.Instance;
+        List<SpellData> allList = AllSpells();
+        List<SpellData> learnedList = LearnedInOrder(allList);
 
         foreach (ElementSection section in sections)
         {
@@ -151,16 +220,13 @@ public class SpellBookUI : MonoBehaviour
                 // 이 속성·단계의 전체 스펠 / 배운 스펠(배운 순서대로)
                 List<SpellData> all = new List<SpellData>();
                 List<SpellData> learned = new List<SpellData>();
-                if (sm != null)
+                foreach (SpellData s in allList)
                 {
-                    foreach (SpellData s in sm.spellDatabase)
-                    {
-                        if (s != null && s.elementType == section.element && TierOf(s) == tier && !all.Contains(s)) all.Add(s);
-                    }
-                    foreach (SpellData s in sm.UnlockedInOrder)
-                    {
-                        if (s != null && s.elementType == section.element && TierOf(s) == tier) learned.Add(s);
-                    }
+                    if (s != null && s.elementType == section.element && TierOf(s) == tier && !all.Contains(s)) all.Add(s);
+                }
+                foreach (SpellData s in learnedList)
+                {
+                    if (s != null && s.elementType == section.element && TierOf(s) == tier) learned.Add(s);
                 }
                 totalCount += all.Count;
                 learnedCount += learned.Count;
@@ -178,7 +244,8 @@ public class SpellBookUI : MonoBehaviour
                     if (i < learned.Count)
                     {
                         SpellData spell = learned[i];
-                        bool isNew = !seen.Contains(spell);
+                        bool isNew = UseCollection ? !SpellCollection.IsSeen(spell) && !spell.unlockedByDefault
+                                                   : !seen.Contains(spell);
                         SetSlotAlpha(slot, 1f);
                         if (label != null)
                         {
@@ -271,8 +338,8 @@ public class SpellBookUI : MonoBehaviour
         RectTransform tpl = labelTemplate.rectTransform;
         Vector3 worldCenter = tpl.TransformPoint(tpl.rect.center);
 
+        // 견본 중심이 실제로 '올라가 있는' 칸만 기준으로 사용 (가까운 칸으로 추측하지 않음)
         RectTransform best = null;
-        float bestDist = float.MaxValue;
         foreach (ElementSection section in sections)
         {
             if (section.slots == null) continue;
@@ -282,24 +349,19 @@ public class SpellBookUI : MonoBehaviour
                 {
                     RectTransform slotRT = (RectTransform)img.transform;
                     Vector2 local = slotRT.InverseTransformPoint(worldCenter);
-                    if (slotRT.rect.Contains(local))
-                    {
-                        best = slotRT;
-                        bestDist = 0f;
-                        break;
-                    }
-                    float d = (local - slotRT.rect.center).sqrMagnitude;
-                    if (d < bestDist)
-                    {
-                        bestDist = d;
-                        best = slotRT;
-                    }
+                    if (slotRT.rect.Contains(local)) { best = slotRT; break; }
                 }
-                if (bestDist == 0f) break;
+                if (best != null) break;
             }
-            if (bestDist == 0f) break;
+            if (best != null) break;
         }
-        if (best == null) return;
+
+        if (best == null)
+        {
+            Debug.LogWarning("[SpellBookUI] 견본 글자(Label Template)가 어느 칸 위에도 올라가 있지 않습니다.\n" +
+                             "견본을 아무 스펠 칸 위에 겹쳐 두세요. 지금은 글자를 칸 크기에 꽉 맞춰 만듭니다.");
+            return;
+        }
 
         Vector2 centerInSlot = best.InverseTransformPoint(worldCenter);
         templateOffset = centerInSlot - best.rect.center;
@@ -307,6 +369,7 @@ public class SpellBookUI : MonoBehaviour
         float slotScale = best.lossyScale.x != 0f ? best.lossyScale.x : 1f;
         templateScale = Vector3.one * (tpl.lossyScale.x / slotScale);
         hasTemplateLayout = true;
+        Debug.Log($"[SpellBookUI] 견본 기준 칸: {best.name}");
     }
 
     private IEnumerator Pop(Transform target)

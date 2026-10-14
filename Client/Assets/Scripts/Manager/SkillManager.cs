@@ -25,6 +25,11 @@ public class SkillManager : MonoBehaviour
     private readonly HashSet<SpellData> unlockedSpells = new HashSet<SpellData>();
 
     public IReadOnlyCollection<SpellData> UnlockedSpells => unlockedSpells;
+    [Header("회차 이어하기")]
+    [Tooltip("켜면 이전 회차에서 한 번이라도 배운 스펠을 새 게임 시작 때 바로 쓸 수 있습니다.\n" +
+             "(이 컴퓨터에 저장된 스펠 도감 기록 기준)")]
+    public bool carryOverLearnedSpells = true;
+
     // 해금된 순서대로 (스펠 도감에서 차곡차곡 쌓을 때 사용)
     private readonly List<SpellData> unlockOrder = new List<SpellData>();
     public IReadOnlyList<SpellData> UnlockedInOrder => unlockOrder;
@@ -241,6 +246,7 @@ public class SkillManager : MonoBehaviour
     {
         if (spell == null || !unlockedSpells.Add(spell)) return false;
         unlockOrder.Add(spell);
+        SpellCollection.Add(spell); // 스펠 도감 누적 기록 (타이틀 화면 도감에 표시)
 
         Debug.Log($"[스펠 해금] 새로운 마법을 배웠습니다!: {spell.spellName} (Tier {spell.tier})");
         OnSpellUnlocked?.Invoke(spell);
@@ -255,9 +261,26 @@ public class SkillManager : MonoBehaviour
         unlockOrder.Clear();
         foreach (SpellData spell in spellDatabase)
         {
-            if (spell != null && spell.unlockedByDefault && unlockedSpells.Add(spell)) unlockOrder.Add(spell);
+            if (spell != null && spell.unlockedByDefault && unlockedSpells.Add(spell))
+            {
+                unlockOrder.Add(spell);
+                SpellCollection.Add(spell);
+            }
         }
-        Debug.Log($"[SkillManager] 스펠 해금 상태 초기화 완료 (기본 해금 {unlockedSpells.Count}개)");
+        int defaultCount = unlockedSpells.Count;
+
+        // 이전 회차에서 배운 스펠 이어받기 (배운 순서 그대로)
+        if (carryOverLearnedSpells)
+        {
+            foreach (string name in SpellCollection.CollectedNames)
+            {
+                SpellData spell = spellDatabase.Find(s =>
+                    s != null && (string.IsNullOrEmpty(s.spellName) ? s.name : s.spellName) == name);
+                if (spell != null && unlockedSpells.Add(spell)) unlockOrder.Add(spell);
+            }
+        }
+
+        Debug.Log($"[SkillManager] 스펠 해금 상태 초기화 완료 (기본 {defaultCount}개 + 이전 회차 {unlockedSpells.Count - defaultCount}개)");
         SpellsChanged?.Invoke();
     }
 
@@ -267,7 +290,11 @@ public class SkillManager : MonoBehaviour
         foreach (string name in spellNames)
         {
             SpellData spell = FindSpell(name);
-            if (spell != null && unlockedSpells.Add(spell)) unlockOrder.Add(spell);
+            if (spell != null && unlockedSpells.Add(spell))
+            {
+                unlockOrder.Add(spell);
+                SpellCollection.Add(spell);
+            }
         }
         SpellsChanged?.Invoke();
     }

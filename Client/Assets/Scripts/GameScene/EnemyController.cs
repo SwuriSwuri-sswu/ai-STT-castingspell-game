@@ -64,8 +64,13 @@ public class EnemyController : MonoBehaviour
     public string hitTrigger = "";
     [Tooltip("Animator가 없거나 Die State를 못 찾았을 때 대기 시간")]
     public float deathFallbackDuration = 1.5f;
-    [Tooltip("Death 애니메이션이 끝난 뒤 사라지기까지의 여유 시간")]
+    [Tooltip("Death 애니메이션이 끝난 뒤(마지막 자세로 멈춘 채) 사라지기 시작할 때까지의 시간")]
     public float destroyDelayAfterDeath = 0.2f;
+    [Tooltip("Death 애니메이션이 끝나면 마지막 자세에서 멈춤 (Death 클립이 반복 재생돼서\n" +
+             "다시 일어서는 듯 보이는 문제 방지)")]
+    public bool freezeOnDeathEnd = true;
+    [Tooltip("[애니메이션 있는 몹] 쓰러진 뒤 작아지면서 사라지는 시간(초). 0이면 바로 사라짐")]
+    public float despawnShrinkDuration = 0.35f;
 
     [Header("애니메이션이 없을 때의 대체 연출")]
     [Tooltip("[Animator 없는 몹] 사망 시 작아지면서 사라짐. 끄면 Death Fallback Duration만큼 서 있다가 사라짐")]
@@ -85,6 +90,18 @@ public class EnemyController : MonoBehaviour
     public DropItem dropItemPrefab;
     [Tooltip("두루마리가 처음 생겨나는 위치 보정 (발밑 기준). 여기서 몹과 플레이어 사이 공중으로 날아감")]
     public Vector3 dropOffset = new Vector3(0f, 1f, 0f);
+
+    [Header("높이")]
+    [Tooltip("바닥에서 떠 있는 높이 (날아다니는 몹만). 걷는 몹은 0.\n" +
+             "스폰 지점들은 바닥 높이에 두고, 이 값만큼 띄워서 이동합니다.\n" +
+             "장판 마법·드랍 두루마리는 여기서 이 높이만큼 아래(바닥)를 기준으로 생깁니다.")]
+    [Min(0f)] public float hoverHeight = 0f;
+
+    [Header("방향")]
+    [Tooltip("모델이 엉뚱한 방향을 볼 때 돌려 주는 각도 (Y축).\n" +
+             "뒤돌아 있으면 180, 옆을 보면 90 또는 -90")]
+    public float facingYawOffset = 0f;
+    private Quaternion FacingOffset => Quaternion.Euler(0f, facingYawOffset, 0f);
 
     [Header("등장 이동 (성 밖 → 스폰포인트)")]
     [Tooltip("이동 속도 (초당 미터)")]
@@ -149,7 +166,7 @@ public class EnemyController : MonoBehaviour
     }
 
     // 장판형 마법이 생성될 발밑 좌표
-    public Vector3 GroundPoint => transform.position;
+    public Vector3 GroundPoint => transform.position - Vector3.up * hoverHeight;
 
     public static float DefaultHP(MonsterRank r)
     {
@@ -171,6 +188,18 @@ public class EnemyController : MonoBehaviour
         }
     }
 
+    // 처치 자막 등에 쓰는 속성 색 (주문 자막 색과 동일)
+    public static Color ElementColor(MagicElement e)
+    {
+        switch (e)
+        {
+            case MagicElement.Water: return new Color(0.31f, 0.76f, 1f);    // 하늘색
+            case MagicElement.Fire: return new Color(1f, 0.35f, 0.21f);     // 주황빛 빨강
+            case MagicElement.Grass: return new Color(0.42f, 0.86f, 0.36f); // 연두
+            default: return new Color(1f, 0.84f, 0f);                       // 노말: 금색
+        }
+    }
+
     public static string ElementToKorean(MagicElement e)
     {
         switch (e)
@@ -188,6 +217,11 @@ public class EnemyController : MonoBehaviour
         colliders = GetComponentsInChildren<Collider>();
         renderers = GetComponentsInChildren<Renderer>();
         originalScale = transform.localScale;
+
+        // 날아다니는 몹은 바닥 높이의 생성 지점에서 hoverHeight만큼 띄워서 시작
+        if (hoverHeight > 0f) transform.position += Vector3.up * hoverHeight;
+        // 모델 방향 보정 (생성 직후 방향에도 적용)
+        if (facingYawOffset != 0f) transform.rotation *= FacingOffset;
 
         if (useRankDefaultHP) maxHP = DefaultHP(rank);
         CurrentHP = maxHP;
@@ -221,7 +255,9 @@ public class EnemyController : MonoBehaviour
             return;
         }
         IsReady = false;
-        StartCoroutine(ApproachRoutine(new List<Vector3>(waypoints), lookAt));
+        List<Vector3> path = new List<Vector3>(waypoints.Count);
+        foreach (Vector3 p in waypoints) path.Add(p + Vector3.up * hoverHeight); // 경로도 같은 높이로
+        StartCoroutine(ApproachRoutine(path, lookAt));
     }
 
     private float approachSpeedMultiplier = 1f;
@@ -241,7 +277,7 @@ public class EnemyController : MonoBehaviour
                 dir.y = 0f;
                 if (dir.sqrMagnitude > 0.0001f)
                 {
-                    Quaternion targetRot = Quaternion.LookRotation(dir);
+                    Quaternion targetRot = Quaternion.LookRotation(dir) * FacingOffset;
                     transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, turn * Time.deltaTime);
                 }
 
@@ -258,7 +294,7 @@ public class EnemyController : MonoBehaviour
         face.y = 0f;
         if (face.sqrMagnitude > 0.0001f)
         {
-            Quaternion targetRot = Quaternion.LookRotation(face);
+            Quaternion targetRot = Quaternion.LookRotation(face) * FacingOffset;
             float timer = 0f;
             while (Quaternion.Angle(transform.rotation, targetRot) > 1f && timer < 1.5f)
             {
@@ -446,7 +482,9 @@ public class EnemyController : MonoBehaviour
         // 처치 자막
         if (BattleUIManager.Instance != null)
         {
-            BattleUIManager.Instance.ShowKill($"{RankToKorean(rank)} {ElementToKorean(enemyType)} 속성 몬스터 처치!");
+            string hex = ColorUtility.ToHtmlStringRGB(ElementColor(enemyType));
+            BattleUIManager.Instance.ShowKill(
+                $"{RankToKorean(rank)} <color=#{hex}>{ElementToKorean(enemyType)} 속성</color> 몬스터 처치!");
         }
 
         // 처치 카운트 + 드랍 여부 결정 (여기서 미리 정해두고, 애니메이션이 끝나면 생성)
@@ -468,13 +506,27 @@ public class EnemyController : MonoBehaviour
         if (dropSpell != null && dropItemPrefab != null)
         {
             DropItem drop = Instantiate(dropItemPrefab, transform.position + dropOffset, Quaternion.identity);
-            drop.Initialize(dropSpell, transform.position); // 발밑 높이 = 바닥 기준
+            drop.Initialize(dropSpell, GroundPoint); // 바닥 높이 기준
         }
 
         // 애니메이션 없는 몹은 이미 작아져서 안 보이므로 바로 삭제
         if (HasAnimation || !shrinkOnDeath)
         {
             yield return new WaitForSeconds(destroyDelayAfterDeath);
+
+            // 쓰러진 자세 그대로 작아지면서 사라짐 (툭 끊기듯 사라지지 않게)
+            if (HasAnimation && despawnShrinkDuration > 0f)
+            {
+                Vector3 from = transform.localScale;
+                float t = 0f;
+                while (t < despawnShrinkDuration)
+                {
+                    t += Time.deltaTime;
+                    float k = Mathf.Clamp01(t / despawnShrinkDuration);
+                    transform.localScale = Vector3.Lerp(from, Vector3.zero, k * k);
+                    yield return null;
+                }
+            }
         }
         OnDespawned?.Invoke(this);
         Destroy(gameObject);
@@ -522,14 +574,19 @@ public class EnemyController : MonoBehaviour
         }
 
         // 2. Die 애니메이션이 끝까지 재생될 때까지 대기
+        //    (반복 재생 클립이면 끝나는 순간 다시 처음 자세로 돌아가므로, 끝나기 직전에 멈춤)
         float safety = 0f;
         while (safety < 10f)
         {
             AnimatorStateInfo info = anim.GetCurrentAnimatorStateInfo(0);
-            if (!anim.IsInTransition(0) && IsInDeathState() && info.normalizedTime >= 1f) break;
+            float oneFrame = info.length > 0f ? (Time.deltaTime * 1.5f) / info.length : 0f;
+            if (!anim.IsInTransition(0) && IsInDeathState() && info.normalizedTime >= 1f - oneFrame) break;
             safety += Time.deltaTime;
             yield return null;
         }
+
+        // 3. 마지막 자세로 고정
+        if (freezeOnDeathEnd) anim.speed = 0f;
     }
 
     private bool IsInDeathState()
