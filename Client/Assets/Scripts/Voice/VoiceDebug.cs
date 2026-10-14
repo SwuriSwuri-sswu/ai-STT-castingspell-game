@@ -12,7 +12,8 @@ using UnityEngine;
 ///  - 맨 위 한 줄: 서버 연결 상태, 녹음·판정 대기 상태, 마지막 발화 정보.
 ///  - 디버그 WAV 저장: VoiceSender 가 서버로 보낸 WAV 를 persistentDataPath/mic_debug 에 저장한다 (판정 문제 확인용).
 /// VoiceInput·VoiceSender·VoiceSocket 의 값을 읽기만 하며, 감지·전송 동작에는 영향을 주지 않는다.
-/// 테스트용 컴포넌트이므로 게임 씬에는 붙이지 않는다.
+///  - 테스트 키: C = 해금된 스펠 하나를 음성 없이 시전, U = 잠긴 스펠 하나 해금(드랍 획득 흉내), R = 해금 초기화.
+/// 테스트용 컴포넌트이므로 배포할 때는 끄거나 제거한다.
 /// </summary>
 public class VoiceDebug : MonoBehaviour
 {
@@ -24,6 +25,11 @@ public class VoiceDebug : MonoBehaviour
     [Header("디버그 WAV 저장")]
     [Tooltip("켜면 서버로 보낸 발화 WAV 를 persistentDataPath/mic_debug 에 저장한다")]
     [SerializeField] bool saveDebugWav = true;
+
+    [Header("테스트 키 (게임 조작과 겹치면 None)")]
+    [SerializeField] KeyCode castTestKey = KeyCode.C;   // 해금된 스펠 하나를 음성 없이 시전 (시전 경로 확인)
+    [SerializeField] KeyCode unlockKey = KeyCode.U;     // 잠긴 스펠 하나 해금 (드랍 획득 흉내)
+    [SerializeField] KeyCode resetKey = KeyCode.R;      // 해금 초기화 (게임 재시작 흉내)
 
     [Header("표시")]
     [SerializeField] bool show = true;
@@ -126,6 +132,7 @@ public class VoiceDebug : MonoBehaviour
 
     void Update()
     {
+        HandleTestKeys();
         if (!show || dbHist == null) return;
 
         // ── dB 기록: VAD 의 현재 값을 읽어 칸 단위로 쌓는다 ──
@@ -175,6 +182,30 @@ public class VoiceDebug : MonoBehaviour
     }
 
     // ── 파형: 열마다 담당 구간의 최소~최대 진폭을 세로선으로 그린다 ──
+    // ── 테스트 키: SkillManager 를 직접 호출한다. 목록이 바뀌면 SpellsChanged 로 서버에 자동 재전송된다 ──
+    void HandleTestKeys()
+    {
+        SkillManager sm = SkillManager.Instance;
+        if (sm == null) return;
+
+        if (Input.GetKeyDown(castTestKey))
+        {
+            var list = sm.GetVoiceSpells();
+            if (list.Count > 0)
+            {
+                string name = list[UnityEngine.Random.Range(0, list.Count)].spellName;
+                Debug.Log($"[테스트] {name} 시전: {sm.TryCastByVoice(name) ?? "성공"}");
+            }
+        }
+        if (Input.GetKeyDown(unlockKey))
+        {
+            var locked = sm.spellDatabase.FindAll(s => s != null && !sm.IsUnlocked(s));
+            if (locked.Count > 0) sm.UnlockSpell(locked[UnityEngine.Random.Range(0, locked.Count)]);
+            else Debug.Log("[테스트] 모든 스펠을 해금했습니다.");
+        }
+        if (Input.GetKeyDown(resetKey)) sm.ResetSpellUnlocks();
+    }
+
     void DrawWaveform()
     {
         Fill(wavePixels, Bg);

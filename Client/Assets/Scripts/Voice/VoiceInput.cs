@@ -25,6 +25,17 @@ public class VoiceInput : MonoBehaviour
     /// <summary>마이크가 바뀌어 녹음을 다시 시작했을 때 호출된다. 샘플레이트가 바뀔 수 있으므로 구독자는 상태를 초기화해야 한다.</summary>
     public event Action DeviceChanged;
 
+    /// <summary>
+    /// 사용할 마이크 이름 (게임 설정 연동용). 비우면 시스템 기본 장치.
+    /// 플레이 중에 바꾸면 다음 프레임에 새 장치로 다시 시작한다 (Inspector 에서 바꿀 때와 같은 동작).
+    /// 연동: VoiceRecorder 가 GameSettingManager.Instance.selectedMicName 을 넣어 준다.
+    /// </summary>
+    public string DeviceName
+    {
+        get => deviceName;
+        set => deviceName = value ?? "";
+    }
+
     bool micStarted;             // device 가 null(기본 장치)일 수 있으므로 시작 여부를 따로 기록한다
     string appliedDeviceName;    // 마지막으로 적용한 deviceName. Inspector 값과 다르면 다시 시작한다
     /// <summary>

@@ -658,6 +658,10 @@ GameObject:
   m_Component:
   - component: {fileID: 72393939}
   - component: {fileID: 72393940}
+  - component: {fileID: 72393944}
+  - component: {fileID: 72393943}
+  - component: {fileID: 72393942}
+  - component: {fileID: 72393941}
   m_Layer: 0
   m_Name: VoiceManager
   m_TagString: Untagged
@@ -693,19 +697,96 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceRecorder
   subtitleText: {fileID: 1669194216}
-  useMockServer: 1
-  backendUrl: http://localhost:8000/transcribe
-  requestTimeout: 10
-  mockSpellSequence:
-  - "\uBE5B"
-  - "\uBC14\uB78C"
-  - "\uB3CC"
-  mockDelay: 1
-  minRecordingTime: 0.2
-  useVolumeGate: 0
-  minVolumeDb: -30
   typingSpeed: 0.05
-  skillManager: {fileID: 67344987}
+  successHoldSec: 1
+  voiceInput: {fileID: 72393942}
+  voiceSender: {fileID: 72393943}
+  voiceSocket: {fileID: 72393944}
+--- !u!114 &72393941
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 72393938}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd65006f5338cf34a88aef639bed8469, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoiceDebug
+  voiceInput: {fileID: 0}
+  voiceSender: {fileID: 0}
+  voiceSocket: {fileID: 0}
+  saveDebugWav: 1
+  castTestKey: 99
+  unlockKey: 117
+  resetKey: 114
+  show: 1
+  screenPosition: {x: 10, y: 260}
+  width: 480
+  waveHeight: 100
+  dbHeight: 120
+  waveformSec: 0.5
+  historySec: 6
+  dbMin: -80
+  dbMax: 0
+  clipLevel: 0.99
+--- !u!114 &72393942
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 72393938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38b64766c9a3e6a4a97b8f669ef42ca2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoiceInput
+  deviceName: Microphone Array (AMD Audio Device)
+  requestedSampleRate: 16000
+  loopBufferSec: 10
+--- !u!114 &72393943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 72393938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c7b8a7dd225ea1b4b8af03242dc94294, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoiceSender
+  voiceInput: {fileID: 72393942}
+  voiceSocket: {fileID: 72393944}
+  vadSettings:
+    frameMs: 30
+    calibrationSec: 1
+    thresholdAboveNoiseDb: 10
+    minNoiseFloorDb: -40
+    startFrames: 3
+    endSilenceSec: 0.4
+    prerollSec: 0.25
+    maxUtteranceSec: 4.8
+    adaptNoiseFloor: 1
+    noiseAdaptRate: 0.02
+  resultTimeoutSec: 6
+  keepTrailingSilenceSec: 0.1
+--- !u!114 &72393944
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 72393938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f334a38489baeb542943df082a69aff0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoiceSocket
+  serverUrl: ws://127.0.0.1:8000/ws/voice/analyzing
+  unlockedOnly: 1
 --- !u!1 &79414433
 GameObject:
   m_ObjectHideFlags: 0

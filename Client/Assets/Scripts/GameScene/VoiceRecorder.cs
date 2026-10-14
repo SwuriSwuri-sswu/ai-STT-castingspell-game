@@ -2,273 +2,154 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 
-// �����̽��ٸ� ������ ���� ���� �� ����(STT)�� ���� �� �ڸ� ���� �� ���� ����
-// - ���� ��������Ʈ�� �����ؾ߸� ���� ����
-// - �� ���� �ϳ��� �ֹ��� ó�� (ó�� �߿��� �� ���� �Ұ�)
-// - ���� ���� �׽�Ʈ�� �� �ִ� Mock ��� ����
+/// <summary>
+/// 음성 주문 결과를 자막으로 보여 주고 스펠 시전을 요청한다.
+/// 녹음과 전송은 VoiceSender / VoiceSocket 가 하고, 이 클래스는 그 이벤트만 받는다.
+/// 시전은 SkillManager.TryCastByVoice 에 요청한다.
+///
+/// 표시 규칙
+///   - 대기: 적이 있으면 "주문을 영창하세요.", 없으면 "적이 다가오고 있습니다..."
+///   - 말하는 중 / 해석 중: 상태 문구
+///   - 발동: 들린 글자 타이핑 → 스펠 이름 노란 강조 → 시전 → 1초 뒤 자막 지움
+///   - 불발, 오류, 시간 초과, 너무 짧음, 적 없음, 시전 실패: 자막을 지우고 로그만 남김
+/// </summary>
 public class VoiceRecorder : MonoBehaviour
 {
+    [Header("자막")]
     public TextMeshProUGUI subtitleText;
-    public float typingSpeed = 0.05f;   // ���ڴ� ��� �ð� (��)
+    public float typingSpeed = 0.05f;             // 글자당 출력 시간 (초)
+    [SerializeField] float successHoldSec = 1f;   // 발동 강조를 보여 주는 시간 (초)
 
-    [Header("��Ʈ��ũ ����")]
-    [Tooltip("üũ�ϸ� ���� ��� �Ʒ� Mock ����� �׽�Ʈ (�鿣�� ���� ����)")]
-    public bool useMockServer = true;
-    // �鿣�� API �ּ� (FastAPI ������ ��������Ʈ �Է�)
-    public string backendUrl = "http://localhost:8000/transcribe";
-    [Tooltip("���� ���� ��� �ִ� �ð�(��)")]
-    public int requestTimeout = 10;
+    [Header("음성 연결")]
+    [SerializeField] VoiceInput voiceInput;
+    [SerializeField] VoiceSender voiceSender;
+    [SerializeField] VoiceSocket voiceSocket;
 
-    [Header("Mock �׽�Ʈ (Use Mock Server üũ ��)")]
-    [Tooltip("������ ������ ������� ����� ���� �̸�. SpellData�� Spell Name�� ���ƾ� �մϴ�.")]
-    public string[] mockSpellSequence = { "��", "�ٶ�", "��" };
-    [Tooltip("���� ���� �ð� �䳻 (��)")]
-    public float mockDelay = 1.0f;
-
-    [Header("���� ����")]
-    [Tooltip("�ʹ� ª�� ������ ���� (��)")]
-    public float minRecordingTime = 0.2f;
-    [Tooltip("üũ�ϸ� ���� ���� �̻����� ���ؾ� �ֹ��� ���۵˴ϴ�")]
-    public bool useVolumeGate = false;
-    [Tooltip("�ּ� ���� (dBFS, 0�� �ִ�. -30 ~ -20 �������� ����)")]
-    public float minVolumeDb = -30f;
-
-    [Header("�ڸ� ���� ����")]
-    public float typingSpeed = 0.05f; // ���ڴ� ��� ��� �ð� (��)
-
-    [Header("�Ŵ��� ����")]
-    public SkillManager skillManager;
-
-    // ���� ������ ���� (���� ������ ���Ŀ� ��� ����)
+    /// <summary>직전 주문의 성량 (dBFS, 0이 최대). 서버가 계산한 값. 데미지 공식에 사용 가능</summary>
     public float LastVolumeDb { get; private set; } = -80f;
 
-    private const int SampleRate = 16000;
-    private const int MaxRecordingTime = 10;
+    const string HintReady = "주문을 영창하세요.";
+    const string HintWaiting = "적이 다가오고 있습니다...";
 
-    private const string HintReady = "�����̽��ٸ� ���� ä�� �ֹ��� ��â�ϼ���.";
-    private const string HintWaiting = "���� �ٰ����� �ֽ��ϴ�...";
+    Coroutine sequence;
+    Vector3 baseScale = Vector3.one;   // 자막 원래 크기 (연출이 끊겨도 크기가 누적되지 않게)
+    bool wasCastable;
 
-    private string selectedDevice;
-    private AudioClip recordingClip;
-    private bool isRecording;      // �����̽��ٸ� ������ �ִ� ����
-    private bool isProcessing;     // ���� ���� ��� ~ �ڸ� ���� ~ ��������
-    private float recordStartTime;
-    private bool wasCastable;
-    private int mockIndex;
-    private Coroutine typingCoroutine;
+    // 스폰포인트에 도착한 적이 있어야 시전 가능
+    static bool CanCast => SkillManager.CanCast;
 
-    private SkillManager Skill => skillManager != null ? skillManager : SkillManager.Instance;
+    bool Busy => sequence != null ||
+                 (voiceSender != null && (voiceSender.IsRecording || voiceSender.IsWaitingForResult));
+
+    void Awake()
+    {
+        if (subtitleText != null) baseScale = subtitleText.transform.localScale;
+    }
+
+    void OnEnable() => Subscribe(true);
+
+    void OnDisable()
+    {
+        Subscribe(false);
+        StopSequence();
+        Show(null);
+    }
 
     void Start()
     {
-        SelectMicrophone();
+        // 게임 설정에서 고른 마이크 사용 (설정 매니저가 없으면 VoiceInput 의 Inspector 값 사용)
+        if (voiceInput != null && GameSettingManager.Instance != null &&
+            !string.IsNullOrEmpty(GameSettingManager.Instance.selectedMicName))
+            voiceInput.DeviceName = GameSettingManager.Instance.selectedMicName;
 
-        if (string.IsNullOrEmpty(selectedDevice))
-        {
-            Debug.LogError("����ũ ��ġ�� �����ϴ�.");
-            SetSubtitle("����ũ�� Ȯ���� �� �����ϴ�.");
-            return;
-        }
+        if (SkillManager.Instance == null)
+            Debug.LogError("[자막] 씬에 SkillManager 가 없습니다. 주문을 시전할 수 없습니다.");
 
-        wasCastable = SkillManager.CanCast;
-        SetSubtitle(wasCastable ? HintReady : HintWaiting);
-    }
-
-    // ȯ�漳������ ���� ����ũ�� ������ �װ� ���, ������ ù ��° ����ũ
-    private void SelectMicrophone()
-    {
-        if (Microphone.devices.Length == 0) return;
-
-        string preferred = GameSettingManager.Instance != null ? GameSettingManager.Instance.selectedMicName : null;
-        selectedDevice = !string.IsNullOrEmpty(preferred) && System.Array.IndexOf(Microphone.devices, preferred) >= 0
-            ? preferred
-            : Microphone.devices[0];
+        wasCastable = CanCast;
+        Show(wasCastable ? HintReady : HintWaiting);
     }
 
     void Update()
     {
-        if (string.IsNullOrEmpty(selectedDevice)) return;
-
-        // ���� �����ϰų� ����� �� �ȳ� �ڸ� ���� (������ó�� ���� �ƴ� ����)
-        bool canCast = SkillManager.CanCast;
-        if (canCast != wasCastable && !isRecording && !isProcessing)
-        {
-            SetSubtitle(canCast ? HintReady : HintWaiting);
-        }
+        // 적이 도착하거나 사라지면 안내 문구 변경 (녹음, 해석, 연출 중이 아닐 때만)
+        bool canCast = CanCast;
+        if (canCast != wasCastable && !Busy) Show(canCast ? HintReady : HintWaiting);
         wasCastable = canCast;
+    }
 
-        if (Input.GetKeyDown(KeyCode.Space))
+    void Subscribe(bool on)
+    {
+        if (voiceSender != null)
         {
-            if (isProcessing) Debug.Log("[VoiceRecorder] ���� �ֹ��� ó�� ���̶� �����մϴ�.");
-            else if (!canCast)
+            if (on)
             {
-                Debug.Log("[VoiceRecorder] ���� ���� �ڸ��� ���� �ʾ� ������ �� �����ϴ�.");
-                SetSubtitle("���� ���� �ڸ��� ���� �ʾҽ��ϴ�!");
+                voiceSender.CanAccept = () => CanCast;   // 적이 없으면 발화를 보내지 않는다
+                voiceSender.RecordingStarted += OnStarted;
+                voiceSender.RecordingSubmitted += OnSubmitted;
+                voiceSender.RecordingRejected += OnRejected;
             }
-            else StartRecording();
+            else
+            {
+                voiceSender.CanAccept = null;
+                voiceSender.RecordingStarted -= OnStarted;
+                voiceSender.RecordingSubmitted -= OnSubmitted;
+                voiceSender.RecordingRejected -= OnRejected;
+            }
         }
-
-        // �ִ� ���� �ð�(10��)�� �ѱ�� �ڵ����� ������ ����
-        if (isRecording && Time.time - recordStartTime >= MaxRecordingTime - 0.1f)
+        if (voiceSocket != null)
         {
-            StopRecording();
-        }
-
-        if (Input.GetKeyUp(KeyCode.Space) && isRecording)
-        {
-            StopRecording();
+            if (on) { voiceSocket.CastResultReceived += OnResult; voiceSocket.ErrorReceived += OnError; }
+            else { voiceSocket.CastResultReceived -= OnResult; voiceSocket.ErrorReceived -= OnError; }
         }
     }
 
-    private void StartRecording()
+    // ── 상태 표시 ──
+    void OnStarted()
     {
-        if (Microphone.IsRecording(selectedDevice)) Microphone.End(selectedDevice);
-
-        recordingClip = Microphone.Start(selectedDevice, false, MaxRecordingTime, SampleRate);
-        recordStartTime = Time.time;
-        isRecording = true;
-        SetSubtitle("[ ���� ��â ��... ]");
-        Debug.Log($"[VoiceRecorder] ���� ���� (����ũ: {selectedDevice})");
+        StopSequence();
+        Show("[ 마법 영창 중... ]");
     }
 
-    private void StopRecording()
+    void OnSubmitted() => Show("[ 마나 흐름 해석 중... ]");
+
+    // 너무 짧음, 시간 초과, 연결 없음, 적 없음 → 자막 지움 + 로그
+    void OnRejected(string reason)
     {
-        isRecording = false;
+        Debug.Log($"[자막] 불발: {reason}");
+        StopSequence();
+        Show(null);
+    }
 
-        int recordingLength = Microphone.IsRecording(selectedDevice)
-            ? Microphone.GetPosition(selectedDevice)
-            : (recordingClip != null ? recordingClip.samples : 0); // �ִ� �ð����� ������ ���
-        Microphone.End(selectedDevice);
+    void OnError(ErrorResponse e)
+    {
+        // request_id 없는 오류(스펠 목록 오류 등)는 주문과 무관하므로 무시한다 (Console 에는 출력됨)
+        if (e == null || string.IsNullOrEmpty(e.RequestId)) return;
+        Debug.Log($"[자막] 불발: 서버 오류 {e.Code}");
+        StopSequence();
+        Show(null);
+    }
 
-        Debug.Log($"[VoiceRecorder] ���� ���� ({(float)recordingLength / SampleRate:F2}��)");
+    void OnResult(CastResult r)
+    {
+        if (r == null) return;
+        // 결과가 늦게 와서 이미 다음 주문을 말하는 중이면 덮어쓰지 않는다
+        if (voiceSender != null && voiceSender.IsRecording) return;
 
-        if (recordingClip == null || recordingLength <= SampleRate * minRecordingTime)
+        if (r.Audio != null) LastVolumeDb = r.Audio.VolumeDb;
+        StopSequence();
+
+        if (!r.Success)
         {
-            Debug.Log("[VoiceRecorder] ������ �ʹ� ª�� �����մϴ�. �����̽��ٸ� 0.2�� �̻� ���� �ּ���.");
-            SetSubtitle("�ֹ��� �鸮�� �ʾҽ��ϴ�.");
+            Debug.Log($"[자막] 불발: {r.RejectReason} (들린 글자 \"{r.Stt?.Text}\")");
+            Show(null);
             return;
         }
-
-        AudioClip trimmedClip = TrimClip(recordingClip, recordingLength);
-
-        // ���� ���� (���� ������ ���� ������ �̴� �� ���)
-        LastVolumeDb = MeasureVolumeDb(trimmedClip);
-        if (useVolumeGate && LastVolumeDb < minVolumeDb)
-        {
-            Debug.Log($"[VoiceRecorder] ���� ����: {LastVolumeDb:F1} dB (���� {minVolumeDb} dB)");
-            SetSubtitle("��Ҹ��� �ʹ� �۽��ϴ�! �� ũ�� ���� �ּ���.");
-            return;
-        }
-
-        isProcessing = true;
-        SetSubtitle("[ ���� �帧 �ؼ� ��... ]");
-        Debug.Log($"[VoiceRecorder] {(useMockServer ? "Mock" : "����")}�� ���� (���� {LastVolumeDb:F1} dB)");
-
-        if (useMockServer) StartCoroutine(SendAudioToMock());
-        else StartCoroutine(SendAudioToBackend(trimmedClip));
+        sequence = StartCoroutine(SuccessSequence(r.Stt?.Text, r.Skill?.Name));
     }
 
-    private AudioClip TrimClip(AudioClip clip, int samplesRecorded)
+    // ── 발동 연출: 들린 글자 타이핑 → 스펠 이름 강조 → 시전 → 잠시 뒤 지움 ──
+    IEnumerator SuccessSequence(string rawText, string spellName)
     {
-        float[] soundData = new float[samplesRecorded * clip.channels];
-        clip.GetData(soundData, 0);
-
-        AudioClip trimmed = AudioClip.Create("RecordedSpell", samplesRecorded, clip.channels, clip.frequency, false);
-        trimmed.SetData(soundData, 0);
-        return trimmed;
-    }
-
-    // RMS ������ dBFS�� ��� (0 = �ִ�, �����Ҽ��� ����)
-    private float MeasureVolumeDb(AudioClip clip)
-    {
-        float[] samples = new float[clip.samples * clip.channels];
-        clip.GetData(samples, 0);
-        if (samples.Length == 0) return -80f;
-
-        double sum = 0;
-        foreach (float s in samples) sum += s * s;
-        float rms = Mathf.Sqrt((float)(sum / samples.Length));
-        return rms > 0.0001f ? 20f * Mathf.Log10(rms) : -80f;
-    }
-
-    // =========================================================
-    // ���� ���
-    // =========================================================
-    private IEnumerator SendAudioToBackend(AudioClip clip)
-    {
-        // 1. AudioClip�� WAV ����Ʈ �迭�� ���ڵ�
-        byte[] wavData = EncodeToWAV(clip);
-
-        // 2. HTTP ���ۿ� ��(Form) ������ ����
-        WWWForm form = new WWWForm();
-        // �鿣�� API���� ���� ���� �Ķ���� �̸�("file"), ����Ʈ ������, �ӽ� ���ϸ�, MIME Ÿ��
-        form.AddBinaryData("file", wavData, "spell.wav", "audio/wav");
-
-        // 3. ������ POST ��û ����
-        using (UnityWebRequest www = UnityWebRequest.Post(backendUrl, form))
-        {
-            www.timeout = requestTimeout;
-            yield return www.SendWebRequest();
-
-            if (www.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogError($"��� ����: {www.error}");
-                SetSubtitle("�ֹ� �ؼ��� �����߽��ϴ�. (��� ����)");
-                isProcessing = false;
-                yield break;
-            }
-
-            // 4. ���� �� JSON ���� �Ľ�
-            WhisperResponse responseData = null;
-            try
-            {
-                responseData = JsonUtility.FromJson<WhisperResponse>(www.downloadHandler.text);
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"���� �Ľ� ����: {e.Message}\n{www.downloadHandler.text}");
-            }
-
-            if (responseData == null)
-            {
-                SetSubtitle("�ֹ� �ؼ��� �����߽��ϴ�. (���� ����)");
-                isProcessing = false;
-                yield break;
-            }
-
-            // �ڸ��� ������ �ؽ�Ʈ�� ���� ������ Ȯ�� �ؽ�Ʈ�� ���ڷ� ���� �ѱ�
-            DisplayRecognizedSpell(responseData.raw_text, responseData.mapped_spell);
-        }
-    }
-
-    // �鿣�� �̿��� �׽�Ʈ��: mockSpellSequence�� ������� ����
-    private IEnumerator SendAudioToMock()
-    {
-        yield return new WaitForSeconds(mockDelay);
-
-        string spell = (mockSpellSequence != null && mockSpellSequence.Length > 0)
-            ? mockSpellSequence[mockIndex++ % mockSpellSequence.Length]
-            : "";
-
-        Debug.Log($"[VoiceRecorder] Mock �ν� ���: \"{spell}\"");
-        DisplayRecognizedSpell(spell, spell);
-    }
-
-    // =========================================================
-    // �ڸ� ���� + ����
-    // =========================================================
-    private void DisplayRecognizedSpell(string rawText, string mappedSpell)
-    {
-        if (typingCoroutine != null) StopCoroutine(typingCoroutine);
-        typingCoroutine = StartCoroutine(SpellTextSequence(rawText ?? "", mappedSpell ?? ""));
-    }
-
-    // ������ �ڸ� ���� �ڷ�ƾ (Ÿ���� -> ���� -> �˾� ȿ�� -> ��ų ����)
-    private IEnumerator SpellTextSequence(string rawText, string mappedSpell)
-    {
-        // ----------------------------------------------------
-        // 1�ܰ�: ������ �ؽ�Ʈ Ÿ���� ����
-        // ----------------------------------------------------
         if (subtitleText != null && !string.IsNullOrEmpty(rawText))
         {
             subtitleText.text = "\"";
@@ -278,132 +159,59 @@ public class VoiceRecorder : MonoBehaviour
                 yield return new WaitForSeconds(typingSpeed);
             }
             subtitleText.text += "\"";
-
-            // ������ ������ �ؽ�Ʈ�� �ν��� �� �ֵ��� 0.5�� ���
             yield return new WaitForSeconds(0.5f);
         }
 
-        // ----------------------------------------------------
-        // 2�ܰ�: ���� ������ �ֹ����� ���� (���� ������ �ڸ����� �ȳ�)
-        // ----------------------------------------------------
-        SkillManager skill = Skill;
-        SpellData spell = (skill != null && !string.IsNullOrWhiteSpace(mappedSpell)) ? skill.FindSpell(mappedSpell) : null;
-
-        string failMessage = null;
-        if (skill == null) failMessage = "SkillManager�� ������� �ʾҽ��ϴ�.";
-        else if (spell == null) failMessage = "�� �� ���� �ֹ��Դϴ�...";
-        else if (!skill.IsUnlocked(spell)) failMessage = $"���� ����� ���� �ֹ��Դϴ�: {spell.spellName}";
-        else if (!SkillManager.CanCast) failMessage = "������ ���� �����ϴ�.";
-
-        if (failMessage != null)
-        {
-            Debug.LogWarning($"[VoiceRecorder] ���� ���� - {failMessage} (�νĵ� �ֹ�: \"{mappedSpell}\")");
-            SetSubtitle($"<color=#AAAAAA>{failMessage}</color>");
-            isProcessing = false;
-            typingCoroutine = null;
-            yield break;
-        }
-
-        // ----------------------------------------------------
-        // 3�ܰ�: Ȯ���� ����� ������ + ��(Pop) �ִϸ��̼�
-        // ----------------------------------------------------
         if (subtitleText != null)
         {
-            // TextMeshPro Rich Text�� ����� �ؽ�Ʈ�� ����� ���� �۾��� ����
-            subtitleText.text = $"<color=#FFD700><b>{spell.spellName}!</b></color>";
-
-            Vector3 originalScale = subtitleText.transform.localScale;
-            Vector3 targetScale = originalScale * 1.5f; // 1.5��� Ȯ��
-            const float popDuration = 0.15f;
-
-            float elapsed = 0f;
-            while (elapsed < popDuration) // �ؽ�Ʈ Ŀ����
-            {
-                subtitleText.transform.localScale = Vector3.Lerp(originalScale, targetScale, elapsed / popDuration);
-                elapsed += Time.deltaTime;
-                yield return null;
-            }
-
-            elapsed = 0f;
-            while (elapsed < popDuration) // �ؽ�Ʈ ���� ũ��� ���ƿ���
-            {
-                subtitleText.transform.localScale = Vector3.Lerp(targetScale, originalScale, elapsed / popDuration);
-                elapsed += Time.deltaTime;
-                yield return null;
-            }
-
-            subtitleText.transform.localScale = originalScale; // ũ�� ���� ����
+            subtitleText.text = $"<color=#FFD700><b>{spellName}!</b></color>";
+            yield return Pop();
         }
 
-        // ----------------------------------------------------
-        // 4�ܰ�: ������ ���� ���� ���� ���� ����
-        // ----------------------------------------------------
-        skill.CastSpell(spell.spellName);
-
-        isProcessing = false;
-        typingCoroutine = null;
-    }
-
-    private void SetSubtitle(string message)
-    {
-        if (subtitleText != null) subtitleText.text = message;
-    }
-
-    // AudioClip -> WAV ��� �� 16-bit PCM ������ ����Ʈ ��ȯ��
-    private byte[] EncodeToWAV(AudioClip clip)
-    {
-        float[] samples = new float[clip.samples * clip.channels];
-        clip.GetData(samples, 0);
-
-        short[] intData = new short[samples.Length];
-        for (int i = 0; i < samples.Length; i++)
+        // 연출이 끝난 직후 시전 (연출 중 적이 사라졌거나 이펙트가 없으면 여기서 실패)
+        SkillManager sm = SkillManager.Instance;
+        string fail = sm != null ? sm.TryCastByVoice(spellName) : "SkillManager 없음";
+        if (fail != null)
         {
-            // float(-1.0f ~ 1.0f) �����͸� 16��Ʈ ����(-32768 ~ 32767)�� ��ȯ
-            intData[i] = (short)(Mathf.Clamp(samples[i], -1f, 1f) * 32767f);
-        }
-
-        using (MemoryStream memoryStream = new MemoryStream())
-        using (BinaryWriter writer = new BinaryWriter(memoryStream))
-        {
-            writer.Write("RIFF".ToCharArray());
-            writer.Write(36 + intData.Length * 2);
-            writer.Write("WAVE".ToCharArray());
-            writer.Write("fmt ".ToCharArray());
-            writer.Write(16);
-            writer.Write((short)1); // PCM ����
-            writer.Write((short)clip.channels);
-            writer.Write(clip.frequency);
-            writer.Write(clip.frequency * clip.channels * 2);
-            writer.Write((short)(clip.channels * 2));
-            writer.Write((short)16);
-            writer.Write("data".ToCharArray());
-            writer.Write(intData.Length * 2);
-
-            foreach (short sample in intData)
-            {
-                subtitleText.text += c;
-                yield return new WaitForSeconds(typingSpeed);
-            }
-            subtitleText.text += "\"";
-            yield return new WaitForSeconds(0.5f);
-        }
-
-        if (spellName == null)
-        {
-            subtitleText.text = "<color=#888888>�ֹ��� ��������ϴ�...</color>";
+            Debug.Log($"[자막] 시전 실패: {fail} ({spellName})");
+            Show(null);
+            sequence = null;
             yield break;
         }
 
-        subtitleText.text = $"<color=#FFD700><b>{spellName}!</b></color>";
-        yield return Pop();
-
-        if (skillBridge != null && !skillBridge.TryCast(spellName))
-            subtitleText.text = "<color=#888888>���� �ٷ� �� ���� �ֹ��Դϴ�.</color>";
+        yield return new WaitForSeconds(successHoldSec);
+        Show(null);
+        sequence = null;
     }
 
-    IEnumerator Pop()   // 0.15�� ���� 1.5��� Ŀ���ٰ� 0.15�� ���� ���� ũ���
+    IEnumerator Pop()   // 0.15초 동안 1.5배로 커졌다가 0.15초 동안 원래 크기로
     {
-        public string raw_text;     // ȭ�� �ڸ��� ��� ������ ����
-        public string mapped_spell; // ��ų �Ŵ����� �ѱ� Ȯ���� ���� �̸� (��Ī ���� �� �� ���ڿ�)
+        Transform t = subtitleText.transform;
+        Vector3 big = baseScale * 1.5f;
+        const float half = 0.15f;
+
+        for (float e = 0f; e < half; e += Time.deltaTime)
+        {
+            t.localScale = Vector3.Lerp(baseScale, big, e / half);
+            yield return null;
+        }
+        for (float e = 0f; e < half; e += Time.deltaTime)
+        {
+            t.localScale = Vector3.Lerp(big, baseScale, e / half);
+            yield return null;
+        }
+        t.localScale = baseScale;
+    }
+
+    void StopSequence()
+    {
+        if (sequence != null) StopCoroutine(sequence);
+        sequence = null;
+        if (subtitleText != null) subtitleText.transform.localScale = baseScale;
+    }
+
+    void Show(string text)
+    {
+        if (subtitleText != null) subtitleText.text = text ?? "";
     }
 }

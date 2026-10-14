@@ -16,6 +16,9 @@ using UnityEngine;
 ///   주문 하나를 보내면 서버 판정이 돌아올 때까지 새 주문을 받지 않는다.
 ///   대기 중에 말한 주문은 보관하지 않고 버린다.
 ///   판정 결과(또는 오류)가 오거나, 정해진 시간이 지나면 대기를 푼다.
+///
+/// [받기 조건]
+///   CanAccept 가 false 일 때(예: 공격할 적이 없음) 시작된 발화는 보내지 않고 끝까지 무시한다.
 /// </summary>
 public class VoiceSender : MonoBehaviour
 {
@@ -46,6 +49,13 @@ public class VoiceSender : MonoBehaviour
     public event Action RecordingSubmitted;          // 발화 전송 시작
     public event Action<string> RecordingRejected;   // 전송하지 못함 (사유)
     public event Action<byte[]> UtteranceSent;       // 서버로 보낸 WAV (VoiceDebug 의 디버그 저장용)
+
+    /// <summary>
+    /// 지금 주문을 받을 수 있는지 (예: 공격할 적이 있는지). VoiceRecorder 가 설정한다.
+    /// false 이면 그때 시작된 발화는 보내지 않고 끝까지 무시한다. null 이면 항상 받는다.
+    /// VoiceSender 가 게임 코드(VoiceSkillBridge, SkillManager)를 직접 알지 않도록 함수로 받는다.
+    /// </summary>
+    public Func<bool> CanAccept { get; set; }
 
     public bool IsRecording => collecting;
     public bool IsWaitingForResult => waitingForResult;
@@ -150,6 +160,15 @@ public class VoiceSender : MonoBehaviour
         {
             ignoringCurrentSpeech = true;
             Debug.Log("[MIC] 판정 대기 중이라 이번 발화는 무시합니다 (막기)");
+            return;
+        }
+
+        // [받기 조건] 공격할 적이 없는 등 지금 주문을 받을 수 없으면 이번 발화는 끝까지 무시한다
+        if (CanAccept != null && !CanAccept())
+        {
+            ignoringCurrentSpeech = true;
+            Debug.Log("[MIC] 지금은 주문을 받을 수 없어 이번 발화는 무시합니다 (공격할 적 없음)");
+            RecordingRejected?.Invoke("아직 적이 자리에 오지 않았습니다.");
             return;
         }
         BeginUtterance(preroll);

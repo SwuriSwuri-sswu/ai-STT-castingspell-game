@@ -15,12 +15,14 @@ public class VoiceSocket : MonoBehaviour
     public event Action<ErrorResponse> ErrorReceived;
 
     [SerializeField] string serverUrl = "ws://localhost:8765";
-    [SerializeField] VoiceSkillBridge skillBridge;          // 서버로 보낼 스펠 목록 (비어 있으면 서버 기본 스킬로 판정)
+    [Tooltip("켜면 해금된 스펠만 서버로 보낸다 (오인식 감소)")]
+    [SerializeField] bool unlockedOnly = true;
 
     /// <summary>서버와 연결되어 있는지 (디버그 표시용)</summary>
     public bool IsConnected => ws != null && ws.State == WebSocketState.Open;
 
     WebSocket ws;
+    SkillManager subscribedSkill;   // 스펠 목록 변경 구독 해제용
     int requestCounter;
     readonly Dictionary<string, float> sentAt = new Dictionary<string, float>();
 
@@ -36,7 +38,10 @@ public class VoiceSocket : MonoBehaviour
 
         ws = new WebSocket(serverUrl);
         ws.OnOpen += () => { Debug.Log("[WS] 연결됨"); SendSkillList(); };   // 연결될 때마다 스펠 목록 전송
-        if (skillBridge != null) skillBridge.SpellsChanged += SendSkillList;     // 해금, 초기화 때 재전송
+        // 해금, 초기화 때 재전송 (SkillManager.Instance 는 Awake 에서 정해지므로 Start 에서 사용할 수 있다)
+        subscribedSkill = SkillManager.Instance;
+        if (subscribedSkill != null) subscribedSkill.SpellsChanged += SendSkillList;
+        else Debug.LogError("[WS] 씬에 SkillManager 가 없습니다. 스펠 목록을 보낼 수 없습니다 (서버 기본 스킬로 판정).");
         ws.OnError += e => Debug.LogError("[WS] 오류: " + e);
         ws.OnClose += code => Debug.Log("[WS] 연결 종료: " + code);
         ws.OnMessage += bytes => HandleMessage(Encoding.UTF8.GetString(bytes));
@@ -72,21 +77,22 @@ public class VoiceSocket : MonoBehaviour
     // 같은 연결의 메시지는 순서대로 처리되므로 이후 발화는 새 목록으로 판정된다.
     public async void SendSkillList()
     {
-        if (skillBridge == null || ws == null || ws.State != WebSocketState.Open) return;
-        var spells = skillBridge.GetCastableSpells();
+        SkillManager sm = SkillManager.Instance;
+        if (sm == null || ws == null || ws.State != WebSocketState.Open) return;
+        var spells = sm.GetVoiceSpells(unlockedOnly);
         if (spells.Count == 0) return;
 
         await ws.SendText(JsonConvert.SerializeObject(new
         {
             type = "skill_list",
-            skills = spells.Select(s => new { s.id, name = s.spellName, s.aliases }),
+            skills = spells.Select(s => new { id = s.name, name = s.spellName }),   // id = SpellData 에셋 이름
         }));
         Debug.Log($"[WS] 스펠 목록 전송: {string.Join(", ", spells.Select(s => s.spellName))}");
     }
 
     void OnDestroy()
     {
-        if (skillBridge != null) skillBridge.SpellsChanged -= SendSkillList;
+        if (subscribedSkill != null) subscribedSkill.SpellsChanged -= SendSkillList;
     }
 
     // ── 수신 처리: type 으로 먼저 분기한 뒤 클래스로 변환 ──
