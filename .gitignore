@@ -104,3 +104,25 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# Unity project in Client/
+Client/[Ll]ibrary/
+Client/[Tt]emp/
+Client/[Oo]bj/
+Client/[Bb]uild/
+Client/[Bb]uilds/
+Client/[Ll]ogs/
+Client/[Uu]ser[Ss]ettings/
+Client/[Mm]emoryCaptures/
+Client/[Rr]ecordings/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.idea/
+
+# 녹음 파일
+*.wav
+*.wav.meta

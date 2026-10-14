@@ -48,20 +48,21 @@ public class SkillManager : MonoBehaviour
     // =========================================================
     // [1] 마법 시전 (VoiceRecorder → 여기)
     // =========================================================
-    public void CastSpell(string recognizedText)
+    // 실제로 시전되면 true. 실패하면 로그를 남기고 false (기존처럼 반환값을 무시해도 된다)
+    public bool CastSpell(string recognizedText)
     {
-        if (string.IsNullOrWhiteSpace(recognizedText)) return;
+        if (string.IsNullOrWhiteSpace(recognizedText)) return false;
 
         SpellData spell = FindSpell(recognizedText);
         if (spell == null)
         {
             Debug.Log($"[시전 실패] 알 수 없는 주문입니다: {recognizedText}");
-            return;
+            return false;
         }
         if (!IsUnlocked(spell))
         {
             Debug.Log($"[시전 실패] 아직 배우지 않은 주문입니다: {spell.spellName}");
-            return;
+            return false;
         }
 
         Vector3 origin = wandTip != null ? wandTip.position : transform.position;
@@ -75,13 +76,14 @@ public class SkillManager : MonoBehaviour
             default: casted = CastInstant(spell, target); break;
         }
 
-        if (!casted) return;
+        if (!casted) return false;
 
         // 점수 처리 (GameManager가 씬에 없을 수도 있으므로 null 체크)
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnSpellRecognized(spell.spellName, Mathf.Max(1, spell.tier) * 50);
         }
+        return true;
     }
 
     private bool CastProjectile(SpellData spell, EnemyController target, Vector3 origin)
@@ -235,6 +237,7 @@ public class SkillManager : MonoBehaviour
 
         Debug.Log($"[스펠 해금] 새로운 마법을 배웠습니다!: {spell.spellName} (Tier {spell.tier})");
         OnSpellUnlocked?.Invoke(spell);
+        SpellsChanged?.Invoke();
         return true;
     }
 
@@ -247,6 +250,7 @@ public class SkillManager : MonoBehaviour
             if (spell != null && spell.unlockedByDefault) unlockedSpells.Add(spell);
         }
         Debug.Log($"[SkillManager] 스펠 해금 상태 초기화 완료 (기본 해금 {unlockedSpells.Count}개)");
+        SpellsChanged?.Invoke();
     }
 
     // TODO(2회차): 세이브 데이터에서 해금 목록을 불러올 때 사용
@@ -257,6 +261,7 @@ public class SkillManager : MonoBehaviour
             SpellData spell = FindSpell(name);
             if (spell != null) unlockedSpells.Add(spell);
         }
+        SpellsChanged?.Invoke();
     }
 
     // =========================================================
@@ -292,4 +297,27 @@ public class SkillManager : MonoBehaviour
     // (GameManager의 호출 부분을 지운 뒤 이 함수도 삭제해도 됩니다)
     [Obsolete("해금은 DropItem 획득 시 UnlockSpell()로 처리됩니다.")]
     public void UnlockRandomSpell() { }
+
+    // =========================================================
+    // [4] 음성 연동 (Voice 폴더의 VoiceSocket, VoiceRecorder 가 사용)
+    // =========================================================
+    // 해금 목록이 바뀔 때 (해금, 초기화, 불러오기). VoiceSocket 가 서버로 스펠 목록을 다시 보낸다
+    public event Action SpellsChanged;
+
+    // 음성 판정 후보로 서버에 보낼 스펠 (unlockedOnly 면 해금된 것만)
+    public List<SpellData> GetVoiceSpells(bool unlockedOnly = true)
+    {
+        return spellDatabase.FindAll(s => s != null && !string.IsNullOrWhiteSpace(s.spellName)
+                                          && (!unlockedOnly || IsUnlocked(s)));
+    }
+
+    // 음성 판정 결과로 시전. 성공이면 null, 실패면 사유 (음성 쪽은 사유를 로그로만 남긴다)
+    public string TryCastByVoice(string spellName)
+    {
+        SpellData spell = FindSpell(spellName);
+        if (spell == null) return "알 수 없는 주문";
+        if (!IsUnlocked(spell)) return "아직 배우지 않은 주문";
+        if (!CanCast) return "공격할 적이 없음";
+        return CastSpell(spell.spellName) ? null : "시전 실패 (타겟 또는 이펙트 없음)";
+    }
 }
