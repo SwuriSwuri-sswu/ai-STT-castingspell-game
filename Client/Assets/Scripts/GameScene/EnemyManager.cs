@@ -24,8 +24,27 @@ public class EnemyManager : MonoBehaviour
     [Tooltip("게임 시작 시 무조건 처음 등장할 몹 (노말 하급 추천). 비우면 랜덤")]
     public EnemyController firstEnemy;
 
-    [Header("스폰할 몹 프리팹 (속성별로 등록)")]
+    [Header("몹 프리팹 한 번에 등록 (추천)")]
+    [Tooltip("Project 창에서 몹 프리팹을 여러 개 선택해 이 목록 이름 위로 드래그하면 한 번에 등록됩니다.\n" +
+             "등장 확률·등장 시점은 각 몹의 등급(Rank)에 따라 아래 값으로 자동 적용")]
+    public List<EnemyController> quickPrefabs = new List<EnemyController>();
+
+    [Header("등급별 자동 값 (Quick Prefabs에 적용)")]
+    [Tooltip("등장 확률 가중치 (하급 : 중급 : 상급 = 5 : 3 : 1)")]
+    [Min(0f)] public float lowWeight = 5f;
+    [Min(0f)] public float midWeight = 3f;
+    [Min(0f)] public float highWeight = 1f;
+    [Tooltip("총 처치 수가 이 값 이상이 되어야 등장")]
+    [Min(0)] public int lowMinKills = 0;
+    [Min(0)] public int midMinKills = 5;
+    [Min(0)] public int highMinKills = 15;
+
+    [Header("개별 설정 (선택: 특정 몹만 값을 다르게 하고 싶을 때)")]
+    [Tooltip("여기에 넣은 몹은 위 자동 값 대신 여기 적은 값을 사용합니다.")]
     public List<EnemySpawnEntry> enemyPrefabs = new List<EnemySpawnEntry>();
+
+    // 실제 스폰에 쓰는 목록 (개별 설정 + 자동 등록)
+    private readonly List<EnemySpawnEntry> spawnPool = new List<EnemySpawnEntry>();
 
     [Header("스폰 위치")]
     [Tooltip("몹이 최종적으로 멈춰 서서 싸우는 위치 (빈 오브젝트)")]
@@ -35,6 +54,8 @@ public class EnemyManager : MonoBehaviour
     public Transform[] approachPath;
     [Tooltip("몹이 바라볼 대상 (왕좌/플레이어). 비우면 메인 카메라")]
     public Transform lookTarget;
+    [Tooltip("등장 이동 속도 배율. 몹 프리팹의 Move Speed에 곱해집니다 (2 = 두 배 빠르게)")]
+    [Min(0.1f)] public float approachSpeedMultiplier = 2f;
 
     [Header("스폰 타이밍")]
     public bool spawnOnStart = true;
@@ -73,6 +94,7 @@ public class EnemyManager : MonoBehaviour
     {
         if (lookTarget == null && Camera.main != null) lookTarget = Camera.main.transform;
         if (spawnPoint == null) spawnPoint = transform;
+        BuildSpawnPool();
 
         if (spawnOnStart) StartSpawning();
     }
@@ -201,7 +223,7 @@ public class EnemyManager : MonoBehaviour
         OnEnemySpawned?.Invoke(CurrentEnemy);
 
         Vector3 lookAt = lookTarget != null ? lookTarget.position : spawnPoint.position + spawnPoint.forward;
-        if (hasApproach) CurrentEnemy.BeginApproach(waypoints, lookAt);
+        if (hasApproach) CurrentEnemy.BeginApproach(waypoints, lookAt, approachSpeedMultiplier);
         else HandleEnemyReady(CurrentEnemy); // 이동 없이 바로 전투 가능
     }
 
@@ -221,6 +243,52 @@ public class EnemyManager : MonoBehaviour
         if (IsRunning) ScheduleSpawn(nextSpawnDelay);
     }
 
+    // 개별 설정을 먼저 넣고, Quick Prefabs는 등급별 자동 값으로 추가 (중복은 개별 설정 우선)
+    public void BuildSpawnPool()
+    {
+        spawnPool.Clear();
+        HashSet<EnemyController> added = new HashSet<EnemyController>();
+
+        foreach (EnemySpawnEntry entry in enemyPrefabs)
+        {
+            if (entry == null || entry.prefab == null || !added.Add(entry.prefab)) continue;
+            spawnPool.Add(entry);
+        }
+
+        foreach (EnemyController prefab in quickPrefabs)
+        {
+            if (prefab == null || !added.Add(prefab)) continue;
+            spawnPool.Add(new EnemySpawnEntry
+            {
+                prefab = prefab,
+                weight = RankWeight(prefab.rank),
+                minKillsToAppear = RankMinKills(prefab.rank),
+            });
+        }
+
+        Debug.Log($"[EnemyManager] 스폰 후보 {spawnPool.Count}종 등록");
+    }
+
+    private float RankWeight(MonsterRank rank)
+    {
+        switch (rank)
+        {
+            case MonsterRank.Mid: return midWeight;
+            case MonsterRank.High: return highWeight;
+            default: return lowWeight;
+        }
+    }
+
+    private int RankMinKills(MonsterRank rank)
+    {
+        switch (rank)
+        {
+            case MonsterRank.Mid: return midMinKills;
+            case MonsterRank.High: return highMinKills;
+            default: return lowMinKills;
+        }
+    }
+
     private EnemyController PickPrefab()
     {
         int kills = GameSessionManager.Instance != null ? GameSessionManager.Instance.TotalKills : 0;
@@ -238,7 +306,7 @@ public class EnemyManager : MonoBehaviour
     private EnemyController PickWeighted(int kills, EnemyController exclude)
     {
         float total = 0f;
-        foreach (EnemySpawnEntry entry in enemyPrefabs)
+        foreach (EnemySpawnEntry entry in spawnPool)
         {
             if (IsCandidate(entry, kills, exclude)) total += entry.weight;
         }
@@ -246,7 +314,7 @@ public class EnemyManager : MonoBehaviour
 
         float roll = UnityEngine.Random.Range(0f, total);
         EnemyController picked = null;
-        foreach (EnemySpawnEntry entry in enemyPrefabs)
+        foreach (EnemySpawnEntry entry in spawnPool)
         {
             if (!IsCandidate(entry, kills, exclude)) continue;
             picked = entry.prefab;
@@ -266,7 +334,7 @@ public class EnemyManager : MonoBehaviour
     private EnemyController EarliestEntry()
     {
         EnemySpawnEntry best = null;
-        foreach (EnemySpawnEntry entry in enemyPrefabs)
+        foreach (EnemySpawnEntry entry in spawnPool)
         {
             if (entry == null || entry.prefab == null || entry.weight <= 0f) continue;
             if (best == null || entry.minKillsToAppear < best.minKillsToAppear) best = entry;

@@ -50,7 +50,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: d935b92c73ec974418e0696c1e26e379, type: 3}
       propertyPath: m_Name
-      value: Demon
+      value: Low_Demon
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -90,8 +90,17 @@ MonoBehaviour:
   hitTrigger: Hit
   deathFallbackDuration: 1.5
   destroyDelayAfterDeath: 0.2
-  dropItemPrefab: {fileID: 0}
+  shrinkOnDeath: 1
+  shrinkDuration: 0.4
+  punchOnHit: 1
+  punchScale: 0.15
+  deathEffectPrefab: {fileID: 0}
+  dropItemPrefab: {fileID: 9009495989836976630, guid: ad5534dabd1333e419fc48a593487964, type: 3}
   dropOffset: {x: 0, y: 1, z: 0}
+  moveSpeed: 3
+  turnSpeed: 360
+  moveBool: Move
+  pendingDamageTimeout: 8
 --- !u!95 &4086747737597710980
 Animator:
   serializedVersion: 7

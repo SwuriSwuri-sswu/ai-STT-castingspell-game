@@ -19,7 +19,7 @@ class NewGameRequest(BaseModel):
     id: Optional[str] = Field(None, description="세션 ID (미입력 시 서버에서 UUID 생성)")
 
 class GameSessionData(BaseModel):
-    session_id: str
+    id: str
     start_time: datetime
     end_time: Optional[datetime] = None
 
@@ -69,7 +69,7 @@ class SettingsUpdate(BaseModel):
 # ============= [3] Game Save =============
 
 class SaveDataSchema(BaseModel):
-    session_id: str
+    id: str
     character_skin: str
     wand_skin: str
     cur_stage: int = 1
@@ -98,7 +98,7 @@ class ExitGameRequest(SaveGameRequest):
     end_time: Optional[datetime] = None
 
 class ExitGameData(BaseModel):
-    session_id: str
+    id: str
     is_saved: bool = True
     end_time: datetime
     message: str = "게임 데이터 저장 및 세션 종료 완료"

@@ -25,6 +25,9 @@ public class SkillManager : MonoBehaviour
     private readonly HashSet<SpellData> unlockedSpells = new HashSet<SpellData>();
 
     public IReadOnlyCollection<SpellData> UnlockedSpells => unlockedSpells;
+    // 해금된 순서대로 (스펠 도감에서 차곡차곡 쌓을 때 사용)
+    private readonly List<SpellData> unlockOrder = new List<SpellData>();
+    public IReadOnlyList<SpellData> UnlockedInOrder => unlockOrder;
 
     // 몹이 스폰포인트에 도착해 있어야 시전 가능 (VoiceRecorder에서 녹음 시작 전에 확인)
     public static bool CanCast => EnemyController.AnyReady;
@@ -77,6 +80,9 @@ public class SkillManager : MonoBehaviour
         }
 
         if (!casted) return false;
+
+        // 데미지 예약: 이 마법으로 몹이 쓰러질 예정이면 그 즉시 영창이 막힌다 (이펙트 연출과 별개)
+        if (target != null) target.ReserveDamage(spell);
 
         // 점수 처리 (GameManager가 씬에 없을 수도 있으므로 null 체크)
         if (GameManager.Instance != null)
@@ -234,6 +240,7 @@ public class SkillManager : MonoBehaviour
     public bool UnlockSpell(SpellData spell)
     {
         if (spell == null || !unlockedSpells.Add(spell)) return false;
+        unlockOrder.Add(spell);
 
         Debug.Log($"[스펠 해금] 새로운 마법을 배웠습니다!: {spell.spellName} (Tier {spell.tier})");
         OnSpellUnlocked?.Invoke(spell);
@@ -245,9 +252,10 @@ public class SkillManager : MonoBehaviour
     public void ResetSpellUnlocks()
     {
         unlockedSpells.Clear();
+        unlockOrder.Clear();
         foreach (SpellData spell in spellDatabase)
         {
-            if (spell != null && spell.unlockedByDefault) unlockedSpells.Add(spell);
+            if (spell != null && spell.unlockedByDefault && unlockedSpells.Add(spell)) unlockOrder.Add(spell);
         }
         Debug.Log($"[SkillManager] 스펠 해금 상태 초기화 완료 (기본 해금 {unlockedSpells.Count}개)");
         SpellsChanged?.Invoke();
@@ -259,7 +267,7 @@ public class SkillManager : MonoBehaviour
         foreach (string name in spellNames)
         {
             SpellData spell = FindSpell(name);
-            if (spell != null) unlockedSpells.Add(spell);
+            if (spell != null && unlockedSpells.Add(spell)) unlockOrder.Add(spell);
         }
         SpellsChanged?.Invoke();
     }

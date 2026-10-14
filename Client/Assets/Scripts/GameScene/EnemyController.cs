@@ -21,8 +21,9 @@ public class EnemyController : MonoBehaviour
         float best = float.MaxValue;
         foreach (EnemyController enemy in aliveEnemies)
         {
-            // 스폰포인트에 도착하지 않았거나 쓰러지는 중인 몹은 타겟이 될 수 없음
-            if (enemy == null || enemy.IsDying || !enemy.IsReady) continue;
+            // 스폰포인트에 도착하지 않았거나, 쓰러지는 중이거나,
+            // 이미 날아가는 마법만으로 쓰러질 몹은 새 타겟이 될 수 없음
+            if (enemy == null || !enemy.IsTargetable) continue;
             float d = (enemy.AimPoint - from).sqrMagnitude;
             if (d < best)
             {
@@ -40,7 +41,7 @@ public class EnemyController : MonoBehaviour
         {
             foreach (EnemyController enemy in aliveEnemies)
             {
-                if (enemy != null && !enemy.IsDying && enemy.IsReady) return true;
+                if (enemy != null && enemy.IsTargetable) return true;
             }
             return false;
         }
@@ -66,12 +67,12 @@ public class EnemyController : MonoBehaviour
     [Tooltip("Death 애니메이션이 끝난 뒤 사라지기까지의 여유 시간")]
     public float destroyDelayAfterDeath = 0.2f;
 
-    [Header("애니메이션 없는 몹용 연출 (Animator가 없을 때 자동 적용)")]
-    [Tooltip("사망 시 작아지면서 사라짐. 끄면 Death Fallback Duration만큼 서 있다가 사라짐")]
+    [Header("애니메이션이 없을 때의 대체 연출")]
+    [Tooltip("[Animator 없는 몹] 사망 시 작아지면서 사라짐. 끄면 Death Fallback Duration만큼 서 있다가 사라짐")]
     public bool shrinkOnDeath = true;
     [Tooltip("작아져서 사라지는 데 걸리는 시간(초)")]
     public float shrinkDuration = 0.4f;
-    [Tooltip("피격 시 살짝 움찔하는 효과")]
+    [Tooltip("[피격 애니메이션이 없는 몹] 맞았을 때 살짝 움찔하는 효과.\nAnimator가 없거나 Hit Trigger를 비워 둔 몹에 적용")]
     public bool punchOnHit = true;
     [Tooltip("움찔하는 크기 (0.15 = 15% 커졌다 돌아옴)")]
     public float punchScale = 0.15f;
@@ -82,7 +83,7 @@ public class EnemyController : MonoBehaviour
 
     [Header("드랍")]
     public DropItem dropItemPrefab;
-    [Tooltip("드랍 아이템 생성 위치 보정 (발밑 기준)")]
+    [Tooltip("두루마리가 처음 생겨나는 위치 보정 (발밑 기준). 여기서 몹과 플레이어 사이 공중으로 날아감")]
     public Vector3 dropOffset = new Vector3(0f, 1f, 0f);
 
     [Header("등장 이동 (성 밖 → 스폰포인트)")]
@@ -98,6 +99,17 @@ public class EnemyController : MonoBehaviour
     public bool IsDying { get; private set; }
     // 스폰포인트에 도착해 공격받을 수 있는 상태 (이동 없이 생성되면 바로 true)
     public bool IsReady { get; private set; } = true;
+
+    // 시전은 됐지만 아직 맞지 않은(날아가는 중·차지 중·장판 연출 중) 마법의 데미지 합
+    public float PendingDamage { get; private set; }
+    // 이미 시전된 마법만으로 HP가 0 이하가 될 예정 → 더 이상 영창을 받지 않음
+    public bool IsDoomed => !IsDying && CurrentHP - PendingDamage <= 0f;
+    // 새 마법의 타겟이 될 수 있는 상태
+    public bool IsTargetable => IsReady && !IsDying && !IsDoomed;
+
+    [Tooltip("예약된 마법이 이 시간(초) 안에 맞지 않으면 예약을 풀어 다시 영창할 수 있게 함 (안전장치)")]
+    public float pendingDamageTimeout = 8f;
+    private float lastReserveTime;
 
     // 스폰포인트에 도착한 순간
     public event Action<EnemyController> OnReady;
@@ -181,6 +193,16 @@ public class EnemyController : MonoBehaviour
         CurrentHP = maxHP;
     }
 
+    private void Update()
+    {
+        // 안전장치: 투사체가 사라지는 등 예약된 마법이 끝내 맞지 않으면 예약을 풀어 준다
+        if (PendingDamage > 0f && !IsDying && Time.time - lastReserveTime > pendingDamageTimeout)
+        {
+            Debug.LogWarning($"[{gameObject.name}] 예약된 마법이 {pendingDamageTimeout}초 동안 맞지 않아 예약을 해제합니다.");
+            PendingDamage = 0f;
+        }
+    }
+
     private void OnEnable() => aliveEnemies.Add(this);
     private void OnDisable() => aliveEnemies.Remove(this);
 
@@ -190,8 +212,9 @@ public class EnemyController : MonoBehaviour
     /// <summary>
     /// 경로(waypoints)를 따라 이동한 뒤, 마지막 지점에서 lookAt 쪽으로 몸을 돌리고 공격 가능 상태가 됩니다.
     /// </summary>
-    public void BeginApproach(IList<Vector3> waypoints, Vector3 lookAt)
+    public void BeginApproach(IList<Vector3> waypoints, Vector3 lookAt, float speedMultiplier = 1f)
     {
+        approachSpeedMultiplier = Mathf.Max(0.1f, speedMultiplier);
         if (waypoints == null || waypoints.Count == 0)
         {
             MarkReady();
@@ -201,9 +224,13 @@ public class EnemyController : MonoBehaviour
         StartCoroutine(ApproachRoutine(new List<Vector3>(waypoints), lookAt));
     }
 
+    private float approachSpeedMultiplier = 1f;
+
     private IEnumerator ApproachRoutine(List<Vector3> waypoints, Vector3 lookAt)
     {
         SetMoveAnimation(true);
+        float speed = moveSpeed * approachSpeedMultiplier;
+        float turn = turnSpeed * approachSpeedMultiplier;
 
         foreach (Vector3 point in waypoints)
         {
@@ -215,10 +242,10 @@ public class EnemyController : MonoBehaviour
                 if (dir.sqrMagnitude > 0.0001f)
                 {
                     Quaternion targetRot = Quaternion.LookRotation(dir);
-                    transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, turnSpeed * Time.deltaTime);
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, turn * Time.deltaTime);
                 }
 
-                transform.position = Vector3.MoveTowards(transform.position, point, moveSpeed * Time.deltaTime);
+                transform.position = Vector3.MoveTowards(transform.position, point, speed * Time.deltaTime);
                 yield return null;
             }
             transform.position = point;
@@ -235,7 +262,7 @@ public class EnemyController : MonoBehaviour
             float timer = 0f;
             while (Quaternion.Angle(transform.rotation, targetRot) > 1f && timer < 1.5f)
             {
-                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, turnSpeed * Time.deltaTime);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, turn * Time.deltaTime);
                 timer += Time.deltaTime;
                 yield return null;
             }
@@ -285,6 +312,28 @@ public class EnemyController : MonoBehaviour
         TakeDamage(spell);
     }
 
+    // 이 스펠이 이 몹에게 줄 데미지 (상성 포함)
+    public float CalculateDamage(SpellData spell)
+    {
+        if (spell == null) return 0f;
+        return spell.baseDamage * GetTypeMultiplier(spell.elementType, enemyType);
+    }
+
+    /// <summary>
+    /// 마법이 시전된 순간 SkillManager가 호출. 아직 맞기 전이지만 '들어올 데미지'로 예약해 둡니다.
+    /// 예약 데미지가 남은 HP 이상이면 IsDoomed = true → 즉시 영창이 막힙니다.
+    /// </summary>
+    public void ReserveDamage(SpellData spell)
+    {
+        if (IsDying || spell == null) return;
+        PendingDamage += CalculateDamage(spell);
+        lastReserveTime = Time.time;
+        if (IsDoomed)
+        {
+            Debug.Log($"[{gameObject.name}] 시전된 마법으로 쓰러질 예정 → 영창 일시 정지 (HP {CurrentHP} / 예약 데미지 {PendingDamage})");
+        }
+    }
+
     public void TakeDamage(SpellData spell)
     {
         if (IsDying || spell == null) return;
@@ -292,8 +341,9 @@ public class EnemyController : MonoBehaviour
         // 1. 상성 배율 계산
         float multiplier = GetTypeMultiplier(spell.elementType, enemyType);
 
-        // 2. 최종 데미지 적용
+        // 2. 최종 데미지 적용 (예약해 둔 데미지는 실제로 맞았으니 차감)
         float finalDamage = spell.baseDamage * multiplier;
+        PendingDamage = Mathf.Max(0f, PendingDamage - finalDamage);
         CurrentHP -= finalDamage;
 
         Debug.Log($"[{gameObject.name}] {spell.spellName} 적중! 데미지: {finalDamage} (배율: {multiplier}x) 남은 HP: {CurrentHP}");
@@ -315,9 +365,9 @@ public class EnemyController : MonoBehaviour
         {
             anim.SetTrigger(hitTrigger);
         }
-        else if (!HasAnimation && punchOnHit)
+        else if (punchOnHit)
         {
-            // 애니메이션 없는 몹: 살짝 커졌다 돌아오는 움찔 효과
+            // 피격 애니메이션이 없는 몹 (Animator 없음 또는 Hit Trigger 비움): 살짝 커졌다 돌아오는 움찔 효과
             if (punchRoutine != null) StopCoroutine(punchRoutine);
             punchRoutine = StartCoroutine(PunchScale());
         }
@@ -418,7 +468,7 @@ public class EnemyController : MonoBehaviour
         if (dropSpell != null && dropItemPrefab != null)
         {
             DropItem drop = Instantiate(dropItemPrefab, transform.position + dropOffset, Quaternion.identity);
-            drop.Initialize(dropSpell);
+            drop.Initialize(dropSpell, transform.position); // 발밑 높이 = 바닥 기준
         }
 
         // 애니메이션 없는 몹은 이미 작아져서 안 보이므로 바로 삭제
