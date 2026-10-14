@@ -7,68 +7,57 @@ using TMPro;
 public class MainMenuController : MonoBehaviour
 {
     [Header("Managers")]
-    public GameSettingManager settingManager; // 설정 제어용 (빈 스크립트 생성 필요)
+    public GameSettingManager settingManager;
 
     [Header("UI Panels")]
     public GameObject settingsPanel;
+    public GameObject spellPanel; // 추가: 스펠 패널
+    public GameObject wandPanel;  // 추가: 지팡이 도감 패널
 
     [Header("Music Settings")]
     private bool isMusicOn = true;
 
-    [Header("System Settings")]
-    public Slider bgmSlider;
-    public Slider sfxSlider;
-    public Toggle fullscreenToggle;
-    public TMP_Dropdown resolutionDropdown;
-
     private void Start()
     {
-        // 초기 UI 상태 설정
+        // 초기 UI 상태 설정 (모든 패널 닫기)
         if (settingsPanel != null) settingsPanel.SetActive(false);
-        if (fullscreenToggle != null) fullscreenToggle.isOn = Screen.fullScreen;
+        if (spellPanel != null) spellPanel.SetActive(false);
+        if (wandPanel != null) wandPanel.SetActive(false);
     }
 
     // =====================
-    // --- 게임 씬 이동 ---
-    // =====================
-    public void OnClickGameStart()
-    {
-        // 빌드 세팅에 추가된 게임 씬 이름으로 이동
-        SceneManager.LoadScene("GameScene");
-    }
-
-    // =====================
-    // --- 설정 및 시스템 ---
+    // --- 패널 열기 버튼용 ---
     // =====================
     public void OnClickSettings()
     {
-        settingsPanel.SetActive(!settingsPanel.activeSelf);
+        if (settingsPanel != null) settingsPanel.SetActive(true);
     }
 
-    public void OnClickCloseSettings()
+    public void OnClickSpell()
     {
-        settingsPanel.SetActive(false);
+        if (spellPanel != null) spellPanel.SetActive(true);
     }
 
-    public void OnClickMusicToggle()
+    public void OnClickWand()
     {
-        if (settingManager != null) settingManager.SetMusicToggle(isMusicOn);
+        if (wandPanel != null) wandPanel.SetActive(true);
     }
 
-    public void OnFullscreenToggle(bool isFullscreen)
+    // =====================
+    // --- 공통 패널 닫기 함수 ---
+    // =====================
+    public void OnClickClosePanel(GameObject targetPanel)
     {
-        if (settingManager != null) settingManager.SetFullscreen(isFullscreen);
-    }
-
-    public void OnResolutionChange(int index)
-    {
-        if (settingManager != null) settingManager.SetResolution(index);
+        if (targetPanel != null)
+        {
+            targetPanel.SetActive(false);
+        }
     }
 
     public void OnClickGameQuit()
     {
 #if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
+        UnityEditor.EditorApplication.isPlaying = false;
 #else
         Application.Quit();
 #endif

@@ -1,55 +1,91 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
+// íˆ¬ì‚¬ì²´í˜• ë§ˆë²•: ì§€íŒ¡ì´ ë â†’ ê°€ì¥ ê°€ê¹Œìš´ ëª¹ì˜ ëª¸ ì¤‘ì•™ìœ¼ë¡œ ìœ ë„ â†’ ì ì¤‘ ì‹œ í­ë°œ ì´í™íŠ¸ + ë°ë¯¸ì§€
+// ê±°ë¦¬ë¡œ ì ì¤‘ì„ íŒì •í•˜ë¯€ë¡œ íˆ¬ì‚¬ì²´ í”„ë¦¬íŒ¹ì— Collider/Rigidbodyê°€ ì—†ì–´ë„ ë™ì‘í•©ë‹ˆë‹¤.
 public class ProjectileController : MonoBehaviour
 {
-    public float speed = 15f; // ³¯¾Æ°¡´Â ¼Óµµ
-    private SpellData mySpellData;
-    private Transform target;
+    [Header("ì´ë™")]
+    public float speed = 15f;
+    [Tooltip("íƒ€ê²Ÿ ì¤‘ì‹¬ê³¼ ì´ ê±°ë¦¬ ì´ë‚´ë¡œ ë“¤ì–´ì˜¤ë©´ ì ì¤‘")]
+    public float hitDistance = 0.4f;
+    [Tooltip("íƒ€ê²Ÿì´ ì—†ì„ ë•Œ ì´ ì‹œê°„ì´ ì§€ë‚˜ë©´ ìë™ ì‚­ì œ")]
+    public float maxLifetime = 5f;
 
-    public void Initialize(SpellData spellData)
+    private SpellData spell;
+    private EnemyController target;
+    private bool hasHit;
+    private float lifetime;
+
+    // ì´ì „ í˜¸ì¶œ ë°©ì‹ í˜¸í™˜ìš© (íƒ€ê²Ÿì€ ìë™ìœ¼ë¡œ ê°€ì¥ ê°€ê¹Œìš´ ëª¹)
+    public void Initialize(SpellData spellData) => Initialize(spellData, null);
+
+    public void Initialize(SpellData spellData, EnemyController targetEnemy)
     {
-        mySpellData = spellData;
-
-        // 1:1 ¹æ½ÄÀÌ¹Ç·Î ¾À¿¡ ÀÖ´Â 'Enemy' ÅÂ±×¸¦ °¡Áø ¿ÀºêÁ§Æ®¸¦ Áï½Ã Å½»ö
-        GameObject enemyObj = GameObject.FindGameObjectWithTag("Enemy");
-        if (enemyObj != null)
-        {
-            target = enemyObj.transform;
-        }
+        spell = spellData;
+        target = targetEnemy != null ? targetEnemy : EnemyController.GetNearest(transform.position);
     }
 
-    void Update()
+    private void Update()
     {
-        if (target == null)
+        if (hasHit) return;
+
+        lifetime += Time.deltaTime;
+        if (lifetime >= maxLifetime)
         {
-            // ÀûÀÌ ¾À¿¡ ¾øÀ¸¸é ÁöÆÎÀÌ°¡ ÇâÇÏ´ø ¹æÇâÀ¸·Î Á÷Áø
-            transform.Translate(Vector3.forward * speed * Time.deltaTime);
+            Destroy(gameObject);
             return;
         }
 
-        // ÀûÀ» ÇâÇØ ÀÌµ¿ (ÃßÈÄ ÀûÀÇ Áß½ÉÁ¡ ÁÂÇ¥·Î ¼öÁ¤ ¿¹Á¤)
-        transform.position = Vector3.MoveTowards(transform.position, target.position, speed * Time.deltaTime);
-        transform.LookAt(target.position);
+        // ë‚ ì•„ê°€ëŠ” ë„ì¤‘ íƒ€ê²Ÿì´ ì£½ì—ˆìœ¼ë©´ ë‹¤ìŒìœ¼ë¡œ ê°€ê¹Œìš´ ëª¹ìœ¼ë¡œ ë³€ê²½
+        if (target == null || target.IsDying)
+        {
+            target = EnemyController.GetNearest(transform.position);
+        }
+
+        if (target == null)
+        {
+            // ëª¹ì´ ì—†ìœ¼ë©´ ë°”ë¼ë³´ëŠ” ë°©í–¥ìœ¼ë¡œ ì§ì§„
+            transform.position += transform.forward * speed * Time.deltaTime;
+            return;
+        }
+
+        Vector3 aim = target.AimPoint;
+        transform.position = Vector3.MoveTowards(transform.position, aim, speed * Time.deltaTime);
+
+        Vector3 dir = aim - transform.position;
+        if (dir.sqrMagnitude > 0.0001f) transform.rotation = Quaternion.LookRotation(dir);
+
+        if ((aim - transform.position).sqrMagnitude <= hitDistance * hitDistance)
+        {
+            Hit(target);
+        }
     }
 
-    void OnTriggerEnter(Collider other)
+    // í”„ë¦¬íŒ¹ì— Collider(Is Trigger) + Rigidbodyê°€ ìˆìœ¼ë©´ ëª¸ì— ë‹¿ëŠ” ìˆœê°„ì—ë„ ì ì¤‘ ì²˜ë¦¬
+    private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Enemy"))
+        if (hasHit) return;
+
+        EnemyController enemy = other.GetComponentInParent<EnemyController>();
+        if (enemy != null && !enemy.IsDying) Hit(enemy);
+    }
+
+    private void Hit(EnemyController enemy)
+    {
+        hasHit = true;
+
+        if (spell != null)
         {
-            // ºÎµúÈù ´ë»óÀÇ EnemyController¸¦ °¡Á®¿Í¼­ µ¥¹ÌÁö Àü´Ş
-            EnemyController enemy = other.GetComponent<EnemyController>();
-            if (enemy != null)
-            {
-                enemy.TakeDamage(mySpellData);
-            }
+            // 1. íˆ¬ì‚¬ì²´ê°€ ì‚¬ë¼ì§„ ìë¦¬ì— í­ë°œ ì´í™íŠ¸ (ì—¬ê¸° í•œ ê³³ì—ì„œë§Œ ìƒì„±)
+            float effectLength = EffectUtil.SpawnAndAutoDestroy(spell.explosionPrefab, transform.position,
+                                                                Quaternion.identity, spell.effectDuration,
+                                                                SkillManager.Instance);
 
-            // ÀûÁß ½Ã Æø¹ß ÀÌÆåÆ® »ı¼º
-            if (mySpellData.explosionPrefab != null)
-            {
-                Instantiate(mySpellData.explosionPrefab, transform.position, Quaternion.identity);
-            }
-
-            Destroy(gameObject); // Åõ»çÃ¼ ÆÄ±«
+            // 2. ë°ë¯¸ì§€ â†’ (HP 0ì´ë©´) í­ë°œê³¼ í•¨ê»˜ death ì• ë‹ˆë©”ì´ì…˜
+            enemy.ReceiveSpell(spell, spell.ResolveDamageDelay(effectLength));
         }
+
+        // 3. íˆ¬ì‚¬ì²´ ì‚­ì œ
+        Destroy(gameObject);
     }
 }

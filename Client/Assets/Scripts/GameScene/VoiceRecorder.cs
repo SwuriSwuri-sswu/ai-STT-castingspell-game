@@ -2,75 +2,384 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 
-/// <summary>
-/// À½¼º ÁÖ¹® °á°ú¸¦ ÀÚ¸·À¸·Î º¸¿© ÁÖ°í ½ºÆç ¹ßµ¿À» ¿äÃ»ÇÑ´Ù.
-/// ³ìÀ½¡¤Åë½ÅÀº VoiceSender / VoiceSocket ÀÌ ÇÏ°í, ÀÌ Å¬·¡½º´Â ±× ÀÌº¥Æ®¸¸ ¹Þ´Â´Ù.
-/// ¹ßµ¿Àº VoiceSkillBridge(Áö±ÝÀº °¡»óÀÇ SkillManager)¿¡ ¿äÃ»ÇÑ´Ù.
-/// subtitleText / typingSpeed ÀÌ¸§Àº ±âÁ¸°ú °°°Ô À¯ÁöÇß´Ù (¾À ¿¬°á°ª À¯Áö).
-/// </summary>
+// ï¿½ï¿½ï¿½ï¿½ï¿½Ì½ï¿½ï¿½Ù¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½(STT)ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ú¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+// - ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ø¾ß¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+// - ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ï³ï¿½ï¿½ï¿½ ï¿½Ö¹ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½ (Ã³ï¿½ï¿½ ï¿½ß¿ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ò°ï¿½)
+// - ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½×½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ ï¿½Ö´ï¿½ Mock ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 public class VoiceRecorder : MonoBehaviour
 {
     public TextMeshProUGUI subtitleText;
-    public float typingSpeed = 0.05f;   // ±ÛÀÚ´ç Ãâ·Â ½Ã°£ (ÃÊ)
+    public float typingSpeed = 0.05f;   // ï¿½ï¿½ï¿½Ú´ï¿½ ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½ (ï¿½ï¿½)
 
-    [SerializeField] VoiceSender voiceSender;
-    [SerializeField] VoiceSocket voiceSocket;
-    [SerializeField] VoiceSkillBridge skillBridge;
+    [Header("ï¿½ï¿½Æ®ï¿½ï¿½Å© ï¿½ï¿½ï¿½ï¿½")]
+    [Tooltip("Ã¼Å©ï¿½Ï¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½Æ·ï¿½ Mock ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½×½ï¿½Æ® (ï¿½é¿£ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)")]
+    public bool useMockServer = true;
+    // ï¿½é¿£ï¿½ï¿½ API ï¿½Ö¼ï¿½ (FastAPI ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½Ô·ï¿½)
+    public string backendUrl = "http://localhost:8000/transcribe";
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½Ã°ï¿½(ï¿½ï¿½)")]
+    public int requestTimeout = 10;
 
-    Coroutine sequence;
-    Vector3 baseScale = Vector3.one;   // ÀÚ¸· ¿ø·¡ Å©±â (¿¬ÃâÀÌ ²÷°Üµµ Å©±â°¡ ´©ÀûµÇÁö ¾Ê°Ô ÇÑ ¹ø¸¸ ÀúÀå)
+    [Header("Mock ï¿½×½ï¿½Æ® (Use Mock Server Ã¼Å© ï¿½ï¿½)")]
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½. SpellDataï¿½ï¿½ Spell Nameï¿½ï¿½ ï¿½ï¿½ï¿½Æ¾ï¿½ ï¿½Õ´Ï´ï¿½.")]
+    public string[] mockSpellSequence = { "ï¿½ï¿½", "ï¿½Ù¶ï¿½", "ï¿½ï¿½" };
+    [Tooltip("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½ ï¿½ä³» (ï¿½ï¿½)")]
+    public float mockDelay = 1.0f;
 
-    void Awake()
+    [Header("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½")]
+    [Tooltip("ï¿½Ê¹ï¿½ Âªï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½)")]
+    public float minRecordingTime = 0.2f;
+    [Tooltip("Ã¼Å©ï¿½Ï¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ì»ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ø¾ï¿½ ï¿½Ö¹ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ÛµË´Ï´ï¿½")]
+    public bool useVolumeGate = false;
+    [Tooltip("ï¿½Ö¼ï¿½ ï¿½ï¿½ï¿½ï¿½ (dBFS, 0ï¿½ï¿½ ï¿½Ö´ï¿½. -30 ~ -20 ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)")]
+    public float minVolumeDb = -30f;
+
+    [Header("ï¿½Ú¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½")]
+    public float typingSpeed = 0.05f; // ï¿½ï¿½ï¿½Ú´ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½ (ï¿½ï¿½)
+
+    [Header("ï¿½Å´ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½")]
+    public SkillManager skillManager;
+
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ä¿ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    public float LastVolumeDb { get; private set; } = -80f;
+
+    private const int SampleRate = 16000;
+    private const int MaxRecordingTime = 10;
+
+    private const string HintReady = "ï¿½ï¿½ï¿½ï¿½ï¿½Ì½ï¿½ï¿½Ù¸ï¿½ ï¿½ï¿½ï¿½ï¿½ Ã¤ï¿½ï¿½ ï¿½Ö¹ï¿½ï¿½ï¿½ ï¿½ï¿½Ã¢ï¿½Ï¼ï¿½ï¿½ï¿½.";
+    private const string HintWaiting = "ï¿½ï¿½ï¿½ï¿½ ï¿½Ù°ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö½ï¿½ï¿½Ï´ï¿½...";
+
+    private string selectedDevice;
+    private AudioClip recordingClip;
+    private bool isRecording;      // ï¿½ï¿½ï¿½ï¿½ï¿½Ì½ï¿½ï¿½Ù¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½
+    private bool isProcessing;     // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ~ ï¿½Ú¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ~ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    private float recordStartTime;
+    private bool wasCastable;
+    private int mockIndex;
+    private Coroutine typingCoroutine;
+
+    private SkillManager Skill => skillManager != null ? skillManager : SkillManager.Instance;
+
+    void Start()
     {
-        if (subtitleText != null) baseScale = subtitleText.transform.localScale;
-    }
+        SelectMicrophone();
 
-    void OnEnable() => Subscribe(true);
-    void OnDisable() { Subscribe(false); Show(null); }
-    void Start() => Show("ÁÖ¹®À» ¿µÃ¢ÇÏ¼¼¿ä.");
-
-    void Subscribe(bool on)
-    {
-        if (voiceSender != null)
+        if (string.IsNullOrEmpty(selectedDevice))
         {
-            if (on) { voiceSender.RecordingStarted += OnStarted; voiceSender.RecordingSubmitted += OnSubmitted; voiceSender.RecordingRejected += Show; }
-            else { voiceSender.RecordingStarted -= OnStarted; voiceSender.RecordingSubmitted -= OnSubmitted; voiceSender.RecordingRejected -= Show; }
+            Debug.LogError("ï¿½ï¿½ï¿½ï¿½Å© ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.");
+            SetSubtitle("ï¿½ï¿½ï¿½ï¿½Å©ï¿½ï¿½ È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.");
+            return;
         }
-        if (voiceSocket != null)
+
+        wasCastable = SkillManager.CanCast;
+        SetSubtitle(wasCastable ? HintReady : HintWaiting);
+    }
+
+    // È¯ï¿½æ¼³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½×°ï¿½ ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã¹ ï¿½ï¿½Â° ï¿½ï¿½ï¿½ï¿½Å©
+    private void SelectMicrophone()
+    {
+        if (Microphone.devices.Length == 0) return;
+
+        string preferred = GameSettingManager.Instance != null ? GameSettingManager.Instance.selectedMicName : null;
+        selectedDevice = !string.IsNullOrEmpty(preferred) && System.Array.IndexOf(Microphone.devices, preferred) >= 0
+            ? preferred
+            : Microphone.devices[0];
+    }
+
+    void Update()
+    {
+        if (string.IsNullOrEmpty(selectedDevice)) return;
+
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°Å³ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½È³ï¿½ ï¿½Ú¸ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã³ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Æ´ï¿½ ï¿½ï¿½ï¿½ï¿½)
+        bool canCast = SkillManager.CanCast;
+        if (canCast != wasCastable && !isRecording && !isProcessing)
         {
-            if (on) { voiceSocket.CastResultReceived += OnResult; voiceSocket.ErrorReceived += OnError; }
-            else { voiceSocket.CastResultReceived -= OnResult; voiceSocket.ErrorReceived -= OnError; }
+            SetSubtitle(canCast ? HintReady : HintWaiting);
+        }
+        wasCastable = canCast;
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            if (isProcessing) Debug.Log("[VoiceRecorder] ï¿½ï¿½ï¿½ï¿½ ï¿½Ö¹ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¶ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.");
+            else if (!canCast)
+            {
+                Debug.Log("[VoiceRecorder] ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ú¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¾ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.");
+                SetSubtitle("ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ú¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¾Ò½ï¿½ï¿½Ï´ï¿½!");
+            }
+            else StartRecording();
+        }
+
+        // ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½(10ï¿½ï¿½)ï¿½ï¿½ ï¿½Ñ±ï¿½ï¿½ ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        if (isRecording && Time.time - recordStartTime >= MaxRecordingTime - 0.1f)
+        {
+            StopRecording();
+        }
+
+        if (Input.GetKeyUp(KeyCode.Space) && isRecording)
+        {
+            StopRecording();
         }
     }
 
-    // ¦¡¦¡ »óÅÂ Ç¥½Ã ¦¡¦¡
-    void OnStarted() => Show("[ ¸¶¹ý ¿µÃ¢ Áß... ]");
-    void OnSubmitted() => Show("[ ¸¶³ª Èå¸§ ÇØ¼® Áß... ]");
-
-    void OnError(ErrorResponse e)
+    private void StartRecording()
     {
-        // request_id ¾ø´Â ¿À·ù(½ºÆç ¸ñ·Ï ¿À·ù µî)´Â ÇÃ·¹ÀÌ¾î¿¡°Ô º¸¿© ÁÖÁö ¾Ê´Â´Ù (Console ¿¡´Â Ãâ·ÂµÊ)
-        if (!string.IsNullOrEmpty(e?.RequestId)) Show("ÁÖ¹® ÇØ¼®¿¡ ½ÇÆÐÇß½À´Ï´Ù. (¼­¹ö ¿À·ù)");
+        if (Microphone.IsRecording(selectedDevice)) Microphone.End(selectedDevice);
+
+        recordingClip = Microphone.Start(selectedDevice, false, MaxRecordingTime, SampleRate);
+        recordStartTime = Time.time;
+        isRecording = true;
+        SetSubtitle("[ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ã¢ ï¿½ï¿½... ]");
+        Debug.Log($"[VoiceRecorder] ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½Å©: {selectedDevice})");
     }
 
-    void OnResult(CastResult r)
+    private void StopRecording()
     {
-        // °á°ú°¡ ´Ê°Ô ¿Í¼­ ÀÌ¹Ì ´ÙÀ½ ÁÖ¹®À» ¸»ÇÏ´Â ÁßÀÌ¸é µ¤¾î¾²Áö ¾Ê´Â´Ù
-        if (r == null || (voiceSender != null && voiceSender.IsRecording)) return;
+        isRecording = false;
 
-        Show(null);
-        sequence = StartCoroutine(ResultSequence(r.Stt?.Text, r.Success ? r.Skill?.Name : null));
+        int recordingLength = Microphone.IsRecording(selectedDevice)
+            ? Microphone.GetPosition(selectedDevice)
+            : (recordingClip != null ? recordingClip.samples : 0); // ï¿½Ö´ï¿½ ï¿½Ã°ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
+        Microphone.End(selectedDevice);
+
+        Debug.Log($"[VoiceRecorder] ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ({(float)recordingLength / SampleRate:F2}ï¿½ï¿½)");
+
+        if (recordingClip == null || recordingLength <= SampleRate * minRecordingTime)
+        {
+            Debug.Log("[VoiceRecorder] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¹ï¿½ Âªï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½. ï¿½ï¿½ï¿½ï¿½ï¿½Ì½ï¿½ï¿½Ù¸ï¿½ 0.2ï¿½ï¿½ ï¿½Ì»ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö¼ï¿½ï¿½ï¿½.");
+            SetSubtitle("ï¿½Ö¹ï¿½ï¿½ï¿½ ï¿½é¸®ï¿½ï¿½ ï¿½Ê¾Ò½ï¿½ï¿½Ï´ï¿½.");
+            return;
+        }
+
+        AudioClip trimmedClip = TrimClip(recordingClip, recordingLength);
+
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ì´ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½)
+        LastVolumeDb = MeasureVolumeDb(trimmedClip);
+        if (useVolumeGate && LastVolumeDb < minVolumeDb)
+        {
+            Debug.Log($"[VoiceRecorder] ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: {LastVolumeDb:F1} dB (ï¿½ï¿½ï¿½ï¿½ {minVolumeDb} dB)");
+            SetSubtitle("ï¿½ï¿½Ò¸ï¿½ï¿½ï¿½ ï¿½Ê¹ï¿½ ï¿½Û½ï¿½ï¿½Ï´ï¿½! ï¿½ï¿½ Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö¼ï¿½ï¿½ï¿½.");
+            return;
+        }
+
+        isProcessing = true;
+        SetSubtitle("[ ï¿½ï¿½ï¿½ï¿½ ï¿½å¸§ ï¿½Ø¼ï¿½ ï¿½ï¿½... ]");
+        Debug.Log($"[VoiceRecorder] {(useMockServer ? "Mock" : "ï¿½ï¿½ï¿½ï¿½")}ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ {LastVolumeDb:F1} dB)");
+
+        if (useMockServer) StartCoroutine(SendAudioToMock());
+        else StartCoroutine(SendAudioToBackend(trimmedClip));
     }
 
-    // ¦¡¦¡ ¿¬Ãâ: µé¸° ¹ßÀ½ Å¸ÀÌÇÎ ¡æ (¹ßµ¿) ½ºÆç ÀÌ¸§ ÆË¾÷ + ¹ßµ¿ ¿äÃ» / (ºÒ¹ß) ½ÇÆÐ ¹®±¸ ¦¡¦¡
-    IEnumerator ResultSequence(string rawText, string spellName)
+    private AudioClip TrimClip(AudioClip clip, int samplesRecorded)
     {
-        if (subtitleText == null) yield break;
+        float[] soundData = new float[samplesRecorded * clip.channels];
+        clip.GetData(soundData, 0);
 
-        if (!string.IsNullOrEmpty(rawText))
+        AudioClip trimmed = AudioClip.Create("RecordedSpell", samplesRecorded, clip.channels, clip.frequency, false);
+        trimmed.SetData(soundData, 0);
+        return trimmed;
+    }
+
+    // RMS ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ dBFSï¿½ï¿½ ï¿½ï¿½ï¿½ (0 = ï¿½Ö´ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½Ò¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    private float MeasureVolumeDb(AudioClip clip)
+    {
+        float[] samples = new float[clip.samples * clip.channels];
+        clip.GetData(samples, 0);
+        if (samples.Length == 0) return -80f;
+
+        double sum = 0;
+        foreach (float s in samples) sum += s * s;
+        float rms = Mathf.Sqrt((float)(sum / samples.Length));
+        return rms > 0.0001f ? 20f * Mathf.Log10(rms) : -80f;
+    }
+
+    // =========================================================
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
+    // =========================================================
+    private IEnumerator SendAudioToBackend(AudioClip clip)
+    {
+        // 1. AudioClipï¿½ï¿½ WAV ï¿½ï¿½ï¿½ï¿½Æ® ï¿½è¿­ï¿½ï¿½ ï¿½ï¿½ï¿½Úµï¿½
+        byte[] wavData = EncodeToWAV(clip);
+
+        // 2. HTTP ï¿½ï¿½ï¿½Û¿ï¿½ ï¿½ï¿½(Form) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        WWWForm form = new WWWForm();
+        // ï¿½é¿£ï¿½ï¿½ APIï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½("file"), ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½Ó½ï¿½ ï¿½ï¿½ï¿½Ï¸ï¿½, MIME Å¸ï¿½ï¿½
+        form.AddBinaryData("file", wavData, "spell.wav", "audio/wav");
+
+        // 3. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ POST ï¿½ï¿½Ã» ï¿½ï¿½ï¿½ï¿½
+        using (UnityWebRequest www = UnityWebRequest.Post(backendUrl, form))
+        {
+            www.timeout = requestTimeout;
+            yield return www.SendWebRequest();
+
+            if (www.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError($"ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½: {www.error}");
+                SetSubtitle("ï¿½Ö¹ï¿½ ï¿½Ø¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ß½ï¿½ï¿½Ï´ï¿½. (ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)");
+                isProcessing = false;
+                yield break;
+            }
+
+            // 4. ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ JSON ï¿½ï¿½ï¿½ï¿½ ï¿½Ä½ï¿½
+            WhisperResponse responseData = null;
+            try
+            {
+                responseData = JsonUtility.FromJson<WhisperResponse>(www.downloadHandler.text);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"ï¿½ï¿½ï¿½ï¿½ ï¿½Ä½ï¿½ ï¿½ï¿½ï¿½ï¿½: {e.Message}\n{www.downloadHandler.text}");
+            }
+
+            if (responseData == null)
+            {
+                SetSubtitle("ï¿½Ö¹ï¿½ ï¿½Ø¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ß½ï¿½ï¿½Ï´ï¿½. (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)");
+                isProcessing = false;
+                yield break;
+            }
+
+            // ï¿½Ú¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ø½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½ ï¿½Ø½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½Ú·ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ±ï¿½
+            DisplayRecognizedSpell(responseData.raw_text, responseData.mapped_spell);
+        }
+    }
+
+    // ï¿½é¿£ï¿½ï¿½ ï¿½Ì¿ï¿½ï¿½ï¿½ ï¿½×½ï¿½Æ®ï¿½ï¿½: mockSpellSequenceï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+    private IEnumerator SendAudioToMock()
+    {
+        yield return new WaitForSeconds(mockDelay);
+
+        string spell = (mockSpellSequence != null && mockSpellSequence.Length > 0)
+            ? mockSpellSequence[mockIndex++ % mockSpellSequence.Length]
+            : "";
+
+        Debug.Log($"[VoiceRecorder] Mock ï¿½Î½ï¿½ ï¿½ï¿½ï¿½: \"{spell}\"");
+        DisplayRecognizedSpell(spell, spell);
+    }
+
+    // =========================================================
+    // ï¿½Ú¸ï¿½ ï¿½ï¿½ï¿½ï¿½ + ï¿½ï¿½ï¿½ï¿½
+    // =========================================================
+    private void DisplayRecognizedSpell(string rawText, string mappedSpell)
+    {
+        if (typingCoroutine != null) StopCoroutine(typingCoroutine);
+        typingCoroutine = StartCoroutine(SpellTextSequence(rawText ?? "", mappedSpell ?? ""));
+    }
+
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ú¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ú·ï¿½Æ¾ (Å¸ï¿½ï¿½ï¿½ï¿½ -> ï¿½ï¿½ï¿½ï¿½ -> ï¿½Ë¾ï¿½ È¿ï¿½ï¿½ -> ï¿½ï¿½Å³ ï¿½ï¿½ï¿½ï¿½)
+    private IEnumerator SpellTextSequence(string rawText, string mappedSpell)
+    {
+        // ----------------------------------------------------
+        // 1ï¿½Ü°ï¿½: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ø½ï¿½Æ® Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        // ----------------------------------------------------
+        if (subtitleText != null && !string.IsNullOrEmpty(rawText))
         {
             subtitleText.text = "\"";
             foreach (char c in rawText)
+            {
+                subtitleText.text += c;
+                yield return new WaitForSeconds(typingSpeed);
+            }
+            subtitleText.text += "\"";
+
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ø½ï¿½Æ®ï¿½ï¿½ ï¿½Î½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Öµï¿½ï¿½ï¿½ 0.5ï¿½ï¿½ ï¿½ï¿½ï¿½
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        // ----------------------------------------------------
+        // 2ï¿½Ü°ï¿½: ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ú¸ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½È³ï¿½)
+        // ----------------------------------------------------
+        SkillManager skill = Skill;
+        SpellData spell = (skill != null && !string.IsNullOrWhiteSpace(mappedSpell)) ? skill.FindSpell(mappedSpell) : null;
+
+        string failMessage = null;
+        if (skill == null) failMessage = "SkillManagerï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¾Ò½ï¿½ï¿½Ï´ï¿½.";
+        else if (spell == null) failMessage = "ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö¹ï¿½ï¿½Ô´Ï´ï¿½...";
+        else if (!skill.IsUnlocked(spell)) failMessage = $"ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö¹ï¿½ï¿½Ô´Ï´ï¿½: {spell.spellName}";
+        else if (!SkillManager.CanCast) failMessage = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.";
+
+        if (failMessage != null)
+        {
+            Debug.LogWarning($"[VoiceRecorder] ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ - {failMessage} (ï¿½Î½Äµï¿½ ï¿½Ö¹ï¿½: \"{mappedSpell}\")");
+            SetSubtitle($"<color=#AAAAAA>{failMessage}</color>");
+            isProcessing = false;
+            typingCoroutine = null;
+            yield break;
+        }
+
+        // ----------------------------------------------------
+        // 3ï¿½Ü°ï¿½: È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½î¾ºï¿½ï¿½ï¿½ + ï¿½ï¿½(Pop) ï¿½Ö´Ï¸ï¿½ï¿½Ì¼ï¿½
+        // ----------------------------------------------------
+        if (subtitleText != null)
+        {
+            // TextMeshPro Rich Textï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ø½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Û¾ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+            subtitleText.text = $"<color=#FFD700><b>{spell.spellName}!</b></color>";
+
+            Vector3 originalScale = subtitleText.transform.localScale;
+            Vector3 targetScale = originalScale * 1.5f; // 1.5ï¿½ï¿½ï¿½ È®ï¿½ï¿½
+            const float popDuration = 0.15f;
+
+            float elapsed = 0f;
+            while (elapsed < popDuration) // ï¿½Ø½ï¿½Æ® Ä¿ï¿½ï¿½ï¿½ï¿½
+            {
+                subtitleText.transform.localScale = Vector3.Lerp(originalScale, targetScale, elapsed / popDuration);
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            elapsed = 0f;
+            while (elapsed < popDuration) // ï¿½Ø½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ Å©ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Æ¿ï¿½ï¿½ï¿½
+            {
+                subtitleText.transform.localScale = Vector3.Lerp(targetScale, originalScale, elapsed / popDuration);
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            subtitleText.transform.localScale = originalScale; // Å©ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        }
+
+        // ----------------------------------------------------
+        // 4ï¿½Ü°ï¿½: ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        // ----------------------------------------------------
+        skill.CastSpell(spell.spellName);
+
+        isProcessing = false;
+        typingCoroutine = null;
+    }
+
+    private void SetSubtitle(string message)
+    {
+        if (subtitleText != null) subtitleText.text = message;
+    }
+
+    // AudioClip -> WAV ï¿½ï¿½ï¿½ ï¿½ï¿½ 16-bit PCM ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½È¯ï¿½ï¿½
+    private byte[] EncodeToWAV(AudioClip clip)
+    {
+        float[] samples = new float[clip.samples * clip.channels];
+        clip.GetData(samples, 0);
+
+        short[] intData = new short[samples.Length];
+        for (int i = 0; i < samples.Length; i++)
+        {
+            // float(-1.0f ~ 1.0f) ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ 16ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½(-32768 ~ 32767)ï¿½ï¿½ ï¿½ï¿½È¯
+            intData[i] = (short)(Mathf.Clamp(samples[i], -1f, 1f) * 32767f);
+        }
+
+        using (MemoryStream memoryStream = new MemoryStream())
+        using (BinaryWriter writer = new BinaryWriter(memoryStream))
+        {
+            writer.Write("RIFF".ToCharArray());
+            writer.Write(36 + intData.Length * 2);
+            writer.Write("WAVE".ToCharArray());
+            writer.Write("fmt ".ToCharArray());
+            writer.Write(16);
+            writer.Write((short)1); // PCM ï¿½ï¿½ï¿½ï¿½
+            writer.Write((short)clip.channels);
+            writer.Write(clip.frequency);
+            writer.Write(clip.frequency * clip.channels * 2);
+            writer.Write((short)(clip.channels * 2));
+            writer.Write((short)16);
+            writer.Write("data".ToCharArray());
+            writer.Write(intData.Length * 2);
+
+            foreach (short sample in intData)
             {
                 subtitleText.text += c;
                 yield return new WaitForSeconds(typingSpeed);
@@ -81,7 +390,7 @@ public class VoiceRecorder : MonoBehaviour
 
         if (spellName == null)
         {
-            subtitleText.text = "<color=#888888>ÁÖ¹®ÀÌ Èð¾îÁ³½À´Ï´Ù...</color>";
+            subtitleText.text = "<color=#888888>ï¿½Ö¹ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½...</color>";
             yield break;
         }
 
@@ -89,27 +398,12 @@ public class VoiceRecorder : MonoBehaviour
         yield return Pop();
 
         if (skillBridge != null && !skillBridge.TryCast(spellName))
-            subtitleText.text = "<color=#888888>¾ÆÁ÷ ´Ù·ê ¼ö ¾ø´Â ÁÖ¹®ÀÔ´Ï´Ù.</color>";
+            subtitleText.text = "<color=#888888>ï¿½ï¿½ï¿½ï¿½ ï¿½Ù·ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö¹ï¿½ï¿½Ô´Ï´ï¿½.</color>";
     }
 
-    IEnumerator Pop()   // 0.15ÃÊ µ¿¾È 1.5¹è·Î Ä¿Á³´Ù°¡ 0.15ÃÊ µ¿¾È ¿ø·¡ Å©±â·Î
+    IEnumerator Pop()   // 0.15ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ 1.5ï¿½ï¿½ï¿½ Ä¿ï¿½ï¿½ï¿½Ù°ï¿½ 0.15ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å©ï¿½ï¿½ï¿½
     {
-        Transform t = subtitleText.transform;
-        for (float e = 0f; e < 0.3f; e += Time.deltaTime)
-        {
-            float k = e < 0.15f ? e / 0.15f : (0.3f - e) / 0.15f;
-            t.localScale = baseScale * (1f + 0.5f * k);
-            yield return null;
-        }
-        t.localScale = baseScale;
-    }
-
-    /// <summary>ÁøÇà ÁßÀÎ ¿¬ÃâÀ» ²÷°í, text °¡ ÀÖÀ¸¸é Ç¥½ÃÇÑ´Ù</summary>
-    void Show(string text)
-    {
-        if (sequence != null) { StopCoroutine(sequence); sequence = null; }
-        if (subtitleText == null) return;
-        subtitleText.transform.localScale = baseScale;
-        if (text != null) subtitleText.text = text;
+        public string raw_text;     // È­ï¿½ï¿½ ï¿½Ú¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+        public string mapped_spell; // ï¿½ï¿½Å³ ï¿½Å´ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ñ±ï¿½ È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ (ï¿½ï¿½Äª ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½Ú¿ï¿½)
     }
 }
