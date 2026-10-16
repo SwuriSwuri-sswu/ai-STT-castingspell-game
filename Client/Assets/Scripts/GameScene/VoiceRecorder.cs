@@ -9,7 +9,7 @@ using UnityEngine;
 ///
 /// 표시 규칙
 ///   - 대기: 적이 있으면 "주문을 영창하세요." (키 입력 모드: "스페이스바를 누른 채 주문을 영창하세요."), 없으면 "적이 다가오고 있습니다..."
-///   - 말하는 중 / 해석 중: 상태 문구
+///   - 말하는 중 / 해석 중: 상태 문구. 실시간 자막(VoiceStreamSocket)이 연결되어 있으면 들린 글자를 흐린 색으로 함께 보여 준다
 ///   - 발동: 들린 글자 타이핑 → 스펠 이름 강조 → 시전 → 몹에 맞고 결과 문구가 뜬 뒤 다음 영창 가능
 ///   - 불발, 오류, 시간 초과, 너무 짧음, 적 없음, 시전 실패: 실패 이유를 회색 자막으로 잠시 보여 준 뒤 안내 문구로 복귀
 /// </summary>
@@ -34,6 +34,15 @@ public class VoiceRecorder : MonoBehaviour
     [SerializeField] VoiceInput voiceInput;
     [SerializeField] VoiceSender voiceSender;
     [SerializeField] VoiceSocket voiceSocket;
+    [SerializeField] VoiceStreamSocket streamSocket;
+
+    [Header("실시간 자막 (중간 받아쓰기)")]
+    [Tooltip("말하는 동안 서버가 보내는 중간 받아쓰기를 자막으로 보여 줄지")]
+    [SerializeField] bool showPartials = true;
+    [Tooltip("중간 자막 색 (확정이 아니라는 표시로 흐리게)")]
+    [SerializeField] Color partialColor = new Color(0.75f, 0.75f, 0.75f);
+    [Tooltip("마지막 중간 자막이 최종 판정 글자와 같으면 한 글자씩 타이핑하는 연출을 건너뛴다")]
+    [SerializeField] bool skipTypingIfPartialMatches = true;
 
     /// <summary>직전 주문의 성량 (dBFS, 0이 최대). 서버가 계산한 값. 데미지 공식에 사용 가능</summary>
     public float LastVolumeDb { get; private set; } = -80f;
@@ -55,6 +64,10 @@ public class VoiceRecorder : MonoBehaviour
     bool castPending;   // 판정 성공 ~ 마법이 몹에 맞고 결과 문구가 뜬 뒤까지 (이 사이에는 새 주문을 받지 않는다)
     Vector3 baseScale = Vector3.one;   // 자막 원래 크기 (연출이 끊겨도 크기가 누적되지 않게)
     bool wasCastable;
+
+    // 실시간 자막 상태 (발화마다 OnStarted 에서 초기화)
+    int lastPartialSeq;
+    string lastPartialText;
 
     // 스폰포인트에 도착한 적이 있어야 시전 가능
     static bool CanCast => SkillManager.CanCast;
@@ -123,16 +136,51 @@ public class VoiceRecorder : MonoBehaviour
             if (on) { voiceSocket.CastResultReceived += OnResult; voiceSocket.ErrorReceived += OnError; }
             else { voiceSocket.CastResultReceived -= OnResult; voiceSocket.ErrorReceived -= OnError; }
         }
+        if (streamSocket != null)
+        {
+            if (on) streamSocket.PartialReceived += OnPartial;
+            else streamSocket.PartialReceived -= OnPartial;
+        }
     }
 
     // ── 상태 표시 ──
+    const string RecordingText = "[ 마법 영창 중... ]";
+    const string AnalyzingText = "[ 마나 흐름 해석 중... ]";
+
     void OnStarted()
     {
         StopSequence();
-        Show("[ 마법 영창 중... ]");
+        lastPartialSeq = 0;
+        lastPartialText = null;
+        Show(RecordingText);
     }
 
-    void OnSubmitted() => Show("[ 마나 흐름 해석 중... ]");
+    // 전송 후: 마지막 중간 자막이 있으면 그 아래 줄에 '해석 중'을 붙인다
+    void OnSubmitted() => Show(string.IsNullOrEmpty(lastPartialText)
+        ? AnalyzingText
+        : PartialLine(lastPartialText) + "\n" + AnalyzingText);
+
+    // ── 실시간 자막: 말하는 동안 서버(/streaming)가 보내는 중간 받아쓰기 ──
+    void OnPartial(StreamPartial p)
+    {
+        if (!showPartials || p == null || voiceSender == null) return;
+        if (string.IsNullOrWhiteSpace(p.Text)) return;
+
+        // 지금 발화의 것이고, 앞서 보여 준 것보다 새 것만 (늦게 온 예전 발화나 순서가 뒤바뀐 결과는 버린다)
+        if (p.RequestId != voiceSender.CurrentRequestId || p.Seq <= lastPartialSeq) return;
+        // 녹음 중이거나 판정을 기다리는 동안만. 판정 결과 연출이 시작되면 덮어쓰지 않는다
+        if (!(voiceSender.IsRecording || voiceSender.IsWaitingForResult)) return;
+        if (sequence != null || castPending) return;
+
+        lastPartialSeq = p.Seq;
+        lastPartialText = p.Text.Trim();
+        Show(voiceSender.IsRecording
+            ? PartialLine(lastPartialText)
+            : PartialLine(lastPartialText) + "\n" + AnalyzingText);
+    }
+
+    // 중간 자막 한 줄: 흐린 색 + 끝에 '…' (아직 확정이 아님)
+    string PartialLine(string text) => $"<color=#{ColorUtility.ToHtmlStringRGB(partialColor)}>\"{text}…\"</color>";
 
     // 너무 짧음, 시간 초과, 연결 없음, 적 없음 → 자막 지움 + 로그
     void OnRejected(string reason)
@@ -200,7 +248,14 @@ public class VoiceRecorder : MonoBehaviour
     IEnumerator SuccessSequence(string rawText, string spellName)
     {
         castPending = true;
-        if (subtitleText != null && !string.IsNullOrEmpty(rawText))
+        bool partialMatched = skipTypingIfPartialMatches && SameText(lastPartialText, rawText);
+        if (subtitleText != null && !string.IsNullOrEmpty(rawText) && partialMatched)
+        {
+            // 실시간 자막으로 이미 보여 준 글자 → 타이핑 없이 확정된 글자로 바꿔 잠깐 보여 준다
+            subtitleText.text = $"\"{rawText}\"";
+            yield return new WaitForSeconds(0.3f);
+        }
+        else if (subtitleText != null && !string.IsNullOrEmpty(rawText))
         {
             subtitleText.text = "\"";
             foreach (char c in rawText)
@@ -298,6 +353,20 @@ public class VoiceRecorder : MonoBehaviour
     }
 
     static string Gray(string s) => $"<color=#AAAAAA>{s}</color>";
+
+    // 띄어쓰기·문장부호를 빼고 같은 글자인지 (실시간 자막과 최종 판정 비교용)
+    static bool SameText(string a, string b)
+    {
+        if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b)) return false;
+        return LettersOnly(a) == LettersOnly(b);
+    }
+
+    static string LettersOnly(string s)
+    {
+        var sb = new System.Text.StringBuilder(s.Length);
+        foreach (char c in s) if (char.IsLetterOrDigit(c)) sb.Append(c);
+        return sb.ToString();
+    }
 
     // 서버 불발 사유 → 플레이어용 문구
     static string RejectToMessage(string reason)

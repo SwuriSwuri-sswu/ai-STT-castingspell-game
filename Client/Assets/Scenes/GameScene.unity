@@ -857,6 +857,7 @@ GameObject:
   - component: {fileID: 72393943}
   - component: {fileID: 72393942}
   - component: {fileID: 72393941}
+  - component: {fileID: 72393945}
   m_Layer: 0
   m_Name: VoiceManager
   m_TagString: Untagged
@@ -903,6 +904,10 @@ MonoBehaviour:
   voiceInput: {fileID: 72393942}
   voiceSender: {fileID: 72393943}
   voiceSocket: {fileID: 72393944}
+  streamSocket: {fileID: 72393945}
+  showPartials: 1
+  partialColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}
+  skipTypingIfPartialMatches: 1
 --- !u!114 &72393941
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -961,6 +966,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VoiceSender
   voiceInput: {fileID: 72393942}
   voiceSocket: {fileID: 72393944}
+  streamSocket: {fileID: 72393945}
+  streamPartials: 1
+  streamChunkSec: 0.1
+  inputMode: 0
+  pushToTalkKey: 32
+  pttPrerollSec: 0.2
+  pttReleaseTailSec: 0.2
   vadSettings:
     frameMs: 30
     calibrationSec: 1
@@ -988,6 +1000,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VoiceSocket
   serverUrl: ws://127.0.0.1:8000/ws/voice/analyzing
   unlockedOnly: 1
+--- !u!114 &72393945
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 72393938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 71563fac5b6713c47a956288b37d0a65, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoiceStreamSocket
+  serverUrl: ws://127.0.0.1:8000/ws/voice/streaming
+  unlockedOnly: 1
+  logPartials: 1
 --- !u!1 &79414433
 GameObject:
   m_ObjectHideFlags: 0

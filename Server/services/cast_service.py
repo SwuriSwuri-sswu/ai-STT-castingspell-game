@@ -5,12 +5,16 @@ ws_server.py 는 이 모듈의 CastService.process() 만 호출한다.
 데미지 계산은 아직 미정이므로 응답의 "damage" 는 항상 None 이다.
 """
 
-import numpy as np
+import logging
 import time
+
+import numpy as np
 
 from . import skill_matcher as sm
 from .audio_analysis import TARGET_SR, analyze_array, decode_wav
-from .stt import SpeechRecognizer, SttResult
+from .stt import COMPUTE_TYPE, CPU_THREADS, DEVICE, MODEL_SIZE, SpeechRecognizer, SttResult
+
+log = logging.getLogger("voice")
 
 # ─────────────────────────────────────────────────────────────
 # 튜닝 상수
@@ -74,10 +78,18 @@ def _judge(stt: SttResult, skills: dict) -> tuple[str | None, sm.MatchResult | N
 
 class CastService:
     def __init__(self, warmup: bool = True):
+        # 단계별 시간을 로그로 남긴다 (voice_runtime.startup 의 [1/2] 안에서 찍힘)
+        t0 = time.perf_counter()
         self.stt = SpeechRecognizer(initial_prompt=sm.build_initial_prompt())
+        log.info("  Whisper 모델 불러오기 (%s, %s, %s, 스레드 %d): %.2f초 (처음 실행이면 내려받기 포함)",
+                 MODEL_SIZE, DEVICE, COMPUTE_TYPE, CPU_THREADS, time.perf_counter() - t0)
         if warmup:
+            t1 = time.perf_counter()
             self.stt.warmup()
+            log.info("  Whisper 준비 실행: %.2f초", time.perf_counter() - t1)
+            t2 = time.perf_counter()
             self._warmup_analysis()
+            log.info("  음향 분석(librosa) 준비 실행: %.2f초", time.perf_counter() - t2)
 
     @staticmethod
     def _warmup_analysis() -> None:

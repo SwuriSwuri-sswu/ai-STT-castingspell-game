@@ -17,7 +17,7 @@ from faster_whisper import WhisperModel
 MODEL_SIZE = "small"      # GPU 서버라면 "large-v3"
 DEVICE = "cpu"            # GPU: "cuda"
 COMPUTE_TYPE = "int8"     # GPU: "float16"
-CPU_THREADS = 4
+CPU_THREADS = 8
 BEAM_SIZE = 1             # 후보(스킬명)가 정해져 있으므로 탐색 폭이 넓을 필요가 없다
 LANGUAGE = "ko"
 
@@ -49,7 +49,7 @@ class SpeechRecognizer:
             audio,
             language=LANGUAGE,
             beam_size=BEAM_SIZE,
-            word_timestamps=True,
+            word_timestamps=False,
             initial_prompt=prompt,
             condition_on_previous_text=False,
             vad_filter=USE_VAD_FILTER,

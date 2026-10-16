@@ -1,4 +1,5 @@
-using System;
+ï»¿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,21 +16,23 @@ public class VoiceSocket : MonoBehaviour
     public event Action<ErrorResponse> ErrorReceived;
 
     [SerializeField] string serverUrl = "ws://localhost:8765";
-    [Tooltip("ÄÑ¸é ÇØ±İµÈ ½ºÆç¸¸ ¼­¹ö·Î º¸³½´Ù (¿ÀÀÎ½Ä °¨¼Ò)")]
+    [Tooltip("ì¼œë©´ í•´ê¸ˆëœ ìŠ¤í ë§Œ ì„œë²„ë¡œ ë³´ë‚¸ë‹¤ (ì˜¤ì¸ì‹ ê°ì†Œ)")]
     [SerializeField] bool unlockedOnly = true;
 
-    /// <summary>¼­¹ö¿Í ¿¬°áµÇ¾î ÀÖ´ÂÁö (µğ¹ö±× Ç¥½Ã¿ë)</summary>
+    /// <summary>ì„œë²„ì™€ ì—°ê²°ë˜ì–´ ìˆëŠ”ì§€ (ë””ë²„ê·¸ í‘œì‹œìš©)</summary>
     public bool IsConnected => ws != null && ws.State == WebSocketState.Open;
 
     WebSocket ws;
-    SkillManager subscribedSkill;   // ½ºÆç ¸ñ·Ï º¯°æ ±¸µ¶ ÇØÁ¦¿ë
+    SkillManager subscribedSkill;   // ìŠ¤í  ëª©ë¡ ë³€ê²½ êµ¬ë… í•´ì œìš©
     int requestCounter;
+    // ì´ ì—°ê²°ë¡œ ë³´ë‚´ëŠ” ë©”ì‹œì§€ë¥¼ í•œ ë²ˆì— í•˜ë‚˜ì”©ë§Œ ë³´ë‚¸ë‹¤ (ìŠ¤í  ëª©ë¡ì´ cast_header ì™€ WAV ì‚¬ì´ì— ë¼ì–´ë“¤ì§€ ì•Šê²Œ)
+    readonly SemaphoreSlim sendLock = new SemaphoreSlim(1, 1);
     readonly Dictionary<string, float> sentAt = new Dictionary<string, float>();
 
     static readonly JsonSerializer Serializer = JsonSerializer.Create(new JsonSerializerSettings
     {
         ContractResolver = new DefaultContractResolver { NamingStrategy = new SnakeCaseNamingStrategy() },
-        MissingMemberHandling = MissingMemberHandling.Ignore,  // ¼­¹ö¿¡ ÇÊµå°¡ ´Ã¾î³ªµµ ±úÁöÁö ¾Ê°Ô
+        MissingMemberHandling = MissingMemberHandling.Ignore,  // ì„œë²„ì— í•„ë“œê°€ ëŠ˜ì–´ë‚˜ë„ ê¹¨ì§€ì§€ ì•Šê²Œ
     });
 
     async void Start()
@@ -37,44 +40,63 @@ public class VoiceSocket : MonoBehaviour
         Application.runInBackground = true;
 
         ws = new WebSocket(serverUrl);
-        ws.OnOpen += () => { Debug.Log("[WS] ¿¬°áµÊ"); SendSkillList(); };   // ¿¬°áµÉ ¶§¸¶´Ù ½ºÆç ¸ñ·Ï Àü¼Û
-        // ÇØ±İ, ÃÊ±âÈ­ ¶§ ÀçÀü¼Û (SkillManager.Instance ´Â Awake ¿¡¼­ Á¤ÇØÁö¹Ç·Î Start ¿¡¼­ »ç¿ëÇÒ ¼ö ÀÖ´Ù)
+        ws.OnOpen += () => { Debug.Log("[WS] ì—°ê²°ë¨"); SendSkillList(); };   // ì—°ê²°ë  ë•Œë§ˆë‹¤ ìŠ¤í  ëª©ë¡ ì „ì†¡
+        // í•´ê¸ˆ, ì´ˆê¸°í™” ë•Œ ì¬ì „ì†¡ (SkillManager.Instance ëŠ” Awake ì—ì„œ ì •í•´ì§€ë¯€ë¡œ Start ì—ì„œ ì‚¬ìš©í•  ìˆ˜ ìˆë‹¤)
         subscribedSkill = SkillManager.Instance;
         if (subscribedSkill != null) subscribedSkill.SpellsChanged += SendSkillList;
-        else Debug.LogError("[WS] ¾À¿¡ SkillManager °¡ ¾ø½À´Ï´Ù. ½ºÆç ¸ñ·ÏÀ» º¸³¾ ¼ö ¾ø½À´Ï´Ù (¼­¹ö ±âº» ½ºÅ³·Î ÆÇÁ¤).");
-        ws.OnError += e => Debug.LogError("[WS] ¿À·ù: " + e);
-        ws.OnClose += code => Debug.Log("[WS] ¿¬°á Á¾·á: " + code);
+        else Debug.LogError("[WS] ì”¬ì— SkillManager ê°€ ì—†ìŠµë‹ˆë‹¤. ìŠ¤í  ëª©ë¡ì„ ë³´ë‚¼ ìˆ˜ ì—†ìŠµë‹ˆë‹¤ (ì„œë²„ ê¸°ë³¸ ìŠ¤í‚¬ë¡œ íŒì •).");
+        ws.OnError += e => Debug.LogError("[WS] ì˜¤ë¥˜: " + e);
+        ws.OnClose += code => Debug.Log("[WS] ì—°ê²° ì¢…ë£Œ: " + code);
         ws.OnMessage += bytes => HandleMessage(Encoding.UTF8.GetString(bytes));
 
-        // ÁÖÀÇ: Connect() ´Â ¿¬°áÀÌ À¯ÁöµÇ´Â µ¿¾È ¹İÈ¯µÇÁö ¾ÊÀ» ¼ö ÀÖ´Ù(³»ºÎ ¼ö½Å ·çÇÁ).
-        // ÀÌ ÁÙ µÚ¿¡ ÄÚµå¸¦ µÎÁö ¸»°í, ¿¬°á ÈÄ ÀÛ¾÷Àº OnOpen ¿¡¼­ ÇÒ °Í.
+        // ì£¼ì˜: Connect() ëŠ” ì—°ê²°ì´ ìœ ì§€ë˜ëŠ” ë™ì•ˆ ë°˜í™˜ë˜ì§€ ì•Šì„ ìˆ˜ ìˆë‹¤(ë‚´ë¶€ ìˆ˜ì‹  ë£¨í”„).
+        // ì´ ì¤„ ë’¤ì— ì½”ë“œë¥¼ ë‘ì§€ ë§ê³ , ì—°ê²° í›„ ì‘ì—…ì€ OnOpen ì—ì„œ í•  ê²ƒ.
         await ws.Connect();
     }
 
     bool IsOpen()
     {
         if (ws != null && ws.State == WebSocketState.Open) return true;
-        Debug.LogWarning("[WS] ¿¬°áµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù. ¼­¹ö ½ÇÇà ¿©ºÎ¸¦ È®ÀÎÇÏ¼¼¿ä.");
+        Debug.LogWarning("[WS] ì—°ê²°ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤. ì„œë²„ ì‹¤í–‰ ì—¬ë¶€ë¥¼ í™•ì¸í•˜ì„¸ìš”.");
         return false;
     }
 
-    // ¦¡¦¡ ¹ßÈ­ WAV Àü¼Û: Çì´õ(ÅØ½ºÆ®) -> WAV(¹ÙÀÌ³Ê¸®) ¦¡¦¡
-    public async Task<string> SendWavBytes(byte[] wav, string tag = "mic")
+    // â”€â”€ ë°œí™” WAV ì „ì†¡: í—¤ë”(í…ìŠ¤íŠ¸) -> WAV(ë°”ì´ë„ˆë¦¬) â”€â”€
+    // ìš”ì²­ ë²ˆí˜¸ë¥¼ ìë™ìœ¼ë¡œ ë§Œë“ ë‹¤ (ì˜ˆì „ í˜¸ì¶œ ë°©ì‹ê³¼ í˜¸í™˜)
+    public Task<string> SendWavBytes(byte[] wav, string tag = "mic")
+    {
+        if (!IsOpen()) return Task.FromResult<string>(null);
+        return SendWavWithId(wav, $"unity-{tag}-{++requestCounter}");
+    }
+
+    /// <summary>
+    /// ìš”ì²­ ë²ˆí˜¸ë¥¼ ì •í•´ì„œ ë³´ë‚¸ë‹¤. VoiceSender ê°€ ì‹¤ì‹œê°„ ìë§‰(VoiceStreamSocket)ê³¼ ê°™ì€ ë²ˆí˜¸ë¥¼ ì“¸ ë•Œ ì‚¬ìš©í•œë‹¤.
+    /// ì„œë²„ ì‘ë‹µ(cast_result / error)ì˜ request_id ê°€ ì´ ë²ˆí˜¸ê°€ ëœë‹¤. ì—°ê²°ì´ ì—†ìœ¼ë©´ null.
+    /// </summary>
+    public async Task<string> SendWavWithId(byte[] wav, string requestId)
     {
         if (!IsOpen()) return null;
 
-        string id = $"unity-{tag}-{++requestCounter}";
-        string header = JsonConvert.SerializeObject(new { type = "cast_header", request_id = id });
+        string header = JsonConvert.SerializeObject(new { type = "cast_header", request_id = requestId });
+        sentAt[requestId] = Time.realtimeSinceStartup;
 
-        sentAt[id] = Time.realtimeSinceStartup;
-        await ws.SendText(header);
-        await ws.Send(wav);
-        Debug.Log($"[WS] Àü¼Û {id}: {wav.Length} bytes");
-        return id;
+        // í—¤ë”ì™€ WAV ì‚¬ì´ì— ë‹¤ë¥¸ ë©”ì‹œì§€ê°€ ë¼ì–´ë“¤ì§€ ì•Šê²Œ í•œ ë²ˆì— ë³´ë‚¸ë‹¤
+        await sendLock.WaitAsync();
+        try
+        {
+            await ws.SendText(header);
+            await ws.Send(wav);
+        }
+        finally
+        {
+            sendLock.Release();
+        }
+        Debug.Log($"[WS] ì „ì†¡ {requestId}: {wav.Length} bytes");
+        return requestId;
     }
 
-    // ¦¡¦¡ ½ºÆç ¸ñ·Ï Àü¼Û: ¿¬°á Á÷ÈÄ, ÇØ±İ¡¤ÃÊ±âÈ­ ¶§ ¦¡¦¡
-    // °°Àº ¿¬°áÀÇ ¸Ş½ÃÁö´Â ¼ø¼­´ë·Î Ã³¸®µÇ¹Ç·Î ÀÌÈÄ ¹ßÈ­´Â »õ ¸ñ·ÏÀ¸·Î ÆÇÁ¤µÈ´Ù.
+    // â”€â”€ ìŠ¤í  ëª©ë¡ ì „ì†¡: ì—°ê²° ì§í›„, í•´ê¸ˆÂ·ì´ˆê¸°í™” ë•Œ â”€â”€
+    // ê°™ì€ ì—°ê²°ì˜ ë©”ì‹œì§€ëŠ” ìˆœì„œëŒ€ë¡œ ì²˜ë¦¬ë˜ë¯€ë¡œ ì´í›„ ë°œí™”ëŠ” ìƒˆ ëª©ë¡ìœ¼ë¡œ íŒì •ëœë‹¤.
     public async void SendSkillList()
     {
         SkillManager sm = SkillManager.Instance;
@@ -82,12 +104,21 @@ public class VoiceSocket : MonoBehaviour
         var spells = sm.GetVoiceSpells(unlockedOnly);
         if (spells.Count == 0) return;
 
-        await ws.SendText(JsonConvert.SerializeObject(new
+        string json = JsonConvert.SerializeObject(new
         {
             type = "skill_list",
-            skills = spells.Select(s => new { id = s.name, name = s.spellName }),   // id = SpellData ¿¡¼Â ÀÌ¸§
-        }));
-        Debug.Log($"[WS] ½ºÆç ¸ñ·Ï Àü¼Û: {string.Join(", ", spells.Select(s => s.spellName))}");
+            skills = spells.Select(s => new { id = s.name, name = s.spellName }),   // id = SpellData ì—ì…‹ ì´ë¦„
+        });
+        await sendLock.WaitAsync();   // WAV ì „ì†¡ ì¤‘ì´ë©´ ëë‚œ ë’¤ì— ë³´ë‚¸ë‹¤
+        try
+        {
+            await ws.SendText(json);
+        }
+        finally
+        {
+            sendLock.Release();
+        }
+        Debug.Log($"[WS] ìŠ¤í  ëª©ë¡ ì „ì†¡: {string.Join(", ", spells.Select(s => s.spellName))}");
     }
 
     void OnDestroy()
@@ -95,7 +126,7 @@ public class VoiceSocket : MonoBehaviour
         if (subscribedSkill != null) subscribedSkill.SpellsChanged -= SendSkillList;
     }
 
-    // ¦¡¦¡ ¼ö½Å Ã³¸®: type À¸·Î ¸ÕÀú ºĞ±âÇÑ µÚ Å¬·¡½º·Î º¯È¯ ¦¡¦¡
+    // â”€â”€ ìˆ˜ì‹  ì²˜ë¦¬: type ìœ¼ë¡œ ë¨¼ì € ë¶„ê¸°í•œ ë’¤ í´ë˜ìŠ¤ë¡œ ë³€í™˜ â”€â”€
     void HandleMessage(string json)
     {
         JObject obj;
@@ -105,7 +136,7 @@ public class VoiceSocket : MonoBehaviour
         }
         catch (JsonException e)
         {
-            Debug.LogError("[WS] JSON ÆÄ½Ì ½ÇÆĞ: " + e.Message + "\n" + json);
+            Debug.LogError("[WS] JSON íŒŒì‹± ì‹¤íŒ¨: " + e.Message + "\n" + json);
             return;
         }
 
@@ -116,19 +147,19 @@ public class VoiceSocket : MonoBehaviour
         }
         else if (type == "skill_list_ack")
         {
-            Debug.Log($"[WS] ½ºÆç ¸ñ·Ï Àû¿ë: {obj["count"]}°³");
-            foreach (var w in obj["warnings"] ?? new JArray()) Debug.LogWarning("[WS] ºñ½ÁÇÑ ½ºÆç ÀÌ¸§: " + w);
+            Debug.Log($"[WS] ìŠ¤í  ëª©ë¡ ì ìš©: {obj["count"]}ê°œ");
+            foreach (var w in obj["warnings"] ?? new JArray()) Debug.LogWarning("[WS] ë¹„ìŠ·í•œ ìŠ¤í  ì´ë¦„: " + w);
         }
         else if (type == "error")
         {
             var err = obj.ToObject<ErrorResponse>(Serializer);
-            Debug.LogWarning($"[WS] ¿À·ù ÀÀ´ä {err.Code}: {err.Message} (request_id={err.RequestId})");
-            if (err.RequestId != null) sentAt.Remove(err.RequestId);   // ¿Õº¹ ½Ã°£ ±â·Ï Á¤¸®
+            Debug.LogWarning($"[WS] ì˜¤ë¥˜ ì‘ë‹µ {err.Code}: {err.Message} (request_id={err.RequestId})");
+            if (err.RequestId != null) sentAt.Remove(err.RequestId);   // ì™•ë³µ ì‹œê°„ ê¸°ë¡ ì •ë¦¬
             ErrorReceived?.Invoke(err);
         }
         else
         {
-            Debug.LogWarning("[WS] ¾Ë ¼ö ¾ø´Â ÀÀ´ä: " + json);
+            Debug.LogWarning("[WS] ì•Œ ìˆ˜ ì—†ëŠ” ì‘ë‹µ: " + json);
         }
     }
 
@@ -142,16 +173,16 @@ public class VoiceSocket : MonoBehaviour
         }
 
         if (r.Success)
-            Debug.Log($"[¹ßµ¿] {r.Skill.Name} ({r.Skill.Id})  text=\"{r.Stt.Text}\"  match={r.Stt.Match:F2}  request_id={r.RequestId}");
+            Debug.Log($"[ë°œë™] {r.Skill.Name} ({r.Skill.Id})  text=\"{r.Stt.Text}\"  match={r.Stt.Match:F2}  request_id={r.RequestId}");
         else
-            Debug.Log($"[ºÒ¹ß] {r.RejectReason}  text=\"{r.Stt.Text}\"  match={r.Stt.Match:F2}  no_speech={r.Stt.NoSpeech:F2}  request_id={r.RequestId}");
+            Debug.Log($"[ë¶ˆë°œ] {r.RejectReason}  text=\"{r.Stt.Text}\"  match={r.Stt.Match:F2}  no_speech={r.Stt.NoSpeech:F2}  request_id={r.RequestId}");
 
         if (r.Audio != null)
         {
-            string pitch = r.Audio.PitchHz.HasValue ? $"{r.Audio.PitchHz.Value:F0}Hz" : "°ËÃâ ½ÇÆĞ";
-            Debug.Log($"   ¼º·® {r.Audio.VolumeDb:F1}dB, ÇÇÄ¡ {pitch}, ¹ßÈ­ {r.Audio.SpeechSec:F2}s / ÀüÃ¼ {r.Audio.DurationSec:F2}s ({r.Audio.SampleRate}Hz)");
+            string pitch = r.Audio.PitchHz.HasValue ? $"{r.Audio.PitchHz.Value:F0}Hz" : "ê²€ì¶œ ì‹¤íŒ¨";
+            Debug.Log($"   ì„±ëŸ‰ {r.Audio.VolumeDb:F1}dB, í”¼ì¹˜ {pitch}, ë°œí™” {r.Audio.SpeechSec:F2}s / ì „ì²´ {r.Audio.DurationSec:F2}s ({r.Audio.SampleRate}Hz)");
         }
-        Debug.Log($"   ¼­¹ö Ã³¸® {r.TimingMs.Total}ms (STT {r.TimingMs.Stt}ms), ¿Õº¹ {roundTrip}, damage={(r.Damage.HasValue ? r.Damage.Value.ToString() : "null")}");
+        Debug.Log($"   ì„œë²„ ì²˜ë¦¬ {r.TimingMs.Total}ms (STT {r.TimingMs.Stt}ms), ì™•ë³µ {roundTrip}, damage={(r.Damage.HasValue ? r.Damage.Value.ToString() : "null")}");
 
         CastResultReceived?.Invoke(r);
     }

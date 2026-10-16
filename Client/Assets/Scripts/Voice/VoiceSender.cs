@@ -13,7 +13,8 @@ using UnityEngine;
 ///   두 방식 모두 WAV 변환·전송·결과 대기(막기)는 같은 코드를 쓴다.
 ///
 /// B-1 단계: 말이 끝나면 발화를 WAV 한 덩어리로 보낸다 (기존 cast_header + WAV 규칙).
-///          B-2 에서는 SubmitUtterance 부분만 조각 전송으로 바뀐다.
+///          실시간 자막: 녹음하는 동안 같은 소리를 조각(기본 0.1초)으로 VoiceStreamSocket(/streaming)에도 보낸다.
+///          최종 판정은 지금처럼 WAV 한 덩어리로 /analyzing 에 보낸다 (두 요청이 같은 request_id 를 쓴다).
 ///
 /// [막기 방식]
 ///   주문 하나를 보내면 서버 판정이 돌아올 때까지 새 주문을 받지 않는다.
@@ -35,6 +36,14 @@ public class VoiceSender : MonoBehaviour
     [Header("연결")]
     [SerializeField] VoiceInput voiceInput;
     [SerializeField] VoiceSocket voiceSocket;
+
+    [Header("실시간 자막 (중간 받아쓰기)")]
+    [Tooltip("/ws/voice/streaming 연결. 비워 두면 실시간 자막 없이 최종 판정만 한다")]
+    [SerializeField] VoiceStreamSocket streamSocket;
+    [Tooltip("녹음하는 동안 소리 조각을 실시간 자막 서버로 보낼지")]
+    [SerializeField] bool streamPartials = true;
+    [Tooltip("조각 하나의 길이(초). 서버는 조각이 올 때마다 받아쓴다")]
+    [SerializeField, Range(0.05f, 0.5f)] float streamChunkSec = 0.1f;
 
     [Header("입력 방식")]
     [Tooltip("PushToTalk: 키를 누르는 동안 녹음 / AutoDetect: 말소리를 자동 감지 (기존 방식). 플레이 중에 바꿔도 된다")]
@@ -87,6 +96,9 @@ public class VoiceSender : MonoBehaviour
     public bool IsPushToTalk => inputMode == InputMode.PushToTalk;
     public KeyCode PushToTalkKey => pushToTalkKey;
 
+    /// <summary>지금(또는 마지막) 발화의 요청 번호. 실시간 자막(partial)과 최종 판정(cast_result)이 같은 번호를 쓴다</summary>
+    public string CurrentRequestId { get; private set; }
+
     VoiceActivityDetector vad;
     readonly List<float> utterance = new List<float>(16000 * 5);
     bool collecting;
@@ -117,6 +129,11 @@ public class VoiceSender : MonoBehaviour
     int pttRingHead, pttRingCount, pttRingRate;
     InputMode appliedMode;
 
+    // ── 실시간 자막 전송 상태 ──
+    int requestCounter;                                     // 요청 번호 (unity-mic-1, 2, ...)
+    bool streaming;                                         // 이번 발화를 실시간 자막 서버로 보내는 중인지
+    readonly List<float> streamBuf = new List<float>(4800); // 아직 보내지 않은 조각
+
     void OnEnable()
     {
         appliedMode = inputMode;
@@ -138,6 +155,7 @@ public class VoiceSender : MonoBehaviour
             voiceSocket.CastResultReceived -= OnCastResult;
             voiceSocket.ErrorReceived -= OnServerError;
         }
+        StopStream(cancel: true);
         collecting = false;
         ResetPushToTalk();
     }
@@ -149,6 +167,7 @@ public class VoiceSender : MonoBehaviour
     void OnDeviceChanged()
     {
         bool wasCollecting = collecting;
+        StopStream(cancel: true);
         vad = null;
         collecting = false;
         ignoringCurrentSpeech = false;
@@ -238,6 +257,7 @@ public class VoiceSender : MonoBehaviour
     {
         if (inputMode != InputMode.AutoDetect || !collecting || ignoringCurrentSpeech) return;
         for (int i = 0; i < count; i++) utterance.Add(frame[i]);   // 배열은 재사용되므로 바로 복사
+        StreamSamples(frame, count);
     }
 
     void OnSpeechEnded(SpeechEndReason reason, int trailingSilenceSamples)
@@ -339,6 +359,7 @@ public class VoiceSender : MonoBehaviour
         }
 
         for (int i = 0; i < count; i++) utterance.Add(samples[i]);   // 배열은 재사용되므로 바로 복사
+        StreamSamples(samples, count);
 
         // 최대 길이에 닿으면 키를 떼지 않았어도 바로 전송한다. 이후 키를 떼도 다시 보내지 않는다
         if (utterance.Count >= Mathf.FloorToInt(MaxRecordingSec * voiceInput.SampleRate))
@@ -397,6 +418,7 @@ public class VoiceSender : MonoBehaviour
     void CancelRecording(string reason)
     {
         bool wasCollecting = collecting;
+        StopStream(cancel: true);
         collecting = false;
         utterance.Clear();
         pttHeld = false;
@@ -427,7 +449,9 @@ public class VoiceSender : MonoBehaviour
         utterance.Clear();
         if (preroll != null) utterance.AddRange(preroll);
         collecting = true;
-        Debug.Log("[MIC] 발화 시작");
+        CurrentRequestId = $"unity-mic-{++requestCounter}";   // RecordingStarted 전에 정해야 자막 쪽이 새 번호를 본다
+        BeginStream(preroll);
+        Debug.Log($"[MIC] 발화 시작 ({CurrentRequestId})");
         RecordingStarted?.Invoke();
     }
 
@@ -444,10 +468,13 @@ public class VoiceSender : MonoBehaviour
 
         if (sec < MinRecordingSec)
         {
+            StopStream(cancel: true);
             Debug.LogWarning($"[MIC] 발화가 너무 짧아 보내지 않습니다 ({sec:F2}초).");
             RecordingRejected?.Invoke("주문이 들리지 않았습니다.");
             return;
         }
+
+        StopStream(cancel: false);   // 남은 조각과 stream_end (서버가 마지막 확정 자막을 보낼 수 있다)
 
         float[] data = utterance.ToArray();
         float peak = 0f;
@@ -470,8 +497,62 @@ public class VoiceSender : MonoBehaviour
         SubmitUtterance(wav);
     }
 
+    // ─────────────────────────────────────────────
+    // 실시간 자막 전송 (VoiceStreamSocket → /ws/voice/streaming)
+    //   발화 시작: stream_start + 프리롤 → 녹음 중: streamChunkSec 마다 PCM16 조각
+    //   → 발화 끝: 남은 조각 + stream_end / 취소: stream_cancel
+    //   연결이 없거나 꺼 두면 아무것도 하지 않는다 (최종 판정에는 영향 없음)
+    // ─────────────────────────────────────────────
+
+    void BeginStream(float[] preroll)
+    {
+        streamBuf.Clear();
+        streaming = false;
+        if (!streamPartials || streamSocket == null || !streamSocket.IsConnected) return;
+
+        streamSocket.StartStream(CurrentRequestId, voiceInput.SampleRate);
+        streaming = true;
+        if (preroll != null) StreamSamples(preroll, preroll.Length);
+    }
+
+    /// <summary>녹음 중인 소리를 조각 버퍼에 모으고, streamChunkSec 만큼 찰 때마다 보낸다</summary>
+    void StreamSamples(float[] samples, int count)
+    {
+        if (!streaming) return;
+        for (int i = 0; i < count; i++) streamBuf.Add(samples[i]);   // 배열은 재사용되므로 바로 복사
+
+        int chunk = Mathf.Max(1, Mathf.RoundToInt(streamChunkSec * voiceInput.SampleRate));
+        int sent = 0;
+        while (streamBuf.Count - sent >= chunk)
+        {
+            streamSocket.SendSamples(streamBuf, sent, chunk);
+            sent += chunk;
+        }
+        if (sent > 0) streamBuf.RemoveRange(0, sent);
+    }
+
+    /// <summary>cancel = false: 남은 조각을 보내고 stream_end / cancel = true: stream_cancel</summary>
+    void StopStream(bool cancel)
+    {
+        if (!streaming) return;
+        streaming = false;
+        if (streamSocket != null)
+        {
+            if (cancel)
+            {
+                streamSocket.CancelStream(CurrentRequestId);
+            }
+            else
+            {
+                if (streamBuf.Count > 0) streamSocket.SendSamples(streamBuf, 0, streamBuf.Count);
+                streamSocket.EndStream(CurrentRequestId);
+            }
+        }
+        streamBuf.Clear();
+    }
+
     /// <summary>
-    /// B-1: WAV 한 덩어리 전송. B-2 에서는 이 메서드가 stream_start / 조각 / stream_end 전송으로 바뀐다.
+    /// WAV 한 덩어리를 /analyzing 으로 보낸다 (최종 판정). 실시간 자막 조각은 StreamSamples 가 따로 보낸다.
     /// </summary>
     async void SubmitUtterance(byte[] wav)
     {
@@ -484,7 +565,7 @@ public class VoiceSender : MonoBehaviour
 
         try
         {
-            string id = await voiceSocket.SendWavBytes(wav, "mic");
+            string id = await voiceSocket.SendWavWithId(wav, CurrentRequestId);   // 실시간 자막과 같은 번호
             if (id == null)
             {
                 ReleaseWait("서버 연결 없음");

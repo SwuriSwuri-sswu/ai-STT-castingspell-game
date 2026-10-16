@@ -7,6 +7,7 @@ import time
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from services import voice_runtime
+from services import partial_vosk
 from services import skill_matcher as sm
 from services.cast_service import CastError, PROTOCOL_VERSION, build_error
 from services.stream_session import StreamError, StreamSession, to_16k
@@ -76,17 +77,24 @@ async def receive_skill_list(websocket: WebSocket, header: dict, current: dict |
 # ---------------------------------------------------------
 # [1] 실시간 자막 (말하는 동안 중간 받아쓰기)
 #
+# 엔진: voice_runtime.PARTIAL_ENGINE
+#   "vosk"    : 조각이 올 때마다 새 소리만 Vosk 에 이어서 넣고, 들린 글자가 바뀌면 partial 을 보낸다.
+#               stream_end 를 받으면 남은 소리까지 확정해 글자가 바뀌었으면 마지막 partial 을 한 번 더 보낸다.
+#               Whisper(판정)와 모델을 나눠 쓰지 않으므로 아래 '최종 판정 우선' 규칙은 해당 없음.
+#   "whisper" : 기존 방식. 받은 소리가 PARTIAL_INTERVAL_SEC 늘 때마다 Whisper 로 처음부터 다시 받아쓴다.
+#   Vosk 모델을 불러오지 못했으면 partial 을 보내지 않는다 (판정은 정상).
+#
 # 프로토콜
 #   (선택) 텍스트 {"type": "skill_list", ...} → skill_list_ack   (/analyzing 과 동일. 중간 받아쓰기 힌트로 사용)
 #   텍스트 {"type": "stream_start", "request_id": "...", "sample_rate": 48000}   발화 시작
 #   바이너리 PCM16 모노 리틀엔디언 조각 (약 0.1초씩, 헤더 없음)                   발화 중
 #   텍스트 {"type": "stream_end", "request_id": "..."}                            발화 끝
 #   텍스트 {"type": "stream_cancel", "request_id": "..."}                         발화 버림
-#   응답: {"type": "partial", "request_id", "seq", "text", "audio_sec", "elapsed_ms"}
-#         받은 소리가 PARTIAL_INTERVAL_SEC 늘어날 때마다. 최종 판정은 /analyzing 이 한다 (같은 request_id).
+#   응답: {"type": "partial", "request_id", "seq", "text", "audio_sec", "elapsed_ms", "engine"}
+#         vosk: 들린 글자가 바뀔 때마다 / whisper: 받은 소리가 PARTIAL_INTERVAL_SEC 늘어날 때마다. 최종 판정은 /analyzing 이 한다 (같은 request_id).
 #
 # 규칙
-#   - 최종 판정 우선: 모델이 사용 중이거나 최종 판정이 기다리고 있으면 이번 중간 받아쓰기는 건너뛴다.
+#   - (whisper) 최종 판정 우선: 모델이 사용 중이거나 최종 판정이 기다리고 있으면 이번 중간 받아쓰기는 건너뛴다.
 #   - stream_end 이후에는 새 중간 받아쓰기를 시작하지 않는다 (진행 중이던 것의 결과는 보낸다).
 #   - 연결 하나에 발화 하나. 새 stream_start 가 오면 이전 발화는 버린다.
 #   - 조각이 STREAM_IDLE_TIMEOUT_SEC 동안 안 오면 발화를 버린다.
@@ -94,7 +102,7 @@ async def receive_skill_list(websocket: WebSocket, header: dict, current: dict |
 @router.websocket("/streaming")
 async def voice_streaming(websocket: WebSocket):
     await websocket.accept()
-    log.info("[WS] 자막용 스트리밍 연결됨")
+    log.info("[WS] 자막용 스트리밍 연결됨 (실시간 자막 엔진: %s)", voice_runtime.partial_engine() or "꺼짐")
 
     session: StreamSession | None = None   # 지금 받고 있는 발화
     skills: dict | None = None            # 이 연결에서 받은 스킬 목록 (중간 받아쓰기 힌트)
@@ -136,6 +144,7 @@ async def voice_streaming(websocket: WebSocket):
                 "text": text,
                 "audio_sec": round(audio_sec, 2),
                 "elapsed_ms": ms,
+                "engine": "whisper",
             })
         except Exception:
             pass   # 그 사이 연결이 끊긴 경우
@@ -156,6 +165,72 @@ async def voice_streaming(websocket: WebSocket):
         task = asyncio.create_task(run_partial(s, raw, seq, audio_sec, skills))
         running.add(task)
         task.add_done_callback(running.discard)
+
+    def start_vosk(s: StreamSession | None) -> None:
+        """[vosk] 처리 루프를 시작한다. 이미 돌고 있으면 그 루프가 새 소리와 stream_end 까지 이어서 처리한다."""
+        if s is None or s.cancelled or s.vosk_running or s.vosk_finished:
+            return
+        s.vosk_running = True
+        task = asyncio.create_task(feed_vosk(s))
+        running.add(task)
+        task.add_done_callback(running.discard)
+
+    async def feed_vosk(s: StreamSession) -> None:
+        """[vosk] 새로 들어온 소리를 차례로 Vosk 에 넣고, 들린 글자가 바뀌면 partial 을 보낸다.
+
+        발화마다 루프는 하나만 돈다 (s.vosk_running). 같은 인식기를 여러 스레드가 동시에 쓰지 않게 하기 위함.
+        stream_end 를 받았으면 남은 소리까지 넣고 확정한 뒤 끝낸다.
+        """
+        try:
+            while not s.cancelled:
+                final = s.ended
+                audio = s.take_new_16k(final=final)
+                if audio.size == 0 and (not final or s.vosk is None):
+                    if final:
+                        s.vosk_finished = True   # 소리가 하나도 없던 발화
+                    break   # 새 소리가 없다. 다음 조각이 오면 start_vosk 가 다시 시작한다
+
+                t0 = time.perf_counter()
+                if s.vosk is None:
+                    model = voice_runtime.vosk_model
+                    if model is None:
+                        return
+                    s.vosk = await asyncio.to_thread(partial_vosk.VoskStream, model, skills)
+                text = s.last_partial_text
+                if audio.size:
+                    text = await asyncio.to_thread(s.vosk.accept, audio)
+                if final:
+                    text = await asyncio.to_thread(s.vosk.finish)
+                    s.vosk_finished = True
+                ms = round((time.perf_counter() - t0) * 1000)
+
+                if s.cancelled:
+                    log.info("[stream] %s vosk 결과 버림 (발화가 취소됨)", s.request_id)
+                    return
+                if text and text != s.last_partial_text:
+                    s.last_partial_text = text
+                    s.seq += 1
+                    log.info("[stream] %s partial #%d %.1fs \"%s\" (vosk %dms%s)",
+                             s.request_id, s.seq, s.audio_sec, text, ms, ", 마지막" if final else "")
+                    try:
+                        await send_json(websocket, {
+                            "type": "partial",
+                            "version": PROTOCOL_VERSION,
+                            "request_id": s.request_id,
+                            "seq": s.seq,
+                            "text": text,
+                            "audio_sec": round(s.audio_sec, 2),
+                            "elapsed_ms": ms,
+                            "engine": "vosk",
+                        })
+                    except Exception:
+                        return   # 그 사이 연결이 끊긴 경우
+                if final:
+                    break
+        except Exception:
+            log.exception("[stream] Vosk 중간 받아쓰기 실패")
+        finally:
+            s.vosk_running = False
 
     async def watchdog() -> None:
         """조각이 끊긴 발화를 버린다."""
@@ -199,6 +274,8 @@ async def voice_streaming(websocket: WebSocket):
                 if msg_type == "stream_end":
                     if session is not None and (rid is None or rid == session.request_id):
                         session.ended = True   # 새 중간 받아쓰기는 시작하지 않는다
+                        if voice_runtime.partial_engine() == "vosk":
+                            start_vosk(session)   # 남은 소리까지 확정 (이미 돌고 있으면 그 루프가 처리)
                         log.info("[stream] %s 끝 (%.2fs, 중간 받아쓰기 %d회)",
                                  session.request_id, session.audio_sec, session.seq)
                         session = None
@@ -232,7 +309,11 @@ async def voice_streaming(websocket: WebSocket):
             session.add_pcm16(data)
             if session.truncated and not was_truncated:
                 log.info("[stream] %s 최대 길이 도달, 이후 조각은 버림", session.request_id)
-            await try_start_partial()
+            engine = voice_runtime.partial_engine()
+            if engine == "vosk":
+                start_vosk(session)
+            elif engine == "whisper":
+                await try_start_partial()
 
     except WebSocketDisconnect:
         pass
