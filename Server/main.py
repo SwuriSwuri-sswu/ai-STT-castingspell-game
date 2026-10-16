@@ -19,7 +19,7 @@ from services import voice_runtime
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 import database
-import schemas_fin as schemas  # 최적화한 스키마 파일 import
+import schemas  # 최적화한 스키마 파일 import
 from database import Base, engine
 from models import GameSession, Settings, SaveData, Spell, Skin
 from exceptions import NotFoundError, UnauthorizedError, BadRequestError, AppException

@@ -90,8 +90,17 @@ MonoBehaviour:
   hitTrigger: Hit
   deathFallbackDuration: 1.5
   destroyDelayAfterDeath: 0.2
-  dropItemPrefab: {fileID: 0}
+  shrinkOnDeath: 1
+  shrinkDuration: 0.4
+  punchOnHit: 1
+  punchScale: 0.15
+  deathEffectPrefab: {fileID: 0}
+  dropItemPrefab: {fileID: 9009495989836976630, guid: ad5534dabd1333e419fc48a593487964, type: 3}
   dropOffset: {x: 0, y: 1, z: 0}
+  moveSpeed: 3
+  turnSpeed: 360
+  moveBool: Move
+  pendingDamageTimeout: 8
 --- !u!95 &5537436985674597670
 Animator:
   serializedVersion: 7

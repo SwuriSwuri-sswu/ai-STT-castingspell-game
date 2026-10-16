@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Low_Anglerfish
+  m_Controller: {fileID: 9100000, guid: 3dbb9420538e40d4aa73fc35a2da1826, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: 4447012609936615250, guid: d935b92c73ec974418e0696c1e26e379, type: 3}
+    m_OverrideClip: {fileID: -4977210580334121839, guid: 90a3b5da079c9174ab489b953a225ba4, type: 3}
+  - m_OriginalClip: {fileID: -7710415605997073860, guid: d935b92c73ec974418e0696c1e26e379, type: 3}
+    m_OverrideClip: {fileID: 8323166163743700370, guid: 90a3b5da079c9174ab489b953a225ba4, type: 3}
+  - m_OriginalClip: {fileID: -2735293274216970117, guid: d935b92c73ec974418e0696c1e26e379, type: 3}
+    m_OverrideClip: {fileID: -9052673528755155433, guid: 90a3b5da079c9174ab489b953a225ba4, type: 3}

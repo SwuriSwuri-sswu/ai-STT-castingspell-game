@@ -1,0 +1,24 @@
+# 팀 공통 편집기 설정 (Visual Studio / VS Code / Rider / PyCharm 공통)
+# 이 파일은 리포 최상위(.gitignore 옆)에 두세요.
+root = true
+
+# C# 스크립트: 한글 주석·문자열이 깨지지 않도록 UTF-8 (BOM 포함)
+[*.cs]
+charset = utf-8-bom
+end_of_line = crlf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+
+# 파이썬 서버 코드: UTF-8 (BOM 없음이 파이썬 표준)
+[*.py]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+
+# 기타 텍스트 파일
+[*.{json,md,txt}]
+charset = utf-8
+insert_final_newline = true

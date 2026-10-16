@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Low_Fish
+  m_Controller: {fileID: 9100000, guid: 3dbb9420538e40d4aa73fc35a2da1826, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: 4447012609936615250, guid: d935b92c73ec974418e0696c1e26e379, type: 3}
+    m_OverrideClip: {fileID: 4447012609936615250, guid: 5d89399cf87743648b7948fee4f79cee, type: 3}
+  - m_OriginalClip: {fileID: -3663672522963054737, guid: d935b92c73ec974418e0696c1e26e379, type: 3}
+    m_OverrideClip: {fileID: -7655272897581899170, guid: 5d89399cf87743648b7948fee4f79cee, type: 3}
+  - m_OriginalClip: {fileID: -2735293274216970117, guid: d935b92c73ec974418e0696c1e26e379, type: 3}
+    m_OverrideClip: {fileID: 9061338213343248790, guid: 5d89399cf87743648b7948fee4f79cee, type: 3}
+  - m_OriginalClip: {fileID: -7710415605997073860, guid: d935b92c73ec974418e0696c1e26e379, type: 3}
+    m_OverrideClip: {fileID: -5599002979973759676, guid: 5d89399cf87743648b7948fee4f79cee, type: 3}
