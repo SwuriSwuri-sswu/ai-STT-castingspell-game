@@ -57,7 +57,8 @@ public class SkillManager : MonoBehaviour
     // [1] 마법 시전 (VoiceRecorder → 여기)
     // =========================================================
     // 실제로 시전되면 true. 실패하면 로그를 남기고 false (기존처럼 반환값을 무시해도 된다)
-    public bool CastSpell(string recognizedText)
+    // power: 영창 보너스 (VoiceBonusCalculator 결과, 기본 1.0)
+    public bool CastSpell(string recognizedText, float power = 1f)
     {
         if (string.IsNullOrWhiteSpace(recognizedText)) return false;
 
@@ -79,15 +80,15 @@ public class SkillManager : MonoBehaviour
         bool casted;
         switch (spell.castType)
         {
-            case CastType.Projectile: casted = CastProjectile(spell, target, origin); break;
-            case CastType.WandCharge: casted = CastCharge(spell, target, origin); break;
-            default: casted = CastInstant(spell, target); break;
+            case CastType.Projectile: casted = CastProjectile(spell, target, origin, power); break;
+            case CastType.WandCharge: casted = CastCharge(spell, target, origin, power); break;
+            default: casted = CastInstant(spell, target, power); break;
         }
 
         if (!casted) return false;
 
         // 데미지 예약: 이 마법으로 몹이 쓰러질 예정이면 그 즉시 영창이 막힌다 (이펙트 연출과 별개)
-        if (target != null) target.ReserveDamage(spell);
+        if (target != null) target.ReserveDamage(spell, power);
 
         // 점수 처리 (GameManager가 씬에 없을 수도 있으므로 null 체크)
         if (GameManager.Instance != null)
@@ -97,7 +98,7 @@ public class SkillManager : MonoBehaviour
         return true;
     }
 
-    private bool CastProjectile(SpellData spell, EnemyController target, Vector3 origin)
+    private bool CastProjectile(SpellData spell, EnemyController target, Vector3 origin, float power)
     {
         if (spell.projectilePrefab == null)
         {
@@ -121,13 +122,13 @@ public class SkillManager : MonoBehaviour
         // 에셋 팩 이펙트에는 스크립트가 없을 수 있으므로 없으면 붙여줌
         ProjectileController controller = projectile.GetComponent<ProjectileController>();
         if (controller == null) controller = projectile.AddComponent<ProjectileController>();
-        controller.Initialize(spell, target);
+        controller.Initialize(spell, target, power);
 
         Debug.Log($"[마법 시전] {spell.spellName} 발사!");
         return true;
     }
 
-    private bool CastInstant(SpellData spell, EnemyController target)
+    private bool CastInstant(SpellData spell, EnemyController target, float power)
     {
         if (target == null)
         {
@@ -140,14 +141,14 @@ public class SkillManager : MonoBehaviour
                                                             spell.effectDuration, this);
 
         // 기본값: 장판 연출이 끝난 뒤 데미지 → 사망 애니메이션
-        target.ReceiveSpell(spell, spell.ResolveDamageDelay(effectLength));
+        target.ReceiveSpell(spell, spell.ResolveDamageDelay(effectLength), power);
 
         Debug.Log($"[마법 시전] {spell.spellName} 타겟 위치에 발동!");
         return true;
     }
 
     // 차지형: 지팡이 끝에 이펙트가 붙어서 재생 → 한 번 끝나면 몹에게 데미지 (→ 쓰러짐)
-    private bool CastCharge(SpellData spell, EnemyController target, Vector3 origin)
+    private bool CastCharge(SpellData spell, EnemyController target, Vector3 origin, float power)
     {
         if (spell.chargePrefab == null)
         {
@@ -178,13 +179,13 @@ public class SkillManager : MonoBehaviour
             chargeLength = EffectUtil.GetDuration(charge);
         }
 
-        StartCoroutine(FinishCharge(charge, chargeLength, spell, target));
+        StartCoroutine(FinishCharge(charge, chargeLength, spell, target, power));
 
         Debug.Log($"[마법 시전] {spell.spellName} 차징 시작! ({chargeLength:F1}초)");
         return true;
     }
 
-    private IEnumerator FinishCharge(GameObject charge, float chargeLength, SpellData spell, EnemyController target)
+    private IEnumerator FinishCharge(GameObject charge, float chargeLength, SpellData spell, EnemyController target, float power)
     {
         float damageDelay = spell.ResolveDamageDelay(chargeLength);
 
@@ -192,7 +193,7 @@ public class SkillManager : MonoBehaviour
         if (damageDelay < chargeLength)
         {
             yield return new WaitForSeconds(damageDelay);
-            HitAfterCharge(spell, target);
+            HitAfterCharge(spell, target, power);
             yield return new WaitForSeconds(chargeLength - damageDelay);
         }
         else
@@ -208,11 +209,11 @@ public class SkillManager : MonoBehaviour
         if (damageDelay >= chargeLength)
         {
             if (damageDelay > chargeLength) yield return new WaitForSeconds(damageDelay - chargeLength);
-            HitAfterCharge(spell, target);
+            HitAfterCharge(spell, target, power);
         }
     }
 
-    private void HitAfterCharge(SpellData spell, EnemyController target)
+    private void HitAfterCharge(SpellData spell, EnemyController target, float power)
     {
         if (target == null || target.IsDying) return;
 
@@ -221,7 +222,7 @@ public class SkillManager : MonoBehaviour
         {
             EffectUtil.SpawnAndAutoDestroy(spell.explosionPrefab, target.AimPoint, Quaternion.identity);
         }
-        target.TakeDamage(spell);
+        target.TakeDamage(spell, power);
     }
 
     // 띄어쓰기·대소문자를 무시하고 스펠 이름 비교
@@ -347,12 +348,13 @@ public class SkillManager : MonoBehaviour
     }
 
     // 음성 판정 결과로 시전. 성공이면 null, 실패면 사유 (음성 쪽은 사유를 로그로만 남긴다)
-    public string TryCastByVoice(string spellName)
+    // power: 영창 보너스 (VoiceBonusCalculator.Evaluate 결과의 power)
+    public string TryCastByVoice(string spellName, float power = 1f)
     {
         SpellData spell = FindSpell(spellName);
         if (spell == null) return "알 수 없는 주문";
         if (!IsUnlocked(spell)) return "아직 배우지 않은 주문";
         if (!CanCast) return "공격할 적이 없음";
-        return CastSpell(spell.spellName) ? null : "시전 실패 (타겟 또는 이펙트 없음)";
+        return CastSpell(spell.spellName, power) ? null : "시전 실패 (타겟 또는 이펙트 없음)";
     }
 }

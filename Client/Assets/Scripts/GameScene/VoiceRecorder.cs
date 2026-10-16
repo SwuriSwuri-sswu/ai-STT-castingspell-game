@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 
@@ -8,7 +8,7 @@ using UnityEngine;
 /// 시전은 SkillManager.TryCastByVoice 에 요청한다.
 ///
 /// 표시 규칙
-///   - 대기: 적이 있으면 "주문을 영창하세요." (키 입력 모드: "스페이스바를 누른 채 주문을 영창하세요."), 없으면 "적이 다가오고 있습니다..."
+///   - 대기: 적이 있으면 "주문을 영창하세요.", 없으면 "적이 다가오고 있습니다..."
 ///   - 말하는 중 / 해석 중: 상태 문구
 ///   - 발동: 들린 글자 타이핑 → 스펠 이름 강조 → 시전 → 몹에 맞고 결과 문구가 뜬 뒤 다음 영창 가능
 ///   - 불발, 오류, 시간 초과, 너무 짧음, 적 없음, 시전 실패: 실패 이유를 회색 자막으로 잠시 보여 준 뒤 안내 문구로 복귀
@@ -35,20 +35,16 @@ public class VoiceRecorder : MonoBehaviour
     [SerializeField] VoiceSender voiceSender;
     [SerializeField] VoiceSocket voiceSocket;
 
+    [Header("영창 보너스")]
+    [Tooltip("비워 두면 같은 오브젝트의 VoiceBonusCalculator 를 사용")]
+    [SerializeField] VoiceBonusCalculator voiceBonus;
+    [Tooltip("강한/완벽한 영창일 때 스펠 이름 아래에 문구 표시")]
+    [SerializeField] bool showChantText = true;
+
     /// <summary>직전 주문의 성량 (dBFS, 0이 최대). 서버가 계산한 값. 데미지 공식에 사용 가능</summary>
     public float LastVolumeDb { get; private set; } = -80f;
 
-    // 대기 안내 문구. 키 입력 모드면 어떤 키를 눌러야 하는지 함께 알려 준다
-    string HintReady
-    {
-        get
-        {
-            if (voiceSender == null || !voiceSender.IsPushToTalk) return "주문을 영창하세요.";
-            KeyCode key = voiceSender.PushToTalkKey;
-            string keyName = key == KeyCode.Space ? "스페이스바를" : $"{key} 키를";
-            return $"{keyName} 누른 채 주문을 영창하세요.";
-        }
-    }
+    const string HintReady = "주문을 영창하세요.";
     const string HintWaiting = "적이 다가오고 있습니다...";
 
     Coroutine sequence;
@@ -65,6 +61,8 @@ public class VoiceRecorder : MonoBehaviour
     void Awake()
     {
         if (subtitleText != null) baseScale = subtitleText.transform.localScale;
+        if (voiceBonus == null) voiceBonus = GetComponent<VoiceBonusCalculator>();
+        if (voiceBonus == null) Debug.LogWarning("[자막] VoiceBonusCalculator 가 없습니다. 영창 보너스 없이 기본 데미지로 시전합니다.");
     }
 
     void OnEnable() => Subscribe(true);
@@ -172,6 +170,17 @@ public class VoiceRecorder : MonoBehaviour
 
         if (r.Audio != null) LastVolumeDb = r.Audio.VolumeDb;
 
+        // 영창 보너스: 사람 목소리였던 발화(발동 성공 + NO_MATCH/AMBIGUOUS 불발)는 모두 평소 목소리 기준에 반영
+        ChantResult chant = new ChantResult { tier = ChantTier.Normal, power = 1f };
+        bool isVoice = r.Success || r.RejectReason == "NO_MATCH" || r.RejectReason == "AMBIGUOUS";
+        if (voiceBonus != null && r.Audio != null && isVoice)
+        {
+            chant = voiceBonus.Evaluate(r.Success, r.Audio.VolumeDb, r.Audio.PitchHz);
+            if (r.Success)
+                Debug.Log($"[영창] {chant.tier} ×{chant.power} (성량차 {chant.volumeDiffDb:+0.0;-0.0}dB, " +
+                          $"피치차 {(chant.pitchDiffSemitones.HasValue ? chant.pitchDiffSemitones.Value.ToString("+0.0;-0.0") + "반음" : "없음")}) {chant.LogText}");
+        }
+
         // 판정이 오는 사이에 몹이 쓰러질 예정이 됐으면 이 주문은 조용히 버린다 (일시 정지)
         if (!CanCast)
         {
@@ -193,11 +202,11 @@ public class VoiceRecorder : MonoBehaviour
             ShowFailure(RejectToMessage(r.RejectReason), r.Stt?.Text);
             return;
         }
-        sequence = StartCoroutine(SuccessSequence(r.Stt?.Text, r.Skill?.Name));
+        sequence = StartCoroutine(SuccessSequence(r.Stt?.Text, r.Skill?.Name, chant));
     }
 
     // ── 발동 연출: 들린 글자 타이핑 → 스펠 이름 강조 → 시전 → 잠시 뒤 지움 ──
-    IEnumerator SuccessSequence(string rawText, string spellName)
+    IEnumerator SuccessSequence(string rawText, string spellName, ChantResult chant)
     {
         castPending = true;
         if (subtitleText != null && !string.IsNullOrEmpty(rawText))
@@ -216,6 +225,8 @@ public class VoiceRecorder : MonoBehaviour
         {
             string hex = ColorUtility.ToHtmlStringRGB(SpellColor(spellName));
             subtitleText.text = $"<color=#{hex}><b>{spellName}!</b></color>";
+            if (showChantText && chant.LogText != null)
+                subtitleText.text += $"\n<size=70%><b>{chant.LogText}</b></size>";
             yield return Pop();
         }
 
@@ -232,7 +243,7 @@ public class VoiceRecorder : MonoBehaviour
         // 연출이 끝난 직후 시전 (연출 중 적이 사라졌거나 이펙트가 없으면 여기서 실패)
         SkillManager sm = SkillManager.Instance;
         EnemyController target = EnemyManager.Instance != null ? EnemyManager.Instance.CurrentEnemy : null;
-        string fail = sm != null ? sm.TryCastByVoice(spellName) : "SkillManager 없음";
+        string fail = sm != null ? sm.TryCastByVoice(spellName, chant.power) : "SkillManager 없음";
         if (fail != null)
         {
             castPending = false;

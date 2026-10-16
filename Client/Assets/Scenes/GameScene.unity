@@ -896,13 +896,33 @@ MonoBehaviour:
   failHoldSec: 1.5
   afterHitHoldSec: 1
   maxHitWaitSec: 6
-  normalColor: {r: 1, g: 0.84, b: 0, a: 1}
-  waterColor: {r: 0.31, g: 0.76, b: 1, a: 1}
-  fireColor: {r: 1, g: 0.35, b: 0.21, a: 1}
-  grassColor: {r: 0.42, g: 0.86, b: 0.36, a: 1}
+  normalColor:
+    r: 1
+    g: 0.84
+    b: 0
+    a: 1
+  waterColor:
+    r: 0.31
+    g: 0.76
+    b: 1
+    a: 1
+  fireColor:
+    r: 1
+    g: 0.35
+    b: 0.21
+    a: 1
+  grassColor:
+    r: 0.42
+    g: 0.86
+    b: 0.36
+    a: 1
   voiceInput: {fileID: 72393942}
   voiceSender: {fileID: 72393943}
   voiceSocket: {fileID: 72393944}
+  <LastVolumeDb>k__BackingField: -80
+  castPending: 0
+  baseScale: {x: 1, y: 1, z: 1}
+  wasCastable: 0
 --- !u!114 &72393941
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -961,6 +981,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::VoiceSender
   voiceInput: {fileID: 72393942}
   voiceSocket: {fileID: 72393944}
+  inputMode: 0
+  pushToTalkKey: 32
+  pttPrerollSec: 0.2
+  pttReleaseTailSec: 0.2
   vadSettings:
     frameMs: 30
     calibrationSec: 1
@@ -986,7 +1010,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f334a38489baeb542943df082a69aff0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceSocket
-  serverUrl: ws://127.0.0.1:8000/ws/voice/analyzing
+  serverUrl: ws://localhost:8000/ws/voice/analyzing
   unlockedOnly: 1
 --- !u!1 &79414433
 GameObject:
