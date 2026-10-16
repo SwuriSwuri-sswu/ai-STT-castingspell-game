@@ -234,7 +234,6 @@ GameObject:
   - component: {fileID: 349662462}
   - component: {fileID: 349662465}
   - component: {fileID: 349662466}
-  - component: {fileID: 349662468}
   - component: {fileID: 349662467}
   m_Layer: 0
   m_Name: GameObject
@@ -283,7 +282,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceWsTest
   serverUrl: ws://127.0.0.1:8000/ws/voice/analyzing
-  skillBridge: {fileID: 349662468}
+  unlockedOnly: 1
 --- !u!4 &349662464
 Transform:
   m_ObjectHideFlags: 0
@@ -330,6 +329,9 @@ MonoBehaviour:
   voiceSender: {fileID: 349662462}
   voiceSocket: {fileID: 349662463}
   saveDebugWav: 1
+  castTestKey: 99
+  unlockKey: 117
+  resetKey: 114
   show: 1
   screenPosition: {x: 10, y: 260}
   width: 480
@@ -358,175 +360,6 @@ MonoBehaviour:
   voiceInput: {fileID: 349662465}
   voiceSender: {fileID: 349662462}
   voiceSocket: {fileID: 349662463}
-  skillBridge: {fileID: 349662468}
---- !u!114 &349662468
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 349662461}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3f36ddf6dd0c20e49af701433f7a9aa2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::VoiceSkillBridge
-  spells:
-  - id: light
-    spellName: "\uBE5B"
-    tier: 0
-    unlockedByDefault: 1
-    aliases: []
-  - id: wind
-    spellName: "\uBC14\uB78C"
-    tier: 0
-    unlockedByDefault: 1
-    aliases: []
-  - id: stone
-    spellName: "\uB3CC"
-    tier: 0
-    unlockedByDefault: 1
-    aliases: []
-  - id: aqua
-    spellName: "\uBB3C"
-    tier: 1
-    unlockedByDefault: 0
-    aliases: []
-  - id: ice
-    spellName: "\uC5BC\uC74C"
-    tier: 1
-    unlockedByDefault: 0
-    aliases: []
-  - id: wave
-    spellName: "\uD30C\uB3C4"
-    tier: 1
-    unlockedByDefault: 0
-    aliases: []
-  - id: ice_thorn
-    spellName: "\uC5BC\uC74C \uAC00\uC2DC"
-    tier: 2
-    unlockedByDefault: 0
-    aliases: []
-  - id: rain_shower
-    spellName: "\uC18C\uB098\uAE30"
-    tier: 2
-    unlockedByDefault: 0
-    aliases: []
-  - id: water_spray
-    spellName: "\uBB3C\uBCF4\uB77C"
-    tier: 2
-    unlockedByDefault: 0
-    aliases: []
-  - id: cold_rain_shower
-    spellName: "\uCC28\uAC00\uC6B4 \uC18C\uB098\uAE30"
-    tier: 3
-    unlockedByDefault: 0
-    aliases: []
-  - id: sharp_icicle
-    spellName: "\uB0A0\uCE74\uB85C\uC6B4 \uACE0\uB4DC\uB984"
-    tier: 3
-    unlockedByDefault: 0
-    aliases: []
-  - id: raging_wave
-    spellName: "\uBAB0\uC544\uCE58\uB294 \uD30C\uB3C4"
-    tier: 3
-    unlockedByDefault: 0
-    aliases: []
-  - id: sun
-    spellName: "\uD574"
-    tier: 1
-    unlockedByDefault: 0
-    aliases: []
-  - id: fire
-    spellName: "\uBD88"
-    tier: 1
-    unlockedByDefault: 0
-    aliases: []
-  - id: flame
-    spellName: "\uD654\uC5FC"
-    tier: 1
-    unlockedByDefault: 0
-    aliases: []
-  - id: fire_ball
-    spellName: "\uD654\uC5FC\uAD6C"
-    tier: 2
-    unlockedByDefault: 0
-    aliases: []
-  - id: spark
-    spellName: "\uBD88\uAF43"
-    tier: 2
-    unlockedByDefault: 0
-    aliases: []
-  - id: volcano
-    spellName: "\uD654\uC0B0"
-    tier: 2
-    unlockedByDefault: 0
-    aliases: []
-  - id: flame_burst
-    spellName: "\uD654\uC5FC \uD3ED\uBC1C"
-    tier: 3
-    unlockedByDefault: 0
-    aliases: []
-  - id: hot_flame
-    spellName: "\uB728\uAC70\uC6B4 \uBD88\uAF43"
-    tier: 3
-    unlockedByDefault: 0
-    aliases: []
-  - id: red_volcano_explosion
-    spellName: "\uBD89\uC740 \uD654\uC0B0 \uD3ED\uBC1C"
-    tier: 3
-    unlockedByDefault: 0
-    aliases: []
-  - id: grass
-    spellName: "\uD480"
-    tier: 1
-    unlockedByDefault: 0
-    aliases: []
-  - id: leaf
-    spellName: "\uC78E"
-    tier: 1
-    unlockedByDefault: 0
-    aliases: []
-  - id: seed
-    spellName: "\uC528\uC557"
-    tier: 1
-    unlockedByDefault: 0
-    aliases: []
-  - id: log
-    spellName: "\uD1B5\uB098\uBB34"
-    tier: 2
-    unlockedByDefault: 0
-    aliases: []
-  - id: flower_petal
-    spellName: "\uAF43\uC78E"
-    tier: 2
-    unlockedByDefault: 0
-    aliases: []
-  - id: leafage
-    spellName: "\uC78E\uC0AC\uADC0"
-    tier: 2
-    unlockedByDefault: 0
-    aliases: []
-  - id: giant_log
-    spellName: "\uAC70\uB300\uD55C \uD1B5\uB098\uBB34"
-    tier: 3
-    unlockedByDefault: 0
-    aliases: []
-  - id: poisonous_thorn
-    spellName: "\uB3C5\uC744 \uD488\uC740 \uAC00\uC2DC"
-    tier: 3
-    unlockedByDefault: 0
-    aliases: []
-  - id: dancing_green_flower_petal
-    spellName: "\uCDA4\uCD94\uB294 \uCD08\uB85D \uAF43\uC78E"
-    tier: 3
-    unlockedByDefault: 0
-    aliases: []
-  unlockedOnly: 1
-  enemyReady: 1
-  enemyToggleKey: 101
-  unlockKey: 117
-  resetKey: 114
 --- !u!1 &382808709
 GameObject:
   m_ObjectHideFlags: 0

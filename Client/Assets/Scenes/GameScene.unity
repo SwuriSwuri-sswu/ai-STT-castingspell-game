@@ -709,15 +709,15 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 72393938}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd65006f5338cf34a88aef639bed8469, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceDebug
-  voiceInput: {fileID: 0}
-  voiceSender: {fileID: 0}
-  voiceSocket: {fileID: 0}
-  saveDebugWav: 1
+  voiceInput: {fileID: 72393942}
+  voiceSender: {fileID: 72393943}
+  voiceSocket: {fileID: 72393944}
+  saveDebugWav: 0
   castTestKey: 99
   unlockKey: 117
   resetKey: 114
@@ -743,7 +743,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38b64766c9a3e6a4a97b8f669ef42ca2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceInput
-  deviceName: Microphone Array (AMD Audio Device)
+  deviceName: Headset Microphone (Realtek(R) Audio)
   requestedSampleRate: 16000
   loopBufferSec: 10
 --- !u!114 &72393943

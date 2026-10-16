@@ -1,85 +1,125 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEngine;
 
 /// <summary>
-/// VoiceInput(¼Ò¸®) ¡æ VoiceActivityDetector(¸» ±¸°£ °¨Áö) ¡æ WAV º¯È¯¡¤Àü¼Û ¡æ °á°ú ´ë±â ¸¦ Á¶Á¤ÇÑ´Ù.
+/// VoiceInput(ì†Œë¦¬) â†’ VoiceActivityDetector(ë§ êµ¬ê°„ ê°ì§€) â†’ WAV ë³€í™˜Â·ì „ì†¡ â†’ ê²°ê³¼ ëŒ€ê¸° ë¥¼ ì¡°ì •í•œë‹¤.
 ///
-/// ÀÔ·Â: VAD °¡ ¸» ½ÃÀÛ¡¤³¡À» °¨ÁöÇØ ÀÚµ¿À¸·Î Àü¼ÛÇÑ´Ù (ÀÚµ¿ °¨Áö¸¸ »ç¿ë).
+/// ì…ë ¥ ë°©ì‹ (Inspector ì˜ inputMode ì—ì„œ ì„ íƒ)
+///   - PushToTalk : í‚¤(ê¸°ë³¸ ìŠ¤í˜ì´ìŠ¤ë°”)ë¥¼ ëˆ„ë¥´ëŠ” ë™ì•ˆ ë…¹ìŒí•˜ê³ , ë–¼ë©´ ì „ì†¡í•œë‹¤. (ê¸°ë³¸ê°’)
+///   - AutoDetect : VAD ê°€ ë§ ì‹œì‘Â·ëì„ ê°ì§€í•´ ìë™ìœ¼ë¡œ ì „ì†¡í•œë‹¤ (ê¸°ì¡´ ë°©ì‹).
+///   ë‘ ë°©ì‹ ëª¨ë‘ WAV ë³€í™˜Â·ì „ì†¡Â·ê²°ê³¼ ëŒ€ê¸°(ë§‰ê¸°)ëŠ” ê°™ì€ ì½”ë“œë¥¼ ì“´ë‹¤.
 ///
-/// B-1 ´Ü°è: ¸»ÀÌ ³¡³ª¸é ¹ßÈ­¸¦ WAV ÇÑ µ¢¾î¸®·Î º¸³½´Ù (±âÁ¸ cast_header + WAV ±ÔÄ¢).
-///          B-2 ¿¡¼­´Â SubmitUtterance ºÎºĞ¸¸ Á¶°¢ Àü¼ÛÀ¸·Î ¹Ù²ï´Ù.
+/// B-1 ë‹¨ê³„: ë§ì´ ëë‚˜ë©´ ë°œí™”ë¥¼ WAV í•œ ë©ì–´ë¦¬ë¡œ ë³´ë‚¸ë‹¤ (ê¸°ì¡´ cast_header + WAV ê·œì¹™).
+///          B-2 ì—ì„œëŠ” SubmitUtterance ë¶€ë¶„ë§Œ ì¡°ê° ì „ì†¡ìœ¼ë¡œ ë°”ë€ë‹¤.
 ///
-/// [¸·±â ¹æ½Ä]
-///   ÁÖ¹® ÇÏ³ª¸¦ º¸³»¸é ¼­¹ö ÆÇÁ¤ÀÌ µ¹¾Æ¿Ã ¶§±îÁö »õ ÁÖ¹®À» ¹ŞÁö ¾Ê´Â´Ù.
-///   ´ë±â Áß¿¡ ¸»ÇÑ ÁÖ¹®Àº º¸°üÇÏÁö ¾Ê°í ¹ö¸°´Ù.
-///   ÆÇÁ¤ °á°ú(¶Ç´Â ¿À·ù)°¡ ¿À°Å³ª, Á¤ÇØÁø ½Ã°£ÀÌ Áö³ª¸é ´ë±â¸¦ Ç¬´Ù.
+/// [ë§‰ê¸° ë°©ì‹]
+///   ì£¼ë¬¸ í•˜ë‚˜ë¥¼ ë³´ë‚´ë©´ ì„œë²„ íŒì •ì´ ëŒì•„ì˜¬ ë•Œê¹Œì§€ ìƒˆ ì£¼ë¬¸ì„ ë°›ì§€ ì•ŠëŠ”ë‹¤.
+///   ëŒ€ê¸° ì¤‘ì— ë§í•œ ì£¼ë¬¸ì€ ë³´ê´€í•˜ì§€ ì•Šê³  ë²„ë¦°ë‹¤.
+///   íŒì • ê²°ê³¼(ë˜ëŠ” ì˜¤ë¥˜)ê°€ ì˜¤ê±°ë‚˜, ì •í•´ì§„ ì‹œê°„ì´ ì§€ë‚˜ë©´ ëŒ€ê¸°ë¥¼ í‘¼ë‹¤.
 ///
-/// [¹Ş±â Á¶°Ç]
-///   CanAccept °¡ false ÀÏ ¶§(¿¹: °ø°İÇÒ ÀûÀÌ ¾øÀ½) ½ÃÀÛµÈ ¹ßÈ­´Â º¸³»Áö ¾Ê°í ³¡±îÁö ¹«½ÃÇÑ´Ù.
+/// [ë°›ê¸° ì¡°ê±´]
+///   CanAccept ê°€ false ì¼ ë•Œ(ì˜ˆ: ê³µê²©í•  ì ì´ ì—†ìŒ) ì‹œì‘ëœ ë°œí™”ëŠ” ë³´ë‚´ì§€ ì•Šê³  ëê¹Œì§€ ë¬´ì‹œí•œë‹¤.
 /// </summary>
 public class VoiceSender : MonoBehaviour
 {
-    [Header("¿¬°á")]
+    /// <summary>ë…¹ìŒì„ ì‹œì‘í•˜ê³  ëë‚´ëŠ” ë°©ì‹</summary>
+    public enum InputMode
+    {
+        PushToTalk = 0,   // í‚¤ë¥¼ ëˆ„ë¥´ëŠ” ë™ì•ˆ ë…¹ìŒ
+        AutoDetect = 1,   // VAD ìë™ ê°ì§€ (ê¸°ì¡´ ë°©ì‹)
+    }
+
+    [Header("ì—°ê²°")]
     [SerializeField] VoiceInput voiceInput;
     [SerializeField] VoiceSocket voiceSocket;
 
-    [Header("ÀÚµ¿ °¨Áö ¼³Á¤")]
+    [Header("ì…ë ¥ ë°©ì‹")]
+    [Tooltip("PushToTalk: í‚¤ë¥¼ ëˆ„ë¥´ëŠ” ë™ì•ˆ ë…¹ìŒ / AutoDetect: ë§ì†Œë¦¬ë¥¼ ìë™ ê°ì§€ (ê¸°ì¡´ ë°©ì‹). í”Œë ˆì´ ì¤‘ì— ë°”ê¿”ë„ ëœë‹¤")]
+    [SerializeField] InputMode inputMode = InputMode.PushToTalk;
+
+    [Header("í‚¤ ì…ë ¥ ì„¤ì • (PushToTalk)")]
+    [Tooltip("ëˆ„ë¥´ëŠ” ë™ì•ˆ ë…¹ìŒí•  í‚¤")]
+    [SerializeField] KeyCode pushToTalkKey = KeyCode.Space;
+    [Tooltip("í‚¤ë¥¼ ëˆ„ë¥´ê¸° ì§ì „ êµ¬ê°„ì„ í•¨ê»˜ ë³´ë‚¼ ê¸¸ì´(ì´ˆ). í‚¤ì™€ ë™ì‹œì— ë§ì„ ì‹œì‘í•´ë„ ì²« ìŒì ˆì´ ì˜ë¦¬ì§€ ì•Šê²Œ í•œë‹¤")]
+    [SerializeField, Min(0f)] float pttPrerollSec = 0.2f;
+    [Tooltip("í‚¤ë¥¼ ë—€ ë’¤ ë” ë…¹ìŒí•  ì‹œê°„(ì´ˆ). ë§ˆì§€ë§‰ ìŒì ˆì„ ë§í•˜ë©´ì„œ í‚¤ë¥¼ ë–¼ë„ ì˜ë¦¬ì§€ ì•Šê²Œ í•œë‹¤")]
+    [SerializeField, Min(0f)] float pttReleaseTailSec = 0.2f;
+
+    [Header("ìë™ ê°ì§€ ì„¤ì • (AutoDetect)")]
     [SerializeField] VadSettings vadSettings = new VadSettings();
 
-    [Header("°á°ú ´ë±â (¸·±â ¹æ½Ä)")]
-    [Tooltip("¼­¹ö ÀÀ´äÀÌ ÀÌ ½Ã°£(ÃÊ) ¾È¿¡ ¿ÀÁö ¾ÊÀ¸¸é ´ë±â¸¦ °­Á¦·Î Ç¬´Ù. °ÔÀÓÀÌ ¸ØÃßÁö ¾Ê°Ô ÇÏ´Â ¾ÈÀüÀåÄ¡")]
+    [Header("ê²°ê³¼ ëŒ€ê¸° (ë§‰ê¸° ë°©ì‹)")]
+    [Tooltip("ì„œë²„ ì‘ë‹µì´ ì´ ì‹œê°„(ì´ˆ) ì•ˆì— ì˜¤ì§€ ì•Šìœ¼ë©´ ëŒ€ê¸°ë¥¼ ê°•ì œë¡œ í‘¼ë‹¤. ê²Œì„ì´ ë©ˆì¶”ì§€ ì•Šê²Œ í•˜ëŠ” ì•ˆì „ì¥ì¹˜")]
     [SerializeField] float resultTimeoutSec = 3f;
 
-    [Header("¹ßÈ­ ´Ùµë±â")]
-    [Tooltip("¸» ³¡ ¹«À½ Áß ³²°Ü µÑ ±æÀÌ(ÃÊ). ³¡ ÀÚÀ½ÀÌ Àß¸®Áö ¾Ê°Ô ¾à°£ ³²±ä´Ù")]
+    [Header("ë°œí™” ë‹¤ë“¬ê¸°")]
+    [Tooltip("ë§ ë ë¬´ìŒ ì¤‘ ë‚¨ê²¨ ë‘˜ ê¸¸ì´(ì´ˆ). ë ììŒì´ ì˜ë¦¬ì§€ ì•Šê²Œ ì•½ê°„ ë‚¨ê¸´ë‹¤")]
     [SerializeField] float keepTrailingSilenceSec = 0.1f;
 
-    const float MinRecordingSec = 0.15f;   // ¼­¹ö ÃÖ¼Ò 0.1ÃÊ + ¿©À¯
-    const float MaxRecordingSec = 4.9f;    // ¼­¹ö ÃÖ´ë 5ÃÊº¸´Ù ¾à°£ Âª°Ô (ÇÁ·¹ÀÓ ´ÜÀ§ ¿ÀÂ÷ ´ëºñ)
-    const float SilentPeak = 0.01f;        // ÀÌº¸´Ù ÀÛÀ¸¸é ¼Ò¸®°¡ °ÅÀÇ ¾ø´Â °ÍÀ¸·Î ÆÇ´Ü
+    const float MinRecordingSec = 0.15f;   // ì„œë²„ ìµœì†Œ 0.1ì´ˆ + ì—¬ìœ 
+    const float MaxRecordingSec = 4.9f;    // ì„œë²„ ìµœëŒ€ 5ì´ˆë³´ë‹¤ ì•½ê°„ ì§§ê²Œ (í”„ë ˆì„ ë‹¨ìœ„ ì˜¤ì°¨ ëŒ€ë¹„)
+    const float SilentPeak = 0.01f;        // ì´ë³´ë‹¤ ì‘ìœ¼ë©´ ì†Œë¦¬ê°€ ê±°ì˜ ì—†ëŠ” ê²ƒìœ¼ë¡œ íŒë‹¨
 
-    /// <summary>ÇöÀç VAD (µğ¹ö±× Ç¥½Ã¿ë). ÀåÄ¡ º¯°æ µîÀ¸·Î ´Ù½Ã ¸¸µé¾îÁö±â Àü¿¡´Â null ÀÏ ¼ö ÀÖ´Ù.</summary>
+    /// <summary>í˜„ì¬ VAD (ë””ë²„ê·¸ í‘œì‹œìš©). ì¥ì¹˜ ë³€ê²½ ë“±ìœ¼ë¡œ ë‹¤ì‹œ ë§Œë“¤ì–´ì§€ê¸° ì „ì—ëŠ” null ì¼ ìˆ˜ ìˆë‹¤.</summary>
     public VoiceActivityDetector Vad => vad;
 
-    // ¦¡¦¡ °ÔÀÓ(ÀÚ¸· ¿¬Ãâ µî)¿¡¼­ ±¸µ¶ÇÏ´Â ÀÌº¥Æ® ¦¡¦¡
-    public event Action RecordingStarted;            // ¹ßÈ­ ¼öÁı ½ÃÀÛ
-    public event Action RecordingSubmitted;          // ¹ßÈ­ Àü¼Û ½ÃÀÛ
-    public event Action<string> RecordingRejected;   // Àü¼ÛÇÏÁö ¸øÇÔ (»çÀ¯)
-    public event Action<byte[]> UtteranceSent;       // ¼­¹ö·Î º¸³½ WAV (VoiceDebug ÀÇ µğ¹ö±× ÀúÀå¿ë)
+    // â”€â”€ ê²Œì„(ìë§‰ ì—°ì¶œ ë“±)ì—ì„œ êµ¬ë…í•˜ëŠ” ì´ë²¤íŠ¸ â”€â”€
+    public event Action RecordingStarted;            // ë°œí™” ìˆ˜ì§‘ ì‹œì‘
+    public event Action RecordingSubmitted;          // ë°œí™” ì „ì†¡ ì‹œì‘
+    public event Action<string> RecordingRejected;   // ì „ì†¡í•˜ì§€ ëª»í•¨ (ì‚¬ìœ )
+    public event Action<byte[]> UtteranceSent;       // ì„œë²„ë¡œ ë³´ë‚¸ WAV (VoiceDebug ì˜ ë””ë²„ê·¸ ì €ì¥ìš©)
 
     /// <summary>
-    /// Áö±İ ÁÖ¹®À» ¹ŞÀ» ¼ö ÀÖ´ÂÁö (¿¹: °ø°İÇÒ ÀûÀÌ ÀÖ´ÂÁö). VoiceRecorder °¡ ¼³Á¤ÇÑ´Ù.
-    /// false ÀÌ¸é ±×¶§ ½ÃÀÛµÈ ¹ßÈ­´Â º¸³»Áö ¾Ê°í ³¡±îÁö ¹«½ÃÇÑ´Ù. null ÀÌ¸é Ç×»ó ¹Ş´Â´Ù.
-    /// VoiceSender °¡ °ÔÀÓ ÄÚµå(VoiceSkillBridge, SkillManager)¸¦ Á÷Á¢ ¾ËÁö ¾Êµµ·Ï ÇÔ¼ö·Î ¹Ş´Â´Ù.
+    /// ì§€ê¸ˆ ì£¼ë¬¸ì„ ë°›ì„ ìˆ˜ ìˆëŠ”ì§€ (ì˜ˆ: ê³µê²©í•  ì ì´ ìˆëŠ”ì§€). VoiceRecorder ê°€ ì„¤ì •í•œë‹¤.
+    /// false ì´ë©´ ê·¸ë•Œ ì‹œì‘ëœ ë°œí™”ëŠ” ë³´ë‚´ì§€ ì•Šê³  ëê¹Œì§€ ë¬´ì‹œí•œë‹¤. null ì´ë©´ í•­ìƒ ë°›ëŠ”ë‹¤.
+    /// VoiceSender ê°€ ê²Œì„ ì½”ë“œ(VoiceSkillBridge, SkillManager)ë¥¼ ì§ì ‘ ì•Œì§€ ì•Šë„ë¡ í•¨ìˆ˜ë¡œ ë°›ëŠ”ë‹¤.
     /// </summary>
     public Func<bool> CanAccept { get; set; }
 
     public bool IsRecording => collecting;
     public bool IsWaitingForResult => waitingForResult;
-    public string LastInfo => lastInfo;              // ¸¶Áö¸· ¹ßÈ­ Á¤º¸ (µğ¹ö±× Ç¥½Ã¿ë)
+    public string LastInfo => lastInfo;              // ë§ˆì§€ë§‰ ë°œí™” ì •ë³´ (ë””ë²„ê·¸ í‘œì‹œìš©)
+
+    /// <summary>ì§€ê¸ˆ ì…ë ¥ ë°©ì‹ì´ í‚¤ ì…ë ¥(PushToTalk)ì¸ì§€. VoiceRecorder ê°€ ì•ˆë‚´ ë¬¸êµ¬ë¥¼ ê³ ë¥¼ ë•Œ ì“´ë‹¤</summary>
+    public bool IsPushToTalk => inputMode == InputMode.PushToTalk;
+    public KeyCode PushToTalkKey => pushToTalkKey;
 
     VoiceActivityDetector vad;
     readonly List<float> utterance = new List<float>(16000 * 5);
     bool collecting;
     string lastInfo = "-";
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // °á°ú ´ë±â »óÅÂ (¸·±â ¹æ½Ä)
-    //   waitingForResult : true ÀÎ µ¿¾È »õ ÁÖ¹®À» ¹ŞÁö ¾Ê´Â´Ù
-    //   waitDeadline     : ÀÌ ½Ã°¢ÀÌ Áö³ª¸é ÀÀ´äÀÌ ¾ø¾îµµ ´ë±â¸¦ Ç¬´Ù
-    //   pendingRequestId : Áö±İ ±â´Ù¸®´Â ¿äÃ» ¹øÈ£. ´Ù¸¥ ¿äÃ»ÀÇ °á°ú·Î ´ë±â°¡ Ç®¸®Áö ¾Ê°Ô ÇÑ´Ù
-    //   ignoringCurrentSpeech : ´ë±â Áß ½ÃÀÛµÈ ¹ßÈ­¸¦ ³¡±îÁö ¹«½ÃÇÏ±â À§ÇÑ Ç¥½Ã
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ê²°ê³¼ ëŒ€ê¸° ìƒíƒœ (ë§‰ê¸° ë°©ì‹)
+    //   waitingForResult : true ì¸ ë™ì•ˆ ìƒˆ ì£¼ë¬¸ì„ ë°›ì§€ ì•ŠëŠ”ë‹¤
+    //   waitDeadline     : ì´ ì‹œê°ì´ ì§€ë‚˜ë©´ ì‘ë‹µì´ ì—†ì–´ë„ ëŒ€ê¸°ë¥¼ í‘¼ë‹¤
+    //   pendingRequestId : ì§€ê¸ˆ ê¸°ë‹¤ë¦¬ëŠ” ìš”ì²­ ë²ˆí˜¸. ë‹¤ë¥¸ ìš”ì²­ì˜ ê²°ê³¼ë¡œ ëŒ€ê¸°ê°€ í’€ë¦¬ì§€ ì•Šê²Œ í•œë‹¤
+    //   ignoringCurrentSpeech : ëŒ€ê¸° ì¤‘ ì‹œì‘ëœ ë°œí™”ë¥¼ ëê¹Œì§€ ë¬´ì‹œí•˜ê¸° ìœ„í•œ í‘œì‹œ
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     bool waitingForResult;
     float waitDeadline;
     string pendingRequestId;
     bool ignoringCurrentSpeech;
 
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // í‚¤ ì…ë ¥(PushToTalk) ìƒíƒœ
+    //   pttHeld     : í‚¤ë¥¼ ëˆŒëŸ¬ ë…¹ìŒì„ ì‹œì‘í–ˆê³  ì•„ì§ ë–¼ì§€ ì•ŠìŒ
+    //   pttStopAt   : í‚¤ë¥¼ ë—€ ë’¤ ê¼¬ë¦¬ ë…¹ìŒì´ ëë‚˜ëŠ” ì‹œê°. -1 ì´ë©´ ê¼¬ë¦¬ ë…¹ìŒ ì¤‘ì´ ì•„ë‹˜
+    //   pttRing     : í‚¤ë¥¼ ëˆ„ë¥´ê¸° ì „ ìµœê·¼ ì†Œë¦¬ë¥¼ ë³´ê´€í•˜ëŠ” ì›í˜• ë²„í¼ (í”„ë¦¬ë¡¤)
+    //   appliedMode : ë§ˆì§€ë§‰ìœ¼ë¡œ ì ìš©í•œ ì…ë ¥ ë°©ì‹. í”Œë ˆì´ ì¤‘ Inspector ì—ì„œ ë°”ê¾¸ë©´ ê°ì§€í•´ ì •ë¦¬í•œë‹¤
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    bool pttHeld;
+    float pttStopAt = -1f;
+    float[] pttRing;
+    int pttRingHead, pttRingCount, pttRingRate;
+    InputMode appliedMode;
+
     void OnEnable()
     {
+        appliedMode = inputMode;
         if (voiceInput != null) voiceInput.DeviceChanged += OnDeviceChanged;
         if (voiceInput != null) voiceInput.SamplesAvailable += OnSamples;
         if (voiceSocket != null)
@@ -99,48 +139,66 @@ public class VoiceSender : MonoBehaviour
             voiceSocket.ErrorReceived -= OnServerError;
         }
         collecting = false;
+        ResetPushToTalk();
     }
 
     /// <summary>
-    /// ¸¶ÀÌÅ©°¡ ¹Ù²î¸é VAD ¸¦ ¹ö¸®°í, ´ÙÀ½ »ùÇÃÀÌ µé¾î¿Ã ¶§ »õ »ùÇÃ·¹ÀÌÆ®·Î ´Ù½Ã ¸¸µç´Ù (¼ÒÀ½ ÃøÁ¤µµ ´Ù½Ã ÇÔ).
-    /// ¸ğÀ¸´ø ¹ßÈ­´Â ¹ö¸°´Ù. °á°ú ´ë±â(¸·±â) »óÅÂ´Â ÀÌ¹Ì º¸³½ ¼­¹ö ¿äÃ»°ú °ü·ÃµÇ¹Ç·Î ±×´ë·Î µĞ´Ù.
+    /// ë§ˆì´í¬ê°€ ë°”ë€Œë©´ VAD ë¥¼ ë²„ë¦¬ê³ , ë‹¤ìŒ ìƒ˜í”Œì´ ë“¤ì–´ì˜¬ ë•Œ ìƒˆ ìƒ˜í”Œë ˆì´íŠ¸ë¡œ ë‹¤ì‹œ ë§Œë“ ë‹¤ (ì†ŒìŒ ì¸¡ì •ë„ ë‹¤ì‹œ í•¨).
+    /// ëª¨ìœ¼ë˜ ë°œí™”ëŠ” ë²„ë¦°ë‹¤. ê²°ê³¼ ëŒ€ê¸°(ë§‰ê¸°) ìƒíƒœëŠ” ì´ë¯¸ ë³´ë‚¸ ì„œë²„ ìš”ì²­ê³¼ ê´€ë ¨ë˜ë¯€ë¡œ ê·¸ëŒ€ë¡œ ë‘”ë‹¤.
     /// </summary>
     void OnDeviceChanged()
     {
+        bool wasCollecting = collecting;
         vad = null;
         collecting = false;
         ignoringCurrentSpeech = false;
         utterance.Clear();
-        Debug.Log("[MIC] ¸¶ÀÌÅ©°¡ ¹Ù²î¾î °¨Áö¸¦ ´Ù½Ã ½ÃÀÛÇÕ´Ï´Ù.");
+        ResetPushToTalk();   // ìƒ˜í”Œë ˆì´íŠ¸ê°€ ë°”ë€” ìˆ˜ ìˆìœ¼ë¯€ë¡œ í”„ë¦¬ë¡¤ ë²„í¼ë„ ë‹¤ì‹œ ë§Œë“ ë‹¤
+        if (wasCollecting) RecordingRejected?.Invoke("ë§ˆì´í¬ê°€ ë°”ë€Œì–´ ë…¹ìŒì„ ì·¨ì†Œí–ˆìŠµë‹ˆë‹¤.");
+        Debug.Log("[MIC] ë§ˆì´í¬ê°€ ë°”ë€Œì–´ ê°ì§€ë¥¼ ë‹¤ì‹œ ì‹œì‘í•©ë‹ˆë‹¤.");
     }
 
     void Start()
     {
-        if (voiceInput == null) Debug.LogError("[MIC] voiceInput ÀÌ ºñ¾î ÀÖ½À´Ï´Ù. Inspector ¿¡¼­ VoiceInput À» ¿¬°áÇÏ¼¼¿ä.");
-        if (voiceSocket == null) Debug.LogError("[MIC] voiceSocket °¡ ºñ¾î ÀÖ½À´Ï´Ù. Inspector ¿¡¼­ VoiceSocket ¸¦ ¿¬°áÇÏ¼¼¿ä.");
+        if (voiceInput == null) Debug.LogError("[MIC] voiceInput ì´ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤. Inspector ì—ì„œ VoiceInput ì„ ì—°ê²°í•˜ì„¸ìš”.");
+        if (voiceSocket == null) Debug.LogError("[MIC] voiceSocket ê°€ ë¹„ì–´ ìˆìŠµë‹ˆë‹¤. Inspector ì—ì„œ VoiceSocket ë¥¼ ì—°ê²°í•˜ì„¸ìš”.");
     }
 
     void Update()
     {
-        // [¸·±â] ¾ÈÀüÀåÄ¡: ¼­¹ö°¡ ÀÀ´äÇÏÁö ¾Ê¾Æµµ Á¤ÇØÁø ½Ã°£ÀÌ Áö³ª¸é ´ë±â¸¦ Ç¬´Ù
+        // [ë§‰ê¸°] ì•ˆì „ì¥ì¹˜: ì„œë²„ê°€ ì‘ë‹µí•˜ì§€ ì•Šì•„ë„ ì •í•´ì§„ ì‹œê°„ì´ ì§€ë‚˜ë©´ ëŒ€ê¸°ë¥¼ í‘¼ë‹¤
         if (waitingForResult && Time.unscaledTime >= waitDeadline)
         {
-            ReleaseWait("ÀÀ´ä ½Ã°£ ÃÊ°ú");
-            RecordingRejected?.Invoke("ÁÖ¹® ÇØ¼® ½Ã°£ÀÌ ÃÊ°úµÇ¾ú½À´Ï´Ù.");   // ÀÚ¸·ÀÌ 'ÇØ¼® Áß'¿¡ ¸ØÃßÁö ¾Ê°Ô ¾Ë¸°´Ù
+            ReleaseWait("ì‘ë‹µ ì‹œê°„ ì´ˆê³¼");
+            RecordingRejected?.Invoke("ì£¼ë¬¸ í•´ì„ ì‹œê°„ì´ ì´ˆê³¼ë˜ì—ˆìŠµë‹ˆë‹¤.");   // ìë§‰ì´ 'í•´ì„ ì¤‘'ì— ë©ˆì¶”ì§€ ì•Šê²Œ ì•Œë¦°ë‹¤
         }
+
+        // í”Œë ˆì´ ì¤‘ Inspector ì—ì„œ ì…ë ¥ ë°©ì‹ì„ ë°”ê¾¸ë©´ ëª¨ìœ¼ë˜ ë°œí™”ë¥¼ ë²„ë¦¬ê³  ìƒˆ ë°©ì‹ìœ¼ë¡œ ì‹œì‘í•œë‹¤
+        if (inputMode != appliedMode)
+        {
+            Debug.Log($"[MIC] ì…ë ¥ ë°©ì‹ ë³€ê²½: {appliedMode} â†’ {inputMode}");
+            appliedMode = inputMode;
+            CancelRecording("ì…ë ¥ ë°©ì‹ì´ ë°”ë€Œì–´ ë…¹ìŒì„ ì·¨ì†Œí–ˆìŠµë‹ˆë‹¤.");
+            ignoringCurrentSpeech = false;
+        }
+
+        if (inputMode == InputMode.PushToTalk) UpdatePushToTalk();
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // VoiceInput ¡æ VAD
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // VoiceInput â†’ VAD
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     void OnSamples(float[] samples, int count)
     {
         if (vad == null) CreateVad();
 
-        // ÆÇÁ¤ ´ë±â Áß¿¡µµ °è»êÀº °è¼ÓÇÑ´Ù (À½·® Ç¥½Ã, ¼ÒÀ½ ±âÁØ À¯Áö).
-        // ¸ØÃßÁö ¾Ê¾Æ¾ß ´ë±â°¡ Ç®¸° Á÷ÈÄ ¹Ù·Î Á¤È®ÇÏ°Ô °¨ÁöÇÒ ¼ö ÀÖ´Ù.
+        // íŒì • ëŒ€ê¸° ì¤‘ì—ë„ ê³„ì‚°ì€ ê³„ì†í•œë‹¤ (ìŒëŸ‰ í‘œì‹œ, ì†ŒìŒ ê¸°ì¤€ ìœ ì§€).
+        // ë©ˆì¶”ì§€ ì•Šì•„ì•¼ ëŒ€ê¸°ê°€ í’€ë¦° ì§í›„ ë°”ë¡œ ì •í™•í•˜ê²Œ ê°ì§€í•  ìˆ˜ ìˆë‹¤.
         vad.Process(samples, count);
+
+        // í‚¤ ì…ë ¥ ëª¨ë“œ: VAD ì´ë²¤íŠ¸ ëŒ€ì‹  ì—¬ê¸°ì„œ ì§ì ‘ ì†Œë¦¬ë¥¼ ëª¨ì€ë‹¤ (VAD ëŠ” ìŒëŸ‰ í‘œì‹œìš©ìœ¼ë¡œë§Œ ê³„ì† ëˆë‹¤)
+        if (inputMode == InputMode.PushToTalk) CollectPushToTalk(samples, count);
     }
 
     void CreateVad()
@@ -153,22 +211,24 @@ public class VoiceSender : MonoBehaviour
 
     void OnSpeechStarted(float[] preroll)
     {
-        // [¸·±â] ÀÌÀü ÁÖ¹®ÀÇ ÆÇÁ¤ÀÌ ¾ÆÁ÷ ¿ÀÁö ¾Ê¾ÒÀ¸¸é ÀÌ¹ø ¹ßÈ­´Â ÅëÂ°·Î ¹«½ÃÇÑ´Ù.
-        //        ¸»ÇÏ´Â µµÁß¿¡ ´ë±â°¡ Ç®·Áµµ ÀÌ ¹ßÈ­´Â ³¡±îÁö ¹«½ÃÇØ¼­,
-        //        ¾ÕºÎºĞÀÌ Àß¸° ¹İÂÊÂ¥¸® À½¼ºÀÌ ¼­¹ö·Î °¡Áö ¾Ê°Ô ÇÑ´Ù.
+        if (inputMode != InputMode.AutoDetect) return;   // í‚¤ ì…ë ¥ ëª¨ë“œì—ì„œëŠ” VAD ì˜ ë§ ì‹œì‘Â·ëì„ ì“°ì§€ ì•ŠëŠ”ë‹¤
+
+        // [ë§‰ê¸°] ì´ì „ ì£¼ë¬¸ì˜ íŒì •ì´ ì•„ì§ ì˜¤ì§€ ì•Šì•˜ìœ¼ë©´ ì´ë²ˆ ë°œí™”ëŠ” í†µì§¸ë¡œ ë¬´ì‹œí•œë‹¤.
+        //        ë§í•˜ëŠ” ë„ì¤‘ì— ëŒ€ê¸°ê°€ í’€ë ¤ë„ ì´ ë°œí™”ëŠ” ëê¹Œì§€ ë¬´ì‹œí•´ì„œ,
+        //        ì•ë¶€ë¶„ì´ ì˜ë¦° ë°˜ìª½ì§œë¦¬ ìŒì„±ì´ ì„œë²„ë¡œ ê°€ì§€ ì•Šê²Œ í•œë‹¤.
         if (waitingForResult)
         {
             ignoringCurrentSpeech = true;
-            Debug.Log("[MIC] ÆÇÁ¤ ´ë±â ÁßÀÌ¶ó ÀÌ¹ø ¹ßÈ­´Â ¹«½ÃÇÕ´Ï´Ù (¸·±â)");
+            Debug.Log("[MIC] íŒì • ëŒ€ê¸° ì¤‘ì´ë¼ ì´ë²ˆ ë°œí™”ëŠ” ë¬´ì‹œí•©ë‹ˆë‹¤ (ë§‰ê¸°)");
             return;
         }
 
-        // [¹Ş±â Á¶°Ç] °ø°İÇÒ ÀûÀÌ ¾ø´Â µî Áö±İ ÁÖ¹®À» ¹ŞÀ» ¼ö ¾øÀ¸¸é ÀÌ¹ø ¹ßÈ­´Â ³¡±îÁö ¹«½ÃÇÑ´Ù
+        // [ë°›ê¸° ì¡°ê±´] ê³µê²©í•  ì ì´ ì—†ëŠ” ë“± ì§€ê¸ˆ ì£¼ë¬¸ì„ ë°›ì„ ìˆ˜ ì—†ìœ¼ë©´ ì´ë²ˆ ë°œí™”ëŠ” ëê¹Œì§€ ë¬´ì‹œí•œë‹¤
         if (CanAccept != null && !CanAccept())
         {
             ignoringCurrentSpeech = true;
-            Debug.Log("[MIC] Áö±İÀº ÁÖ¹®À» ¹ŞÀ» ¼ö ¾ø¾î ÀÌ¹ø ¹ßÈ­´Â ¹«½ÃÇÕ´Ï´Ù (°ø°İÇÒ Àû ¾øÀ½)");
-            RecordingRejected?.Invoke("¾ÆÁ÷ ÀûÀÌ ÀÚ¸®¿¡ ¿ÀÁö ¾Ê¾Ò½À´Ï´Ù.");
+            Debug.Log("[MIC] ì§€ê¸ˆì€ ì£¼ë¬¸ì„ ë°›ì„ ìˆ˜ ì—†ì–´ ì´ë²ˆ ë°œí™”ëŠ” ë¬´ì‹œí•©ë‹ˆë‹¤ (ê³µê²©í•  ì  ì—†ìŒ)");
+            RecordingRejected?.Invoke("ì•„ì§ ì ì´ ìë¦¬ì— ì˜¤ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.");
             return;
         }
         BeginUtterance(preroll);
@@ -176,13 +236,15 @@ public class VoiceSender : MonoBehaviour
 
     void OnSpeechFrame(float[] frame, int count)
     {
-        if (!collecting || ignoringCurrentSpeech) return;
-        for (int i = 0; i < count; i++) utterance.Add(frame[i]);   // ¹è¿­Àº Àç»ç¿ëµÇ¹Ç·Î ¹Ù·Î º¹»ç
+        if (inputMode != InputMode.AutoDetect || !collecting || ignoringCurrentSpeech) return;
+        for (int i = 0; i < count; i++) utterance.Add(frame[i]);   // ë°°ì—´ì€ ì¬ì‚¬ìš©ë˜ë¯€ë¡œ ë°”ë¡œ ë³µì‚¬
     }
 
     void OnSpeechEnded(SpeechEndReason reason, int trailingSilenceSamples)
     {
-        // [¸·±â] ¹«½ÃÇÏ´ø ¹ßÈ­°¡ ³¡³µ´Ù. ´ÙÀ½ ¹ßÈ­ºÎÅÍ ´Ù½Ã ¹ŞÀ» ¼ö ÀÖ´Ù
+        if (inputMode != InputMode.AutoDetect) return;
+
+        // [ë§‰ê¸°] ë¬´ì‹œí•˜ë˜ ë°œí™”ê°€ ëë‚¬ë‹¤. ë‹¤ìŒ ë°œí™”ë¶€í„° ë‹¤ì‹œ ë°›ì„ ìˆ˜ ìˆë‹¤
         if (ignoringCurrentSpeech)
         {
             ignoringCurrentSpeech = false;
@@ -190,24 +252,182 @@ public class VoiceSender : MonoBehaviour
         }
         if (!collecting) return;
 
-        // ³¡ºÎºĞ ¹«À½À» Àß¶ó³½´Ù (Àü¼Û·®°ú STT ½Ã°£ °¨¼Ò). ³¡ ÀÚÀ½ º¸È£¿ëÀ¸·Î Á¶±İÀº ³²±ä´Ù
+        // ëë¶€ë¶„ ë¬´ìŒì„ ì˜ë¼ë‚¸ë‹¤ (ì „ì†¡ëŸ‰ê³¼ STT ì‹œê°„ ê°ì†Œ). ë ììŒ ë³´í˜¸ìš©ìœ¼ë¡œ ì¡°ê¸ˆì€ ë‚¨ê¸´ë‹¤
         int remove = trailingSilenceSamples - Mathf.RoundToInt(keepTrailingSilenceSec * voiceInput.SampleRate);
         if (remove > 0 && remove < utterance.Count)
             utterance.RemoveRange(utterance.Count - remove, remove);
 
-        FinishUtterance(reason == SpeechEndReason.Silence ? "¹«À½" : "ÃÖ´ë ±æÀÌ");
+        FinishUtterance(reason == SpeechEndReason.Silence ? "ë¬´ìŒ" : "ìµœëŒ€ ê¸¸ì´");
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ¹ßÈ­ ¼öÁı ¡æ Àü¼Û
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // í‚¤ ì…ë ¥ (PushToTalk)
+    //   í‚¤ ëˆ„ë¦„  â†’ ë°›ì„ ìˆ˜ ìˆëŠ”ì§€ í™•ì¸ â†’ í”„ë¦¬ë¡¤ + ë…¹ìŒ ì‹œì‘
+    //   ëˆ„ë¥´ëŠ” ì¤‘ â†’ ë§ˆì´í¬ ì†Œë¦¬ë¥¼ ê·¸ëŒ€ë¡œ ëª¨ìŒ (ìµœëŒ€ ê¸¸ì´ì— ë‹¿ìœ¼ë©´ ìë™ ì „ì†¡)
+    //   í‚¤ ë—Œ    â†’ pttReleaseTailSec ë§Œí¼ ë” ë…¹ìŒ â†’ ì „ì†¡ (FinishUtterance ì´í›„ëŠ” ìë™ ê°ì§€ì™€ ê°™ë‹¤)
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+    void UpdatePushToTalk()
+    {
+        if (Input.GetKeyDown(pushToTalkKey)) TryBeginPushToTalk();
+
+        // GetKeyUp ëŒ€ì‹  'ì§€ê¸ˆ ëˆŒë ¤ ìˆëŠ”ì§€'ë¡œ í™•ì¸í•œë‹¤. í‚¤ë¥¼ ë—€ í”„ë ˆì„ì„ ë†“ì³ë„ ë…¹ìŒì´ ëë‚˜ì§€ ì•ŠëŠ” ì¼ì´ ì—†ë‹¤
+        if (pttHeld && !Input.GetKey(pushToTalkKey)) ReleasePushToTalk();
+
+        // ê¼¬ë¦¬ ë…¹ìŒ ì‹œê°„ì´ ì§€ë‚˜ë©´ ì „ì†¡
+        if (pttStopAt >= 0f && Time.unscaledTime >= pttStopAt)
+        {
+            pttStopAt = -1f;
+            if (collecting) FinishUtterance("í‚¤ ë—Œ");
+        }
+    }
+
+    void TryBeginPushToTalk()
+    {
+        // ì´ë¯¸ ë…¹ìŒ ì¤‘ì´ê±°ë‚˜ ê¼¬ë¦¬ ë…¹ìŒ ì¤‘ì´ë©´ ë¬´ì‹œí•œë‹¤ (ë‹¤ì‹œ ëˆŒëŸ¬ë„ ì´ì–´ì„œ ë…¹ìŒí•˜ì§€ ì•ŠìŒ)
+        if (collecting || pttStopAt >= 0f) return;
+
+        if (voiceInput == null || !voiceInput.IsRunning)
+        {
+            Debug.LogWarning("[MIC] ë§ˆì´í¬ê°€ ì¤€ë¹„ë˜ì§€ ì•Šì•„ ë…¹ìŒì„ ì‹œì‘í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+            RecordingRejected?.Invoke("ë§ˆì´í¬ê°€ ì¤€ë¹„ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.");
+            return;
+        }
+
+        // ì¼ì‹œì •ì§€ ì¤‘(Time.timeScale 0)ì—ëŠ” ë°›ì§€ ì•ŠëŠ”ë‹¤
+        if (Time.timeScale <= 0f)
+        {
+            Debug.Log("[MIC] ì¼ì‹œì •ì§€ ì¤‘ì´ë¼ ë…¹ìŒí•˜ì§€ ì•ŠìŠµë‹ˆë‹¤.");
+            return;
+        }
+
+        // [ë§‰ê¸°] ì´ì „ ì£¼ë¬¸ì˜ íŒì •ì´ ì•„ì§ ì˜¤ì§€ ì•Šì•˜ìœ¼ë©´ ë…¹ìŒí•˜ì§€ ì•ŠëŠ”ë‹¤ (ìë™ ê°ì§€ ëª¨ë“œì²˜ëŸ¼ ë¡œê·¸ë§Œ ë‚¨ê¹€)
+        if (waitingForResult)
+        {
+            Debug.Log("[MIC] íŒì • ëŒ€ê¸° ì¤‘ì´ë¼ ë…¹ìŒí•˜ì§€ ì•ŠìŠµë‹ˆë‹¤ (ë§‰ê¸°)");
+            return;
+        }
+
+        // [ë°›ê¸° ì¡°ê±´] ê³µê²©í•  ì ì´ ì—†ëŠ” ë“± ì§€ê¸ˆ ì£¼ë¬¸ì„ ë°›ì„ ìˆ˜ ì—†ìœ¼ë©´ ë…¹ìŒí•˜ì§€ ì•ŠëŠ”ë‹¤
+        if (CanAccept != null && !CanAccept())
+        {
+            Debug.Log("[MIC] ì§€ê¸ˆì€ ì£¼ë¬¸ì„ ë°›ì„ ìˆ˜ ì—†ì–´ ë…¹ìŒí•˜ì§€ ì•ŠìŠµë‹ˆë‹¤ (ê³µê²©í•  ì  ì—†ìŒ)");
+            RecordingRejected?.Invoke("ì•„ì§ ì ì´ ìë¦¬ì— ì˜¤ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.");
+            return;
+        }
+
+        pttHeld = true;
+        BeginUtterance(TakePushToTalkPreroll());
+    }
+
+    void ReleasePushToTalk()
+    {
+        pttHeld = false;
+        if (!collecting) return;
+
+        if (pttReleaseTailSec > 0f) pttStopAt = Time.unscaledTime + pttReleaseTailSec;
+        else FinishUtterance("í‚¤ ë—Œ");
+    }
+
+    /// <summary>VoiceInput ì˜ ì†Œë¦¬ë¥¼ ë°›ëŠ”ë‹¤. ë…¹ìŒ ì¤‘ì´ë©´ ë°œí™”ì— ëª¨ìœ¼ê³ , ì•„ë‹ˆë©´ í”„ë¦¬ë¡¤ ë²„í¼ì— ë³´ê´€í•œë‹¤.</summary>
+    void CollectPushToTalk(float[] samples, int count)
+    {
+        if (!collecting)
+        {
+            PushPushToTalkPreroll(samples, count);
+            return;
+        }
+
+        for (int i = 0; i < count; i++) utterance.Add(samples[i]);   // ë°°ì—´ì€ ì¬ì‚¬ìš©ë˜ë¯€ë¡œ ë°”ë¡œ ë³µì‚¬
+
+        // ìµœëŒ€ ê¸¸ì´ì— ë‹¿ìœ¼ë©´ í‚¤ë¥¼ ë–¼ì§€ ì•Šì•˜ì–´ë„ ë°”ë¡œ ì „ì†¡í•œë‹¤. ì´í›„ í‚¤ë¥¼ ë–¼ë„ ë‹¤ì‹œ ë³´ë‚´ì§€ ì•ŠëŠ”ë‹¤
+        if (utterance.Count >= Mathf.FloorToInt(MaxRecordingSec * voiceInput.SampleRate))
+        {
+            pttHeld = false;
+            pttStopAt = -1f;
+            FinishUtterance("ìµœëŒ€ ê¸¸ì´");
+        }
+    }
+
+    void PushPushToTalkPreroll(float[] samples, int count)
+    {
+        int rate = voiceInput.SampleRate;
+        int size = Mathf.RoundToInt(pttPrerollSec * rate);
+        if (size <= 0) return;
+
+        // ì²˜ìŒì´ê±°ë‚˜ ìƒ˜í”Œë ˆì´íŠ¸Â·ê¸¸ì´ ì„¤ì •ì´ ë°”ë€Œë©´ ë²„í¼ë¥¼ ìƒˆë¡œ ë§Œë“ ë‹¤
+        if (pttRing == null || pttRing.Length != size || pttRingRate != rate)
+        {
+            pttRing = new float[size];
+            pttRingRate = rate;
+            pttRingHead = 0;
+            pttRingCount = 0;
+        }
+
+        for (int i = 0; i < count; i++)
+        {
+            pttRing[pttRingHead] = samples[i];
+            pttRingHead = (pttRingHead + 1) % size;
+            if (pttRingCount < size) pttRingCount++;
+        }
+    }
+
+    /// <summary>í”„ë¦¬ë¡¤ ë²„í¼ì˜ ì†Œë¦¬ë¥¼ ì˜¤ë˜ëœ ê²ƒë¶€í„° êº¼ë‚´ê³  ë²„í¼ë¥¼ ë¹„ìš´ë‹¤. ë¹„ì–´ ìˆìœ¼ë©´ null.</summary>
+    float[] TakePushToTalkPreroll()
+    {
+        if (pttRing == null || pttRingCount == 0) return null;
+
+        var pre = new float[pttRingCount];
+        int start = (pttRingHead - pttRingCount + pttRing.Length) % pttRing.Length;
+        for (int i = 0; i < pttRingCount; i++) pre[i] = pttRing[(start + i) % pttRing.Length];
+
+        pttRingHead = 0;
+        pttRingCount = 0;   // ë‹¤ìŒ ë…¹ìŒì— ì´ë²ˆ ì†Œë¦¬ê°€ ì„ì´ì§€ ì•Šê²Œ ë¹„ìš´ë‹¤
+        return pre;
+    }
+
+    void OnApplicationFocus(bool hasFocus)
+    {
+        // í‚¤ë¥¼ ëˆ„ë¥¸ ì±„ ë‹¤ë¥¸ ì°½ìœ¼ë¡œ ê°€ë©´ í‚¤ë¥¼ ë—€ ì‹ í˜¸ë¥¼ ëª» ë°›ì„ ìˆ˜ ìˆìœ¼ë¯€ë¡œ ë…¹ìŒì„ ë²„ë¦°ë‹¤
+        if (!hasFocus && inputMode == InputMode.PushToTalk && collecting)
+            CancelRecording("ì°½ì´ ë°”ë€Œì–´ ë…¹ìŒì„ ì·¨ì†Œí–ˆìŠµë‹ˆë‹¤.");
+    }
+
+    /// <summary>ëª¨ìœ¼ë˜ ë°œí™”ë¥¼ ë³´ë‚´ì§€ ì•Šê³  ë²„ë¦°ë‹¤ (ì°½ ì „í™˜, ì…ë ¥ ë°©ì‹ ë³€ê²½ ë“±). ê²°ê³¼ ëŒ€ê¸° ìƒíƒœëŠ” ê±´ë“œë¦¬ì§€ ì•ŠëŠ”ë‹¤.</summary>
+    void CancelRecording(string reason)
+    {
+        bool wasCollecting = collecting;
+        collecting = false;
+        utterance.Clear();
+        pttHeld = false;
+        pttStopAt = -1f;
+
+        if (wasCollecting)
+        {
+            Debug.Log($"[MIC] ë…¹ìŒ ì·¨ì†Œ: {reason}");
+            RecordingRejected?.Invoke(reason);
+        }
+    }
+
+    void ResetPushToTalk()
+    {
+        pttHeld = false;
+        pttStopAt = -1f;
+        pttRing = null;
+        pttRingHead = 0;
+        pttRingCount = 0;
+    }
+
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ë°œí™” ìˆ˜ì§‘ â†’ ì „ì†¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     void BeginUtterance(float[] preroll)
     {
         utterance.Clear();
         if (preroll != null) utterance.AddRange(preroll);
         collecting = true;
-        Debug.Log("[MIC] ¹ßÈ­ ½ÃÀÛ");
+        Debug.Log("[MIC] ë°œí™” ì‹œì‘");
         RecordingStarted?.Invoke();
     }
 
@@ -224,8 +444,8 @@ public class VoiceSender : MonoBehaviour
 
         if (sec < MinRecordingSec)
         {
-            Debug.LogWarning($"[MIC] ¹ßÈ­°¡ ³Ê¹« Âª¾Æ º¸³»Áö ¾Ê½À´Ï´Ù ({sec:F2}ÃÊ).");
-            RecordingRejected?.Invoke("ÁÖ¹®ÀÌ µé¸®Áö ¾Ê¾Ò½À´Ï´Ù.");
+            Debug.LogWarning($"[MIC] ë°œí™”ê°€ ë„ˆë¬´ ì§§ì•„ ë³´ë‚´ì§€ ì•ŠìŠµë‹ˆë‹¤ ({sec:F2}ì´ˆ).");
+            RecordingRejected?.Invoke("ì£¼ë¬¸ì´ ë“¤ë¦¬ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.");
             return;
         }
 
@@ -233,30 +453,30 @@ public class VoiceSender : MonoBehaviour
         float peak = 0f;
         for (int i = 0; i < data.Length; i++) peak = Mathf.Max(peak, Mathf.Abs(data[i]));
 
-        // ¸ğ³ë 1Ã¤³Î, ½ÇÁ¦ »ùÇÃ·¹ÀÌÆ®¸¦ WAV Çì´õ¿¡ ±â·Ï (¼­¹ö°¡ ÀÌ °ªÀ» º¸°í 16kHz ·Î ¸ÂÃá´Ù)
+        // ëª¨ë…¸ 1ì±„ë„, ì‹¤ì œ ìƒ˜í”Œë ˆì´íŠ¸ë¥¼ WAV í—¤ë”ì— ê¸°ë¡ (ì„œë²„ê°€ ì´ ê°’ì„ ë³´ê³  16kHz ë¡œ ë§ì¶˜ë‹¤)
         byte[] wav = EncodeWav(data, sr);
-        Debug.Log($"[MIC] ¹ßÈ­ ³¡: {sec:F2}ÃÊ ({why}), {sr}Hz, peak {peak:F3}, {wav.Length} bytes");
+        Debug.Log($"[MIC] ë°œí™” ë: {sec:F2}ì´ˆ ({why}), {sr}Hz, peak {peak:F3}, {wav.Length} bytes");
 
         if (peak < SilentPeak)
-            Debug.LogWarning("[MIC] ¼Ò¸®°¡ °ÅÀÇ µé¾î¿ÀÁö ¾Ê¾Ò½À´Ï´Ù. ¸¶ÀÌÅ© À½¼Ò°Å, ÀåÄ¡ ¼±ÅÃ, ÀÔ·Â º¼·ıÀ» È®ÀÎÇÏ¼¼¿ä.");
+            Debug.LogWarning("[MIC] ì†Œë¦¬ê°€ ê±°ì˜ ë“¤ì–´ì˜¤ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤. ë§ˆì´í¬ ìŒì†Œê±°, ì¥ì¹˜ ì„ íƒ, ì…ë ¥ ë³¼ë¥¨ì„ í™•ì¸í•˜ì„¸ìš”.");
 
-        UtteranceSent?.Invoke(wav);   // VoiceDebug °¡ ÄÑÁ® ÀÖÀ¸¸é µğ¹ö±× WAV ·Î ÀúÀåÇÑ´Ù
+        UtteranceSent?.Invoke(wav);   // VoiceDebug ê°€ ì¼œì ¸ ìˆìœ¼ë©´ ë””ë²„ê·¸ WAV ë¡œ ì €ì¥í•œë‹¤
 
         if (voiceSocket == null)
         {
-            RecordingRejected?.Invoke("¼­¹ö ¿¬°á ¼³Á¤ÀÌ ¾ø½À´Ï´Ù.");
+            RecordingRejected?.Invoke("ì„œë²„ ì—°ê²° ì„¤ì •ì´ ì—†ìŠµë‹ˆë‹¤.");
             return;
         }
         SubmitUtterance(wav);
     }
 
     /// <summary>
-    /// B-1: WAV ÇÑ µ¢¾î¸® Àü¼Û. B-2 ¿¡¼­´Â ÀÌ ¸Ş¼­µå°¡ stream_start / Á¶°¢ / stream_end Àü¼ÛÀ¸·Î ¹Ù²ï´Ù.
+    /// B-1: WAV í•œ ë©ì–´ë¦¬ ì „ì†¡. B-2 ì—ì„œëŠ” ì´ ë©”ì„œë“œê°€ stream_start / ì¡°ê° / stream_end ì „ì†¡ìœ¼ë¡œ ë°”ë€ë‹¤.
     /// </summary>
     async void SubmitUtterance(byte[] wav)
     {
-        // [¸·±â] Àü¼ÛÇÏ´Â ¼ø°£ºÎÅÍ ÆÇÁ¤ÀÌ ¿Ã ¶§±îÁö »õ ÁÖ¹®À» ¹ŞÁö ¾Ê´Â´Ù.
-        //        await º¸´Ù ¸ÕÀú ÄÑ¾ß, ÀÀ´äÀÌ ¾ÆÁÖ »¡¸® ¿Íµµ ¼ø¼­°¡ ²¿ÀÌÁö ¾Ê´Â´Ù.
+        // [ë§‰ê¸°] ì „ì†¡í•˜ëŠ” ìˆœê°„ë¶€í„° íŒì •ì´ ì˜¬ ë•Œê¹Œì§€ ìƒˆ ì£¼ë¬¸ì„ ë°›ì§€ ì•ŠëŠ”ë‹¤.
+        //        await ë³´ë‹¤ ë¨¼ì € ì¼œì•¼, ì‘ë‹µì´ ì•„ì£¼ ë¹¨ë¦¬ ì™€ë„ ìˆœì„œê°€ ê¼¬ì´ì§€ ì•ŠëŠ”ë‹¤.
         waitingForResult = true;
         waitDeadline = Time.unscaledTime + resultTimeoutSec;
         pendingRequestId = null;
@@ -267,89 +487,89 @@ public class VoiceSender : MonoBehaviour
             string id = await voiceSocket.SendWavBytes(wav, "mic");
             if (id == null)
             {
-                ReleaseWait("¼­¹ö ¿¬°á ¾øÀ½");
-                RecordingRejected?.Invoke("¼­¹ö¿¡ ¿¬°áµÇ¾î ÀÖÁö ¾Ê½À´Ï´Ù.");
+                ReleaseWait("ì„œë²„ ì—°ê²° ì—†ìŒ");
+                RecordingRejected?.Invoke("ì„œë²„ì— ì—°ê²°ë˜ì–´ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.");
                 return;
             }
-            // °á°ú°¡ ÀÌ¹Ì µµÂøÇØ ´ë±â°¡ Ç®·È´Ù¸é ¹øÈ£¸¦ ±â·ÏÇÒ ÇÊ¿ä°¡ ¾ø´Ù
+            // ê²°ê³¼ê°€ ì´ë¯¸ ë„ì°©í•´ ëŒ€ê¸°ê°€ í’€ë ¸ë‹¤ë©´ ë²ˆí˜¸ë¥¼ ê¸°ë¡í•  í•„ìš”ê°€ ì—†ë‹¤
             if (waitingForResult) pendingRequestId = id;
         }
         catch (Exception e)
         {
-            Debug.LogError("[MIC] Àü¼Û ½ÇÆĞ: " + e);
-            ReleaseWait("Àü¼Û ½ÇÆĞ");
-            RecordingRejected?.Invoke("ÁÖ¹® Àü¼Û¿¡ ½ÇÆĞÇß½À´Ï´Ù.");
+            Debug.LogError("[MIC] ì „ì†¡ ì‹¤íŒ¨: " + e);
+            ReleaseWait("ì „ì†¡ ì‹¤íŒ¨");
+            RecordingRejected?.Invoke("ì£¼ë¬¸ ì „ì†¡ì— ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.");
         }
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // °á°ú ¼ö½Å ¡æ ´ë±â ÇØÁ¦ (¸·±â ¹æ½Ä)
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ê²°ê³¼ ìˆ˜ì‹  â†’ ëŒ€ê¸° í•´ì œ (ë§‰ê¸° ë°©ì‹)
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     void OnCastResult(CastResult r)
     {
         if (r != null && IsMyResult(r.RequestId))
-            ReleaseWait(r.Success ? "¹ßµ¿" : $"ºÒ¹ß {r.RejectReason}");
+            ReleaseWait(r.Success ? "ë°œë™" : $"ë¶ˆë°œ {r.RejectReason}");
     }
 
     void OnServerError(ErrorResponse err)
     {
         if (err != null && IsMyResult(err.RequestId))
-            ReleaseWait($"¿À·ù {err.Code}");
+            ReleaseWait($"ì˜¤ë¥˜ {err.Code}");
     }
 
     /// <summary>
-    /// [¸·±â] Áö±İ ±â´Ù¸®´Â ¿äÃ»ÀÇ °á°úÀÏ ¶§¸¸ ´ë±â¸¦ Ç¬´Ù.
-    ///  - ½Ã°£ ÃÊ°ú·Î ÀÌ¹Ì Æ÷±âÇÑ ¿¹Àü ¿äÃ»ÀÇ °á°ú°¡ ´Ê°Ô ¿Íµµ, »õ ¿äÃ»ÀÇ ´ë±â¸¦ Àß¸ø Ç®Áö ¾Ê´Â´Ù.
-    ///  - request_id °¡ ´Ù¸¥ ÀÀ´äÀ¸·Î ´ë±â°¡ Ç®¸®Áö ¾Ê´Â´Ù.
-    ///  - ¿äÃ» ¹øÈ£¸¦ ¾ÆÁ÷ ¸ğ¸£´Â ¾ÆÁÖ ÂªÀº ¼ø°£(pendingRequestId == null)¿¡´Â µµÂøÇÑ °á°ú¸¦ ³» °ÍÀ¸·Î º»´Ù.
+    /// [ë§‰ê¸°] ì§€ê¸ˆ ê¸°ë‹¤ë¦¬ëŠ” ìš”ì²­ì˜ ê²°ê³¼ì¼ ë•Œë§Œ ëŒ€ê¸°ë¥¼ í‘¼ë‹¤.
+    ///  - ì‹œê°„ ì´ˆê³¼ë¡œ ì´ë¯¸ í¬ê¸°í•œ ì˜ˆì „ ìš”ì²­ì˜ ê²°ê³¼ê°€ ëŠ¦ê²Œ ì™€ë„, ìƒˆ ìš”ì²­ì˜ ëŒ€ê¸°ë¥¼ ì˜ëª» í’€ì§€ ì•ŠëŠ”ë‹¤.
+    ///  - request_id ê°€ ë‹¤ë¥¸ ì‘ë‹µìœ¼ë¡œ ëŒ€ê¸°ê°€ í’€ë¦¬ì§€ ì•ŠëŠ”ë‹¤.
+    ///  - ìš”ì²­ ë²ˆí˜¸ë¥¼ ì•„ì§ ëª¨ë¥´ëŠ” ì•„ì£¼ ì§§ì€ ìˆœê°„(pendingRequestId == null)ì—ëŠ” ë„ì°©í•œ ê²°ê³¼ë¥¼ ë‚´ ê²ƒìœ¼ë¡œ ë³¸ë‹¤.
     /// </summary>
     bool IsMyResult(string requestId)
     {
         return waitingForResult && (pendingRequestId == null || requestId == pendingRequestId);
     }
 
-    /// <summary>[¸·±â] ´ë±â¸¦ Ç®°í ´ÙÀ½ ÁÖ¹®À» ¹ŞÀ» ¼ö ÀÖ°Ô ÇÑ´Ù.</summary>
+    /// <summary>[ë§‰ê¸°] ëŒ€ê¸°ë¥¼ í’€ê³  ë‹¤ìŒ ì£¼ë¬¸ì„ ë°›ì„ ìˆ˜ ìˆê²Œ í•œë‹¤.</summary>
     void ReleaseWait(string why)
     {
         if (!waitingForResult) return;
         waitingForResult = false;
         pendingRequestId = null;
-        Debug.Log($"[MIC] °á°ú ´ë±â ÇØÁ¦: {why}");
+        Debug.Log($"[MIC] ê²°ê³¼ ëŒ€ê¸° í•´ì œ: {why}");
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // WAV º¯È¯ (±âÁ¸ WavEncoder ¸¦ ¿Å°Ü ¿È)
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // WAV ë³€í™˜ (ê¸°ì¡´ WavEncoder ë¥¼ ì˜®ê²¨ ì˜´)
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
-    /// ¸ğ³ë float(-1~1) »ùÇÃÀ» PCM16 WAV ¹ÙÀÌÆ®(44¹ÙÀÌÆ® Çì´õ Æ÷ÇÔ)·Î º¯È¯ÇÑ´Ù.
-    /// sampleRate ¿¡´Â ½ÇÁ¦ µ¥ÀÌÅÍÀÇ °ª(VoiceInput.SampleRate)À» ³Ö¾î¾ß ¼­¹ö°¡ 16kHz ·Î ¿Ã¹Ù¸£°Ô ¸ÂÃá´Ù.
+    /// ëª¨ë…¸ float(-1~1) ìƒ˜í”Œì„ PCM16 WAV ë°”ì´íŠ¸(44ë°”ì´íŠ¸ í—¤ë” í¬í•¨)ë¡œ ë³€í™˜í•œë‹¤.
+    /// sampleRate ì—ëŠ” ì‹¤ì œ ë°ì´í„°ì˜ ê°’(VoiceInput.SampleRate)ì„ ë„£ì–´ì•¼ ì„œë²„ê°€ 16kHz ë¡œ ì˜¬ë°”ë¥´ê²Œ ë§ì¶˜ë‹¤.
     /// </summary>
     static byte[] EncodeWav(float[] samples, int sampleRate)
     {
         const int channels = 1;
-        int dataBytes = samples.Length * 2;   // 16ºñÆ® = 2¹ÙÀÌÆ®
+        int dataBytes = samples.Length * 2;   // 16ë¹„íŠ¸ = 2ë°”ì´íŠ¸
 
         using (var ms = new MemoryStream(44 + dataBytes))
-        using (var w = new BinaryWriter(ms))  // ¸®Æ²¿£µğ¾ğÀ¸·Î ±â·Ï (WAV ±Ô°İ°ú µ¿ÀÏ)
+        using (var w = new BinaryWriter(ms))  // ë¦¬í‹€ì—”ë””ì–¸ìœ¼ë¡œ ê¸°ë¡ (WAV ê·œê²©ê³¼ ë™ì¼)
         {
-            // RIFF Çì´õ
+            // RIFF í—¤ë”
             w.Write(Encoding.ASCII.GetBytes("RIFF"));
             w.Write(36 + dataBytes);
             w.Write(Encoding.ASCII.GetBytes("WAVE"));
 
-            // fmt Ã»Å©
+            // fmt ì²­í¬
             w.Write(Encoding.ASCII.GetBytes("fmt "));
-            w.Write(16);                              // fmt Ã»Å© Å©±â
+            w.Write(16);                              // fmt ì²­í¬ í¬ê¸°
             w.Write((short)1);                        // 1 = PCM
             w.Write((short)channels);
             w.Write(sampleRate);
-            w.Write(sampleRate * channels * 2);       // ÃÊ´ç ¹ÙÀÌÆ® ¼ö
-            w.Write((short)(channels * 2));           // »ùÇÃ 1°³(Àü Ã¤³Î)ÀÇ ¹ÙÀÌÆ® ¼ö
-            w.Write((short)16);                       // ºñÆ® ¼ö
+            w.Write(sampleRate * channels * 2);       // ì´ˆë‹¹ ë°”ì´íŠ¸ ìˆ˜
+            w.Write((short)(channels * 2));           // ìƒ˜í”Œ 1ê°œ(ì „ ì±„ë„)ì˜ ë°”ì´íŠ¸ ìˆ˜
+            w.Write((short)16);                       // ë¹„íŠ¸ ìˆ˜
 
-            // data Ã»Å©
+            // data ì²­í¬
             w.Write(Encoding.ASCII.GetBytes("data"));
             w.Write(dataBytes);
             for (int i = 0; i < samples.Length; i++)

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using TMPro;
 using UnityEngine;
 
@@ -8,7 +8,7 @@ using UnityEngine;
 /// 시전은 SkillManager.TryCastByVoice 에 요청한다.
 ///
 /// 표시 규칙
-///   - 대기: 적이 있으면 "주문을 영창하세요.", 없으면 "적이 다가오고 있습니다..."
+///   - 대기: 적이 있으면 "주문을 영창하세요." (키 입력 모드: "스페이스바를 누른 채 주문을 영창하세요."), 없으면 "적이 다가오고 있습니다..."
 ///   - 말하는 중 / 해석 중: 상태 문구
 ///   - 발동: 들린 글자 타이핑 → 스펠 이름 노란 강조 → 시전 → 1초 뒤 자막 지움
 ///   - 불발, 오류, 시간 초과, 너무 짧음, 적 없음, 시전 실패: 자막을 지우고 로그만 남김
@@ -28,7 +28,17 @@ public class VoiceRecorder : MonoBehaviour
     /// <summary>직전 주문의 성량 (dBFS, 0이 최대). 서버가 계산한 값. 데미지 공식에 사용 가능</summary>
     public float LastVolumeDb { get; private set; } = -80f;
 
-    const string HintReady = "주문을 영창하세요.";
+    // 대기 안내 문구. 키 입력 모드면 어떤 키를 눌러야 하는지 함께 알려 준다
+    string HintReady
+    {
+        get
+        {
+            if (voiceSender == null || !voiceSender.IsPushToTalk) return "주문을 영창하세요.";
+            KeyCode key = voiceSender.PushToTalkKey;
+            string keyName = key == KeyCode.Space ? "스페이스바를" : $"{key} 키를";
+            return $"{keyName} 누른 채 주문을 영창하세요.";
+        }
+    }
     const string HintWaiting = "적이 다가오고 있습니다...";
 
     Coroutine sequence;
