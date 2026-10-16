@@ -334,35 +334,36 @@ public class EnemyController : MonoBehaviour
     // 피격
     // =========================================================
     // 이펙트 연출 시간만큼 기다린 뒤 데미지를 주고 싶을 때 사용
-    public void ReceiveSpell(SpellData spell, float delay)
+    // power: 영창 보너스 (VoiceBonusCalculator 결과, 기본 1.0)
+    public void ReceiveSpell(SpellData spell, float delay, float power = 1f)
     {
         if (IsDying || spell == null) return;
 
-        if (delay <= 0f) TakeDamage(spell);
-        else StartCoroutine(DelayedDamage(spell, delay));
+        if (delay <= 0f) TakeDamage(spell, power);
+        else StartCoroutine(DelayedDamage(spell, delay, power));
     }
 
-    private IEnumerator DelayedDamage(SpellData spell, float delay)
+    private IEnumerator DelayedDamage(SpellData spell, float delay, float power)
     {
         yield return new WaitForSeconds(delay);
-        TakeDamage(spell);
+        TakeDamage(spell, power);
     }
 
-    // 이 스펠이 이 몹에게 줄 데미지 (상성 포함)
-    public float CalculateDamage(SpellData spell)
+    // 이 스펠이 이 몹에게 줄 데미지 = baseDamage × power × 상성
+    public float CalculateDamage(SpellData spell, float power = 1f)
     {
         if (spell == null) return 0f;
-        return spell.baseDamage * GetTypeMultiplier(spell.elementType, enemyType);
+        return spell.baseDamage * power * GetTypeMultiplier(spell.elementType, enemyType);
     }
 
     /// <summary>
     /// 마법이 시전된 순간 SkillManager가 호출. 아직 맞기 전이지만 '들어올 데미지'로 예약해 둡니다.
     /// 예약 데미지가 남은 HP 이상이면 IsDoomed = true → 즉시 영창이 막힙니다.
     /// </summary>
-    public void ReserveDamage(SpellData spell)
+    public void ReserveDamage(SpellData spell, float power = 1f)
     {
         if (IsDying || spell == null) return;
-        PendingDamage += CalculateDamage(spell);
+        PendingDamage += CalculateDamage(spell, power);
         lastReserveTime = Time.time;
         if (IsDoomed)
         {
@@ -370,19 +371,19 @@ public class EnemyController : MonoBehaviour
         }
     }
 
-    public void TakeDamage(SpellData spell)
+    public void TakeDamage(SpellData spell, float power = 1f)
     {
         if (IsDying || spell == null) return;
 
         // 1. 상성 배율 계산
         float multiplier = GetTypeMultiplier(spell.elementType, enemyType);
 
-        // 2. 최종 데미지 적용 (예약해 둔 데미지는 실제로 맞았으니 차감)
-        float finalDamage = spell.baseDamage * multiplier;
+        // 2. 최종 데미지 = baseDamage × power(영창 보너스) × 상성 (예약해 둔 데미지는 실제로 맞았으니 차감)
+        float finalDamage = spell.baseDamage * power * multiplier;
         PendingDamage = Mathf.Max(0f, PendingDamage - finalDamage);
         CurrentHP -= finalDamage;
 
-        Debug.Log($"[{gameObject.name}] {spell.spellName} 적중! 데미지: {finalDamage} (배율: {multiplier}x) 남은 HP: {CurrentHP}");
+        Debug.Log($"[{gameObject.name}] {spell.spellName} 적중! 데미지: {finalDamage} (영창: {power}x, 상성: {multiplier}x) 남은 HP: {CurrentHP}");
 
         // 3. UI 텍스트 출력
         if (BattleUIManager.Instance != null)

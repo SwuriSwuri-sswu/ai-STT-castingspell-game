@@ -13,15 +13,17 @@ public class ProjectileController : MonoBehaviour
 
     private SpellData spell;
     private EnemyController target;
+    private float power = 1f;   // 영창 보너스 (시전 순간 값을 들고 날아감)
     private bool hasHit;
     private float lifetime;
 
     // 이전 호출 방식 호환용 (타겟은 자동으로 가장 가까운 몹)
     public void Initialize(SpellData spellData) => Initialize(spellData, null);
 
-    public void Initialize(SpellData spellData, EnemyController targetEnemy)
+    public void Initialize(SpellData spellData, EnemyController targetEnemy, float spellPower = 1f)
     {
         spell = spellData;
+        power = spellPower;
         target = targetEnemy != null ? targetEnemy : EnemyController.GetNearest(transform.position);
     }
 
@@ -82,7 +84,7 @@ public class ProjectileController : MonoBehaviour
                                                                 SkillManager.Instance);
 
             // 2. 데미지 → (HP 0이면) 폭발과 함께 death 애니메이션
-            enemy.ReceiveSpell(spell, spell.ResolveDamageDelay(effectLength));
+            enemy.ReceiveSpell(spell, spell.ResolveDamageDelay(effectLength), power);
         }
 
         // 3. 투사체 삭제
