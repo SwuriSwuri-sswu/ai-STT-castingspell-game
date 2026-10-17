@@ -103,6 +103,24 @@ public class EnemyController : MonoBehaviour
     public float facingYawOffset = 0f;
     private Quaternion FacingOffset => Quaternion.Euler(0f, facingYawOffset, 0f);
 
+    [Header("공격 (플레이어 체력 깎기)")]
+    [Tooltip("스폰포인트에 도착한 뒤 일정 시간마다 플레이어를 공격")]
+    public bool canAttack = true;
+    [Tooltip("체크하면 등급에 따라 자동 (하급 9초·8 / 중급 8초·12 / 상급 7초·20)")]
+    public bool useRankDefaultAttack = true;
+    [Tooltip("공격 간격 (초)")]
+    public float attackInterval = 9f;
+    [Tooltip("한 번 공격할 때 플레이어가 잃는 체력")]
+    public float attackDamage = 8f;
+    [Tooltip("공격 직전 부르르 떠는 예고 시간 (초)")]
+    public float attackTelegraph = 0.7f;
+    [Tooltip("예고 때 떨리는 크기")]
+    public float telegraphShake = 0.05f;
+    [Tooltip("공격할 때 플레이어 쪽으로 튀어나오는 거리")]
+    public float lungeDistance = 0.8f;
+    [Tooltip("마법에 맞으면 공격 타이머가 이만큼(초) 뒤로 밀림 (경직)")]
+    public float hitStagger = 1.5f;
+
     [Header("등장 이동 (성 밖 → 스폰포인트)")]
     [Tooltip("이동 속도 (초당 미터)")]
     public float moveSpeed = 3f;
@@ -166,6 +184,23 @@ public class EnemyController : MonoBehaviour
     }
 
     // 장판형 마법이 생성될 발밑 좌표
+    // 다음 공격까지 진행도 (0 → 1이 되면 공격). HUD 공격 게이지에 사용
+    public float AttackProgress => (canAttack && IsReady && attackInterval > 0f) ? Mathf.Clamp01(attackTimer / attackInterval) : 0f;
+    public bool IsAttacking => attackRoutine != null;
+    private float attackTimer;
+    private Coroutine attackRoutine;
+    private Vector3 attackBasePos;
+
+    public static void RankDefaultAttack(MonsterRank r, out float interval, out float damage)
+    {
+        switch (r)
+        {
+            case MonsterRank.Mid: interval = 8f; damage = 12f; break;
+            case MonsterRank.High: interval = 7f; damage = 20f; break;
+            default: interval = 9f; damage = 8f; break;
+        }
+    }
+
     public Vector3 GroundPoint => transform.position - Vector3.up * hoverHeight;
 
     public static float DefaultHP(MonsterRank r)
@@ -224,6 +259,7 @@ public class EnemyController : MonoBehaviour
         if (facingYawOffset != 0f) transform.rotation *= FacingOffset;
 
         if (useRankDefaultHP) maxHP = DefaultHP(rank);
+        if (useRankDefaultAttack) RankDefaultAttack(rank, out attackInterval, out attackDamage);
         CurrentHP = maxHP;
     }
 
@@ -235,6 +271,92 @@ public class EnemyController : MonoBehaviour
             Debug.LogWarning($"[{gameObject.name}] 예약된 마법이 {pendingDamageTimeout}초 동안 맞지 않아 예약을 해제합니다.");
             PendingDamage = 0f;
         }
+
+        UpdateAttack();
+    }
+
+    // =========================================================
+    // 공격: 도착 후 attackInterval마다 예고(떨림) → 튀어나오며 공격 → 제자리
+    // =========================================================
+    private void UpdateAttack()
+    {
+        if (!canAttack || !IsReady || IsDying || attackRoutine != null) return;
+        if (PlayerHealth.Instance == null || PlayerHealth.Instance.IsDead) return;
+        // 이미 날아가는 마법으로 쓰러질 예정이면 공격하지 않음 (억울하지 않게)
+        if (IsDoomed) return;
+
+        attackTimer += Time.deltaTime;
+        if (attackTimer >= attackInterval - attackTelegraph)
+        {
+            attackRoutine = StartCoroutine(AttackRoutine());
+        }
+    }
+
+    private IEnumerator AttackRoutine()
+    {
+        attackBasePos = transform.position;
+
+        // 1. 예고: 부르르 떨기 (점점 강하게)
+        float t = 0f;
+        while (t < attackTelegraph)
+        {
+            if (IsDying || IsDoomed) { EndAttack(false); yield break; }
+            t += Time.deltaTime;
+            attackTimer += Time.deltaTime;
+            float k = t / Mathf.Max(0.01f, attackTelegraph);
+            Vector3 jitter = new Vector3(UnityEngine.Random.Range(-1f, 1f), 0f, UnityEngine.Random.Range(-1f, 1f));
+            transform.position = attackBasePos + jitter * telegraphShake * k;
+            yield return null;
+        }
+        transform.position = attackBasePos;
+
+        // 2. 플레이어 쪽으로 튀어나오기
+        Vector3 toPlayer = Vector3.zero;
+        if (Camera.main != null)
+        {
+            toPlayer = Camera.main.transform.position - attackBasePos;
+            toPlayer.y = 0f;
+            toPlayer = toPlayer.normalized;
+        }
+        Vector3 lungePos = attackBasePos + toPlayer * lungeDistance;
+        const float lungeTime = 0.1f, returnTime = 0.25f;
+
+        for (t = 0f; t < lungeTime; t += Time.deltaTime)
+        {
+            transform.position = Vector3.Lerp(attackBasePos, lungePos, t / lungeTime);
+            yield return null;
+        }
+        transform.position = lungePos;
+
+        // 3. 적중 (그 사이 마법에 쓰러졌으면 취소)
+        if (!IsDying && PlayerHealth.Instance != null)
+        {
+            PlayerHealth.Instance.TakeDamage(attackDamage, $"{RankToKorean(rank)} {ElementToKorean(enemyType)} 몬스터의 공격");
+        }
+
+        // 4. 제자리로
+        for (t = 0f; t < returnTime; t += Time.deltaTime)
+        {
+            transform.position = Vector3.Lerp(lungePos, attackBasePos, t / returnTime);
+            yield return null;
+        }
+        EndAttack(true);
+    }
+
+    private void EndAttack(bool attacked)
+    {
+        transform.position = attackBasePos;
+        if (attacked) attackTimer = 0f;
+        attackRoutine = null;
+    }
+
+    // 사망 등으로 공격을 중간에 끊을 때
+    private void CancelAttack()
+    {
+        if (attackRoutine == null) return;
+        StopCoroutine(attackRoutine);
+        transform.position = attackBasePos;
+        attackRoutine = null;
     }
 
     private void OnEnable() => aliveEnemies.Add(this);
@@ -393,6 +515,9 @@ public class EnemyController : MonoBehaviour
 
         // ※ 폭발 이펙트는 ProjectileController / SkillManager에서만 생성합니다 (중복 방지)
 
+        // 맞으면 공격이 잠깐 늦춰짐 (경직)
+        attackTimer = Mathf.Max(0f, attackTimer - hitStagger);
+
         // 4. 사망 판정
         if (CurrentHP <= 0f)
         {
@@ -454,6 +579,8 @@ public class EnemyController : MonoBehaviour
         {
             if (c != null) c.enabled = false;
         }
+
+        CancelAttack(); // 공격 중이었다면 제자리로
 
         // 남아 있는 피격 트리거가 사망 애니메이션을 방해하지 않도록 초기화
         if (anim != null && !string.IsNullOrEmpty(hitTrigger))

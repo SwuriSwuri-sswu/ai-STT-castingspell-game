@@ -20,6 +20,10 @@ public class SkillManager : MonoBehaviour
 
     // 스펠이 새로 해금될 때 (UI 갱신용)
     public event Action<SpellData> OnSpellUnlocked;
+    // 마법이 실제로 시전된 순간 (스펠, 타겟, 영창 보너스 power). 지팡이 휘두르기 연출 등에 사용
+    public event Action<SpellData, EnemyController, float> OnSpellCast;
+    // 음성으로 외친 주문이 시전되지 못한 순간 (사유). 플레이어 체력 패널티 등에 사용
+    public event Action<string> OnVoiceCastFailed;
 
     // 플레이 중 해금 상태 (에셋 파일을 직접 바꾸지 않기 위해 런타임에서만 관리)
     private readonly HashSet<SpellData> unlockedSpells = new HashSet<SpellData>();
@@ -89,6 +93,7 @@ public class SkillManager : MonoBehaviour
 
         // 데미지 예약: 이 마법으로 몹이 쓰러질 예정이면 그 즉시 영창이 막힌다 (이펙트 연출과 별개)
         if (target != null) target.ReserveDamage(spell, power);
+        OnSpellCast?.Invoke(spell, target, power);
 
         // 점수 처리 (GameManager가 씬에 없을 수도 있으므로 null 체크)
         if (GameManager.Instance != null)
@@ -350,6 +355,13 @@ public class SkillManager : MonoBehaviour
     // 음성 판정 결과로 시전. 성공이면 null, 실패면 사유 (음성 쪽은 사유를 로그로만 남긴다)
     // power: 영창 보너스 (VoiceBonusCalculator.Evaluate 결과의 power)
     public string TryCastByVoice(string spellName, float power = 1f)
+    {
+        string fail = TryCastByVoiceInternal(spellName, power);
+        if (fail != null) OnVoiceCastFailed?.Invoke(fail);
+        return fail;
+    }
+
+    private string TryCastByVoiceInternal(string spellName, float power)
     {
         SpellData spell = FindSpell(spellName);
         if (spell == null) return "알 수 없는 주문";
