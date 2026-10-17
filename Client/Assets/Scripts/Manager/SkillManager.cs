@@ -39,7 +39,8 @@ public class SkillManager : MonoBehaviour
     public IReadOnlyList<SpellData> UnlockedInOrder => unlockOrder;
 
     // 몹이 스폰포인트에 도착해 있어야 시전 가능 (VoiceRecorder에서 녹음 시작 전에 확인)
-    public static bool CanCast => EnemyController.AnyReady;
+    // 도감·설정 창으로 일시정지 중이면 영창을 받지 않음
+    public static bool CanCast => EnemyController.AnyReady && !GamePause.IsPaused;
 
     private void Awake()
     {

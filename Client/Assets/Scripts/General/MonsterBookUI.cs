@@ -73,6 +73,8 @@ public class MonsterBookUI : MonoBehaviour
     public Color descColor = new Color(0.29f, 0.18f, 0.10f);
     public Color lockedDescColor = new Color(0.29f, 0.18f, 0.10f, 0.4f);
     public Color newBadgeColor = new Color(0.85f, 0.35f, 0.05f);
+    [Tooltip("도감에서 노말 몹 이름 색 (게임 화면 자막의 금색은 그대로)")]
+    public Color normalNameColor = Color.black;
 
     private bool initialized;
     private int currentPage;
@@ -251,7 +253,8 @@ public class MonsterBookUI : MonoBehaviour
 
     private string BuildDesc(EnemyController mob, bool isNew)
     {
-        string hex = ColorUtility.ToHtmlStringRGB(EnemyController.ElementColor(mob.enemyType));
+        Color nameColor = mob.enemyType == MagicElement.Normal ? normalNameColor : EnemyController.ElementColor(mob.enemyType);
+        string hex = ColorUtility.ToHtmlStringRGB(nameColor);
         string name = $"<color=#{hex}><b>{mob.DisplayName}</b></color>";
         if (isNew && !string.IsNullOrEmpty(newBadge))
         {

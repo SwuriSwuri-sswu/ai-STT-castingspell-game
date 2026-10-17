@@ -1,6 +1,9 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
+using UnityEngine.SceneManagement;
 
 // 오디오 및 화면 설정을 관리하고 백엔드 서버와 설정 데이터를 동기화하는 매니저 클래스
 public class GameSettingManager : MonoBehaviour
@@ -38,6 +41,31 @@ public class GameSettingManager : MonoBehaviour
     // 연결된 전체 마이크 목록을 담을 배열
     private string[] availableMics;
 
+    [Serializable]
+    public class SceneBgm
+    {
+        public string sceneName;
+        public AudioClip clip;
+    }
+
+    [Header("배경 음악 (BGM)")]
+    [Tooltip("씬별 BGM이 따로 없을 때 틀 음악")]
+    public AudioClip defaultBgm;
+    [Tooltip("씬마다 다른 음악 (예: TitleScene / GameScene / EndingScene)")]
+    public List<SceneBgm> sceneBgms = new List<SceneBgm>();
+    [Tooltip("BGM 기본 크기 (설정의 BGM 볼륨에 곱해짐)")]
+    [Range(0f, 1f)] public float bgmBaseVolume = 0.6f;
+    [Tooltip("BGM을 켜고 끌 때 서서히 바뀌는 시간 (초)")]
+    public float bgmFadeTime = 0.5f;
+
+    // BGM 켜짐 여부 (이 컴퓨터에 저장, 씬이 바뀌어도 유지)
+    public bool IsBgmOn { get; private set; } = true;
+    public event Action<bool> OnBgmToggled;
+
+    private const string BgmOnKey = "BGMOn";
+    private AudioSource bgmSource;
+    private Coroutine bgmFade;
+
 
     // 싱글톤 생성 및 씬 전환 시 파괴 방지
     private void Awake()
@@ -46,10 +74,20 @@ public class GameSettingManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            SetupBgm();
         }
         else
         {
             Destroy(gameObject);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            if (NetworkManager.Instance != null) NetworkManager.Instance.OnSessionReady -= HandleSessionReady;
         }
     }
 
@@ -74,6 +112,30 @@ public class GameSettingManager : MonoBehaviour
             }
         }
 
+        // 세션(session-id)이 만들어진 뒤에 서버 설정을 불러온다 (없으면 400 Bad Request)
+        LoadSettingsWhenSessionReady();
+    }
+
+    private void LoadSettingsWhenSessionReady()
+    {
+        NetworkManager nm = NetworkManager.Instance;
+        if (nm == null) return;
+
+        if (nm.HasSession)
+        {
+            LoadSettingsFromServer();
+        }
+        else
+        {
+            nm.OnSessionReady -= HandleSessionReady;
+            nm.OnSessionReady += HandleSessionReady;
+            Debug.Log("[GameSettingManager] 세션 생성을 기다렸다가 설정을 불러옵니다.");
+        }
+    }
+
+    private void HandleSessionReady()
+    {
+        if (NetworkManager.Instance != null) NetworkManager.Instance.OnSessionReady -= HandleSessionReady;
         LoadSettingsFromServer();
     }
 
@@ -82,6 +144,11 @@ public class GameSettingManager : MonoBehaviour
     public void LoadSettingsFromServer()
     {
         if (NetworkManager.Instance == null) return;
+        if (!NetworkManager.Instance.HasSession)
+        {
+            LoadSettingsWhenSessionReady(); // 아직 세션이 없으면 생기면 다시 시도
+            return;
+        }
 
         StartCoroutine(NetworkManager.Instance.GetSettings((settingsData) =>
         {
@@ -105,6 +172,11 @@ public class GameSettingManager : MonoBehaviour
     public void SaveSettingsToServer()
     {
         if (NetworkManager.Instance == null) return;
+        if (!NetworkManager.Instance.HasSession)
+        {
+            Debug.LogWarning("[GameSettingManager] 세션이 아직 없어 설정을 서버에 저장하지 못했습니다.");
+            return;
+        }
 
         // 전송용 DTO 생성
         SettingsUpdateRequest updateRequest = new SettingsUpdateRequest
@@ -135,6 +207,7 @@ public class GameSettingManager : MonoBehaviour
         SetBGMVolume(bgmVolume);
         SetSFXVolume(sfxVolume);
         SetMuteToggle(isMuted);
+        ApplyBgmVolume(true);
 
         // (2) 창모드/전체화면 적용 (isWindowed == true -> fullScreen = false)
         Screen.fullScreen = !isWindowed;
@@ -154,6 +227,7 @@ public class GameSettingManager : MonoBehaviour
             float db = isMuted ? -80f : ConvertToDecibel(masterVolume);
             audioMixer.SetFloat("Master", db);
         }
+        ApplyBgmVolume(true);
         Debug.Log($"음소거 상태 변경: {isMuted}");
     }
 
@@ -191,6 +265,7 @@ public class GameSettingManager : MonoBehaviour
         {
             audioMixer.SetFloat("Master", ConvertToDecibel(masterVolume));
         }
+        ApplyBgmVolume(true);
     }
 
     /// BGM 볼륨 조절 (UI 슬라이더 연동)
@@ -201,6 +276,7 @@ public class GameSettingManager : MonoBehaviour
         {
             audioMixer.SetFloat("BGM", ConvertToDecibel(bgmVolume));
         }
+        ApplyBgmVolume(true);
     }
 
     // SFX 볼륨 조절 (UI 슬라이더 연동)
@@ -230,6 +306,88 @@ public class GameSettingManager : MonoBehaviour
         }
     }
 
+
+    // =========================================================
+    // BGM 켜기 / 끄기 (MusicToggle 버튼 등에서 호출)
+    // =========================================================
+    public void ToggleBGM() => SetBGMOn(!IsBgmOn);
+
+    public void SetBGMOn(bool on)
+    {
+        IsBgmOn = on;
+        PlayerPrefs.SetInt(BgmOnKey, on ? 1 : 0);
+        PlayerPrefs.Save();
+        ApplyBgmVolume(false);
+        OnBgmToggled?.Invoke(on);
+        Debug.Log($"BGM {(on ? "켜짐" : "꺼짐")}");
+    }
+
+    private void SetupBgm()
+    {
+        IsBgmOn = PlayerPrefs.GetInt(BgmOnKey, 1) == 1;
+
+        bgmSource = gameObject.AddComponent<AudioSource>();
+        bgmSource.loop = true;
+        bgmSource.playOnAwake = false;
+        bgmSource.spatialBlend = 0f; // 2D 사운드
+        if (audioMixer != null)
+        {
+            AudioMixerGroup[] groups = audioMixer.FindMatchingGroups("BGM");
+            if (groups != null && groups.Length > 0) bgmSource.outputAudioMixerGroup = groups[0];
+        }
+
+        SceneManager.sceneLoaded += HandleSceneLoaded;
+        PlayBgmForScene(SceneManager.GetActiveScene().name);
+    }
+
+    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode) => PlayBgmForScene(scene.name);
+
+    // 씬에 맞는 BGM 재생 (같은 곡이면 끊지 않고 이어서)
+    private void PlayBgmForScene(string sceneName)
+    {
+        if (bgmSource == null) return;
+        AudioClip clip = defaultBgm;
+        foreach (SceneBgm s in sceneBgms)
+        {
+            if (s != null && s.clip != null && s.sceneName == sceneName) { clip = s.clip; break; }
+        }
+        if (clip == null) { bgmSource.Stop(); return; }
+        if (bgmSource.clip == clip && bgmSource.isPlaying) return;
+
+        bgmSource.clip = clip;
+        bgmSource.Play();
+        ApplyBgmVolume(true);
+    }
+
+    // 실제 BGM 크기 = 기본 크기 × BGM 볼륨 × (믹서가 없으면 마스터 볼륨) / 꺼짐·음소거면 0
+    private void ApplyBgmVolume(bool instant)
+    {
+        if (bgmSource == null) return;
+        float target = 0f;
+        if (IsBgmOn && !isMuted)
+        {
+            target = bgmBaseVolume;
+            if (audioMixer == null) target *= Mathf.Clamp01(bgmVolume) * Mathf.Clamp01(masterVolume);
+        }
+
+        if (bgmFade != null) StopCoroutine(bgmFade);
+        if (instant || bgmFadeTime <= 0f) bgmSource.volume = target;
+        else bgmFade = StartCoroutine(FadeBgm(target));
+    }
+
+    private IEnumerator FadeBgm(float target)
+    {
+        float start = bgmSource.volume;
+        float t = 0f;
+        while (t < bgmFadeTime)
+        {
+            t += Time.unscaledDeltaTime;
+            bgmSource.volume = Mathf.Lerp(start, target, t / bgmFadeTime);
+            yield return null;
+        }
+        bgmSource.volume = target;
+        bgmFade = null;
+    }
 
     // 4. 내부 헬퍼 함수
 

@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // 도감 탭 전환 (BookPanel에 붙이기)
-// 스펠 버튼 → 스펠 도감 / 몬스터 버튼 → 몹 도감. 선택된 탭 버튼은 밝고 살짝 크게
+// 스펠 버튼 → 스펠 도감 / 몬스터 버튼 → 몹 도감. 선택된 탭 버튼은 밝게, 나머지는 어둡게
 // 칸을 비워 두면 자식 중 SpellPanel / MonsterPanel / Spell_Button / Monster_Button을 이름으로 찾음
 public class BookTabs : MonoBehaviour
 {
@@ -19,11 +19,9 @@ public class BookTabs : MonoBehaviour
     public bool rememberLastTab = false;
     public Color selectedColor = Color.white;
     public Color unselectedColor = new Color(0.65f, 0.65f, 0.65f);
-    public float selectedScale = 1.1f;
 
     private bool showingMonsters;
     private bool wired;
-    private Vector3 spellButtonScale = Vector3.one, monsterButtonScale = Vector3.one;
 
     private void Awake() => Wire();
 
@@ -44,16 +42,8 @@ public class BookTabs : MonoBehaviour
         if (spellButton == null) spellButton = FindChild("Spell_Button")?.GetComponent<Button>();
         if (monsterButton == null) monsterButton = FindChild("Monster_Button")?.GetComponent<Button>();
 
-        if (spellButton != null)
-        {
-            spellButtonScale = spellButton.transform.localScale;
-            spellButton.onClick.AddListener(ShowSpells);
-        }
-        if (monsterButton != null)
-        {
-            monsterButtonScale = monsterButton.transform.localScale;
-            monsterButton.onClick.AddListener(ShowMonsters);
-        }
+        if (spellButton != null) spellButton.onClick.AddListener(ShowSpells);
+        if (monsterButton != null) monsterButton.onClick.AddListener(ShowMonsters);
     }
 
     public void ShowSpells() => Show(false);
@@ -64,15 +54,15 @@ public class BookTabs : MonoBehaviour
         showingMonsters = monsters;
         if (spellPage != null) spellPage.SetActive(!monsters);
         if (monsterPage != null) monsterPage.SetActive(monsters);
-        Highlight(spellButton, spellButtonScale, !monsters);
-        Highlight(monsterButton, monsterButtonScale, monsters);
+        Highlight(spellButton, !monsters);
+        Highlight(monsterButton, monsters);
     }
 
-    private void Highlight(Button button, Vector3 baseScale, bool selected)
+    // 선택된 탭은 밝게, 나머지는 어둡게 (크기는 그대로)
+    private void Highlight(Button button, bool selected)
     {
         if (button == null) return;
         if (button.targetGraphic != null) button.targetGraphic.color = selected ? selectedColor : unselectedColor;
-        button.transform.localScale = baseScale * (selected ? selectedScale : 1f);
     }
 
     private GameObject FindChild(string childName)

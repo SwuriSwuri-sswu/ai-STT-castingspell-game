@@ -308,22 +308,22 @@ public class EnemyController : MonoBehaviour
         { "Low_Demon",       new Vector2(9f,   8f)  },  // 불: 기본
         { "Low_Spirit",      new Vector2(8f,   7f)  },  // 불: 가벼운 정령
         { "Low_Bee",         new Vector2(6.5f, 6f)  },  // 풀: 자주 쏘는 벌
-        { "Slime",           new Vector2(10f,  9f)  },  // 풀: 느릿한 슬라임
+        { "Low_Slime",       new Vector2(10f,  9f)  },  // 풀: 느릿한 슬라임
         { "Low_Anglerfish",  new Vector2(9f,   8f)  },  // 물: 기본
         { "Low_Crab",        new Vector2(10f,  10f) },  // 물: 느리지만 묵직한 집게
         { "Low_Fish",        new Vector2(7f,   6f)  },  // 물: 날쌘 물고기
         // 중급 (HP 50)
         { "Mid_Zombie",      new Vector2(9f,   14f) },  // 노말: 느리고 아픔
         { "Mid_Dragon",      new Vector2(8f,   13f) },  // 불: 기본
-        { "Mid_LittleDragon",new Vector2(6.5f, 10f) },  // 불: 작고 빠름
-        { "Mid_Skeleton",    new Vector2(7.5f, 11f) },  // 불: 균형
-        { "Tribal",          new Vector2(7f,   11f) },  // 풀: 창 찌르기
+        { "Mid_BabyDragon",  new Vector2(6.5f, 10f) },  // 불: 작고 빠른 아기 용
+        { "Mid_Skeleton Mage",new Vector2(7.5f, 11f) },  // 불: 해골 마법사
+        { "Mid_Tribal",      new Vector2(7f,   11f) },  // 풀: 창 찌르기
         { "Mid_BlueDemon",   new Vector2(8f,   13f) },  // 물: 기본
         { "Mid_GoblinShark", new Vector2(7f,   11f) },  // 물: 물어뜯기
         // 상급 (HP 100)
         { "High_Skeleton",   new Vector2(6.5f, 18f) },  // 노말: 빠른 상급
-        { "High_Demon",      new Vector2(7f,   20f) },  // 불: 기본
-        { "High_Dragon",     new Vector2(8.5f, 26f) },  // 불: 느리지만 강한 브레스
+        { "High_MagmaDemon", new Vector2(7f,   20f) },  // 불: 마그마 데몬
+        { "High_FlameDragon",new Vector2(8.5f, 26f) },  // 불: 느리지만 강한 화염 브레스
         { "High_MushroomKing",new Vector2(8.5f,25f) },  // 풀: 묵직한 버섯왕
         { "High_Yeti",       new Vector2(8f,   24f) },  // 물: 강한 한 방
     };

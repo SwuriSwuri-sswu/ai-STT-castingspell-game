@@ -30,8 +30,8 @@ public class MonsterPhotoStudio : MonoBehaviour
     public float yawAngle = 25f;
     [Tooltip("위에서 내려다보는 정도 (0 = 수평)")]
     [Range(0f, 1f)] public float lookDown = 0.2f;
-    [Tooltip("화면에 꽉 차는 정도 (클수록 여백이 많음)")]
-    public float padding = 1.15f;
+    [Tooltip("여백 (1 = 몹이 사진에 딱 맞음, 클수록 여백이 많음, 1보다 작으면 살짝 잘림)")]
+    public float padding = 1.05f;
     [Tooltip("Idle 애니메이션을 이 시간만큼 진행시킨 자세로 찍기 (0 = 첫 프레임)")]
     public float poseTime = 0.3f;
 
@@ -169,8 +169,11 @@ public class MonsterPhotoStudio : MonoBehaviour
         }
         if (has)
         {
-            float radius = b.extents.magnitude * padding;
-            float dist = radius / Mathf.Sin(fieldOfView * 0.5f * Mathf.Deg2Rad);
+            // 몹의 가장 긴 변(높이 또는 가로폭)이 사진에 딱 맞는 거리
+            float halfSize = Mathf.Max(b.extents.y, Mathf.Max(b.extents.x, b.extents.z)) * padding;
+            float depth = Mathf.Max(b.extents.x, b.extents.z);
+            float dist = halfSize / Mathf.Tan(fieldOfView * 0.5f * Mathf.Deg2Rad) + depth;
+            float radius = b.extents.magnitude;
             Vector3 dir = new Vector3(0f, lookDown, -1f).normalized; // 몹 앞(-Z 쪽)에서 바라봄
             photoCamera.transform.position = b.center + dir * dist;
             photoCamera.transform.LookAt(b.center);

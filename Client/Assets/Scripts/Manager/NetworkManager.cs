@@ -12,6 +12,10 @@ public class NetworkManager : MonoBehaviour
     [SerializeField] private string accessToken = "valid_token";
 
     public string CurrentSessionId { get; private set; }
+    public bool HasSession => !string.IsNullOrEmpty(CurrentSessionId);
+
+    // 세션 생성(/game/new)이 끝나 session-id가 준비된 순간. 설정 불러오기 등 세션이 필요한 요청은 이후에 보낸다
+    public event Action OnSessionReady;
 
     private void Awake()
     {
@@ -65,6 +69,7 @@ public class NetworkManager : MonoBehaviour
                     CurrentSessionId = response.data.id;
                     Debug.Log($"세션 생성 및 ID 저장 완료: {CurrentSessionId}");
                     onComplete?.Invoke(true);
+                    OnSessionReady?.Invoke();
                 }
                 else
                 {

@@ -15,8 +15,10 @@ public class PlayerHUD : MonoBehaviour
     public Image hpFill;
     [Tooltip("(선택) hpFill 뒤에 깔린 흰색/노란색 Filled 이미지. 천천히 줄어들며 깎인 양을 보여 줌")]
     public Image hpDelayFill;
-    [Tooltip("(선택) '72 / 100' 표시")]
+    [Tooltip("(선택) 'HP 72 / 100' 표시")]
     public TMP_Text hpText;
+    [Tooltip("체력 숫자 문구. {hp} = 현재 체력, {max} = 최대 체력")]
+    public string hpTextFormat = "HP {hp} / {max}";
     [Tooltip("체력 비율에 따라 바 색이 초록 → 노랑 → 빨강으로 바뀜.\n" +
              "※ 바 이미지가 흰색(또는 회색조)이어야 색이 제대로 보입니다. 빨간 이미지면 셋 다 흰색으로 두세요")]
     public bool colorByHealth = true;
@@ -151,7 +153,9 @@ public class PlayerHUD : MonoBehaviour
             hpFill.fillAmount = ratio;
             if (colorByHealth) hpFill.color = HealthColor(ratio);
         }
-        if (hpText != null) hpText.text = $"{Mathf.CeilToInt(current)} / {Mathf.CeilToInt(max)}";
+        if (hpText != null) hpText.text = hpTextFormat
+            .Replace("{hp}", Mathf.CeilToInt(current).ToString())
+            .Replace("{max}", Mathf.CeilToInt(max).ToString());
     }
 
     private void HandleDamaged(float amount, string reason)
