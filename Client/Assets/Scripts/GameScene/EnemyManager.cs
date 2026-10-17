@@ -57,6 +57,13 @@ public class EnemyManager : MonoBehaviour
     [Tooltip("등장 이동 속도 배율. 몹 프리팹의 Move Speed에 곱해집니다 (2 = 두 배 빠르게)")]
     [Min(0.1f)] public float approachSpeedMultiplier = 2f;
 
+    [Header("등장 자막")]
+    [Tooltip("몹이 나타날 때 처치 자막 자리에 'Demon이 나타났습니다!' 표시")]
+    public bool showAppearText = true;
+    [Tooltip("처음 만난 몹이면 아래에 작게 'New!'")]
+    public string newEncounterText = "New!";
+    public Color newEncounterColor = new Color(1f, 0.84f, 0.3f);
+
     [Header("스폰 타이밍")]
     public bool spawnOnStart = true;
     [Tooltip("게임 시작 후 첫 몹이 등장하기까지")]
@@ -220,11 +227,46 @@ public class EnemyManager : MonoBehaviour
 
         Debug.Log($"[EnemyManager] {EnemyController.RankToKorean(CurrentEnemy.rank)} " +
                   $"{EnemyController.ElementToKorean(CurrentEnemy.enemyType)} 속성 몬스터 등장!");
+        // 몹 도감 기록 + 등장 자막
+        bool isNew = MonsterCollection.Encounter(prefab.gameObject.name);
+        if (showAppearText && BattleUIManager.Instance != null)
+        {
+            BattleUIManager.Instance.ShowKill(BuildAppearText(CurrentEnemy, isNew));
+        }
         OnEnemySpawned?.Invoke(CurrentEnemy);
 
         Vector3 lookAt = lookTarget != null ? lookTarget.position : spawnPoint.position + spawnPoint.forward;
         if (hasApproach) CurrentEnemy.BeginApproach(waypoints, lookAt, approachSpeedMultiplier);
         else HandleEnemyReady(CurrentEnemy); // 이동 없이 바로 전투 가능
+    }
+
+    // "Demon이 나타났습니다!" (이름은 속성 색) + 처음이면 작은 New!
+    private string BuildAppearText(EnemyController enemy, bool isNew)
+    {
+        string name = enemy.DisplayName;
+        string hex = ColorUtility.ToHtmlStringRGB(EnemyController.ElementColor(enemy.enemyType));
+        string text = $"<color=#{hex}>{name}</color>{EnemyController.Josa(name, "이", "가")} 나타났습니다!";
+        if (isNew && !string.IsNullOrEmpty(newEncounterText))
+        {
+            string newHex = ColorUtility.ToHtmlStringRGB(newEncounterColor);
+            text += $"\n<size=60%><color=#{newHex}>{newEncounterText}</color></size>";
+        }
+        return text;
+    }
+
+    // 등록된 모든 몹 프리팹 (첫 몹 + 개별 설정 + Quick Prefabs, 중복 없이). 몹 도감·사진 촬영용
+    public List<EnemyController> AllPrefabs
+    {
+        get
+        {
+            List<EnemyController> list = new List<EnemyController>();
+            if (firstEnemy != null) list.Add(firstEnemy);
+            foreach (EnemySpawnEntry e in enemyPrefabs)
+                if (e != null && e.prefab != null && !list.Contains(e.prefab)) list.Add(e.prefab);
+            foreach (EnemyController p in quickPrefabs)
+                if (p != null && !list.Contains(p)) list.Add(p);
+            return list;
+        }
     }
 
     private void HandleEnemyReady(EnemyController enemy)

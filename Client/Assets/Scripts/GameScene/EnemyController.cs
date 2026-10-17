@@ -50,6 +50,9 @@ public class EnemyController : MonoBehaviour
     [Header("몹 설정")]
     public MagicElement enemyType = MagicElement.Normal;
     public MonsterRank rank = MonsterRank.Low;
+    [Tooltip("등장 자막·몹 도감에 표시할 이름. 비우면 프리팹 이름에서 자동 (High_Demon → Demon)\n" +
+             "한글로 적으면 '데몬이 나타났습니다'처럼 조사(이/가)가 정확해집니다")]
+    public string displayName = "";
     [Tooltip("체크하면 등급에 따라 HP 자동 설정 (하급 20 / 중급 50 / 상급 100)")]
     public bool useRankDefaultHP = true;
     public float maxHP = 20f;
@@ -106,7 +109,8 @@ public class EnemyController : MonoBehaviour
     [Header("공격 (플레이어 체력 깎기)")]
     [Tooltip("스폰포인트에 도착한 뒤 일정 시간마다 플레이어를 공격")]
     public bool canAttack = true;
-    [Tooltip("체크하면 등급에 따라 자동 (하급 9초·8 / 중급 8초·12 / 상급 7초·20)")]
+    [Tooltip("체크하면 자동: 몹별 추천값(EnemyController의 AttackPresets 표) → 표에 없으면 등급 기본값\n" +
+             "(하급 9초·8 / 중급 8초·12 / 상급 7초·20). 끄면 아래 두 칸 값을 그대로 사용")]
     public bool useRankDefaultAttack = true;
     [Tooltip("공격 간격 (초)")]
     public float attackInterval = 9f;
@@ -235,6 +239,112 @@ public class EnemyController : MonoBehaviour
         }
     }
 
+    // 표시 이름: displayName → 없으면 프리팹/오브젝트 이름에서 등급 접두어와 (Clone) 제거
+    public string DisplayName => GetDisplayName(this);
+
+    public static string GetDisplayName(EnemyController enemy)
+    {
+        if (enemy == null) return "";
+        if (!string.IsNullOrWhiteSpace(enemy.displayName)) return enemy.displayName.Trim();
+        return CleanName(enemy.gameObject.name);
+    }
+
+    public static string CleanName(string raw)
+    {
+        string n = (raw ?? "").Replace("(Clone)", "").Trim();
+        foreach (string prefix in new[] { "Low_", "Mid_", "High_" })
+        {
+            if (n.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) { n = n.Substring(prefix.Length); break; }
+        }
+        return SplitWords(n);
+    }
+
+    // MagmaDemon → Magma Demon, Goblin_Shark → Goblin Shark
+    private static string SplitWords(string n)
+    {
+        System.Text.StringBuilder sb = new System.Text.StringBuilder(n.Length + 4);
+        for (int i = 0; i < n.Length; i++)
+        {
+            char c = n[i];
+            if (c == '_' || c == '-') { if (sb.Length > 0 && sb[sb.Length - 1] != ' ') sb.Append(' '); continue; }
+            if (i > 0 && char.IsUpper(c) && (char.IsLower(n[i - 1]) || char.IsDigit(n[i - 1])) && sb.Length > 0 && sb[sb.Length - 1] != ' ')
+                sb.Append(' ');
+            sb.Append(c);
+        }
+        return sb.ToString().Trim();
+    }
+
+    // 도감·통계용 고유 키 (프리팹 이름 기준, (Clone) 제거)
+    public static string KeyOf(EnemyController enemy) =>
+        enemy == null ? "" : enemy.gameObject.name.Replace("(Clone)", "").Trim();
+
+    // 이 몹을 1.5배로 때리는 마법 속성 (노말 몹은 약점 없음 → false)
+    public static bool TryGetWeakness(MagicElement defend, out MagicElement weakness)
+    {
+        switch (defend)
+        {
+            case MagicElement.Fire: weakness = MagicElement.Water; return true;
+            case MagicElement.Grass: weakness = MagicElement.Fire; return true;
+            case MagicElement.Water: weakness = MagicElement.Grass; return true;
+            default: weakness = MagicElement.Normal; return false;
+        }
+    }
+
+    // 실제로 적용될 공격 간격·데미지 (프리팹에서도 사용 가능)
+    public void GetAttackStats(out float interval, out float damage)
+    {
+        if (!useRankDefaultAttack) { interval = attackInterval; damage = attackDamage; return; }
+        if (AttackPresets.TryGetValue(KeyOf(this), out Vector2 p)) { interval = p.x; damage = p.y; return; }
+        RankDefaultAttack(rank, out interval, out damage);
+    }
+
+    // 몹별 추천 공격값 (프리팹 이름 → (공격 간격 초, 데미지))
+    // 기준: 등급마다 초당 피해가 비슷하도록(하급 ≈0.9 / 중급 ≈1.5 / 상급 ≈2.9),
+    //       작고 날쌘 몹은 '자주 약하게', 크고 무거운 몹은 '가끔 세게'
+    public static readonly Dictionary<string, Vector2> AttackPresets = new Dictionary<string, Vector2>
+    {
+        // 하급 (HP 20)
+        { "Low_Bat",         new Vector2(7f,   6f)  },  // 노말: 빠른 박쥐
+        { "Low_Demon",       new Vector2(9f,   8f)  },  // 불: 기본
+        { "Low_Spirit",      new Vector2(8f,   7f)  },  // 불: 가벼운 정령
+        { "Low_Bee",         new Vector2(6.5f, 6f)  },  // 풀: 자주 쏘는 벌
+        { "Slime",           new Vector2(10f,  9f)  },  // 풀: 느릿한 슬라임
+        { "Low_Anglerfish",  new Vector2(9f,   8f)  },  // 물: 기본
+        { "Low_Crab",        new Vector2(10f,  10f) },  // 물: 느리지만 묵직한 집게
+        { "Low_Fish",        new Vector2(7f,   6f)  },  // 물: 날쌘 물고기
+        // 중급 (HP 50)
+        { "Mid_Zombie",      new Vector2(9f,   14f) },  // 노말: 느리고 아픔
+        { "Mid_Dragon",      new Vector2(8f,   13f) },  // 불: 기본
+        { "Mid_LittleDragon",new Vector2(6.5f, 10f) },  // 불: 작고 빠름
+        { "Mid_Skeleton",    new Vector2(7.5f, 11f) },  // 불: 균형
+        { "Tribal",          new Vector2(7f,   11f) },  // 풀: 창 찌르기
+        { "Mid_BlueDemon",   new Vector2(8f,   13f) },  // 물: 기본
+        { "Mid_GoblinShark", new Vector2(7f,   11f) },  // 물: 물어뜯기
+        // 상급 (HP 100)
+        { "High_Skeleton",   new Vector2(6.5f, 18f) },  // 노말: 빠른 상급
+        { "High_Demon",      new Vector2(7f,   20f) },  // 불: 기본
+        { "High_Dragon",     new Vector2(8.5f, 26f) },  // 불: 느리지만 강한 브레스
+        { "High_MushroomKing",new Vector2(8.5f,25f) },  // 풀: 묵직한 버섯왕
+        { "High_Yeti",       new Vector2(8f,   24f) },  // 물: 강한 한 방
+    };
+
+    // 한국어 조사 고르기: Josa("데몬", "이", "가") → "이"
+    // 영어 이름은 발음 끝소리를 대략 추정 (정확히 하려면 displayName을 한글로)
+    public static string Josa(string word, string withFinal, string withoutFinal)
+    {
+        if (string.IsNullOrEmpty(word)) return withoutFinal;
+        char c = word[word.Length - 1];
+        if (c >= 0xAC00 && c <= 0xD7A3) return ((c - 0xAC00) % 28) != 0 ? withFinal : withoutFinal;
+        if (char.IsDigit(c)) return "013678".IndexOf(c) >= 0 ? withFinal : withoutFinal;
+
+        string w = word.ToLowerInvariant();
+        if (w.EndsWith("ng") || w.EndsWith("m") || w.EndsWith("n") || w.EndsWith("l")) return withFinal;
+        if (w.EndsWith("b") || w.EndsWith("d") || w.EndsWith("g") || w.EndsWith("p") || w.EndsWith("t")) return withFinal;
+        // 묵음 e: Slime(슬라임), Stone(스톤) → 앞 글자가 m/n/l이면 받침
+        if (w.Length >= 2 && w.EndsWith("e") && "mnl".IndexOf(w[w.Length - 2]) >= 0) return withFinal;
+        return withoutFinal;
+    }
+
     public static string ElementToKorean(MagicElement e)
     {
         switch (e)
@@ -259,7 +369,7 @@ public class EnemyController : MonoBehaviour
         if (facingYawOffset != 0f) transform.rotation *= FacingOffset;
 
         if (useRankDefaultHP) maxHP = DefaultHP(rank);
-        if (useRankDefaultAttack) RankDefaultAttack(rank, out attackInterval, out attackDamage);
+        if (useRankDefaultAttack) GetAttackStats(out attackInterval, out attackDamage);
         CurrentHP = maxHP;
     }
 
@@ -622,6 +732,7 @@ public class EnemyController : MonoBehaviour
             dropSpell = GameSessionManager.Instance.RegisterKill(this);
         }
 
+        MonsterCollection.AddKill(KeyOf(this)); // 몹 도감 처치 수
         OnDied?.Invoke(this);
         StartCoroutine(DeathSequence(dropSpell));
     }
