@@ -141,6 +141,8 @@ public class EnemyController : MonoBehaviour
 
     // 시전은 됐지만 아직 맞지 않은(날아가는 중·차지 중·장판 연출 중) 마법의 데미지 합
     public float PendingDamage { get; private set; }
+    // 마지막으로 맞은 마법의 상성 배율 (1.5 = 상성 우위). 처치 시 상성 회복 판정용
+    public float LastHitMultiplier { get; private set; } = 1f;
     // 이미 시전된 마법만으로 HP가 0 이하가 될 예정 → 더 이상 영창을 받지 않음
     public bool IsDoomed => !IsDying && CurrentHP - PendingDamage <= 0f;
     // 새 마법의 타겟이 될 수 있는 상태
@@ -614,6 +616,7 @@ public class EnemyController : MonoBehaviour
         float finalDamage = spell.baseDamage * power * multiplier;
         PendingDamage = Mathf.Max(0f, PendingDamage - finalDamage);
         CurrentHP -= finalDamage;
+        LastHitMultiplier = multiplier;
 
         Debug.Log($"[{gameObject.name}] {spell.spellName} 적중! 데미지: {finalDamage} (영창: {power}x, 상성: {multiplier}x) 남은 HP: {CurrentHP}");
 

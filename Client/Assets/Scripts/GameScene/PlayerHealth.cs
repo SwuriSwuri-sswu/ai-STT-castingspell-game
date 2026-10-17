@@ -45,6 +45,8 @@ public class PlayerHealth : MonoBehaviour
     // (깎인 양, 이유)
     public event Action<float, string> OnDamaged;
     public event Action OnDied;
+    // (회복한 양, 이유)
+    public event Action<float, string> OnHealed;
 
     private float lastHitTime = -999f;
     private float startTime;
@@ -90,11 +92,19 @@ public class PlayerHealth : MonoBehaviour
         if (CurrentHP <= 0f) Die();
     }
 
-    public void Heal(float amount)
+    // 실제로 회복된 양을 돌려줌 (이미 가득 차 있으면 0)
+    public float Heal(float amount, string reason = "")
     {
-        if (IsDead || amount <= 0f) return;
+        if (IsDead || amount <= 0f) return 0f;
+        float before = CurrentHP;
         CurrentHP = Mathf.Min(maxHP, CurrentHP + amount);
+        float healed = CurrentHP - before;
+        if (healed <= 0f) return 0f;
+
+        Debug.Log($"[플레이어] {reason} +{healed} → 체력 {CurrentHP}/{maxHP}");
+        OnHealed?.Invoke(healed, reason);
         OnHealthChanged?.Invoke(CurrentHP, maxHP);
+        return healed;
     }
 
     // ── 주문 실패 패널티 ──

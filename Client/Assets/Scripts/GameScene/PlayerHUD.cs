@@ -46,10 +46,17 @@ public class PlayerHUD : MonoBehaviour
     [Tooltip("체력바가 흔들리는 크기 (픽셀)")]
     public float barShake = 8f;
 
-    [Header("(선택) 깎인 숫자")]
-    [Tooltip("체력바 근처에 '-8'을 띄울 글자. 비우면 표시 안 함")]
+    [Header("(선택) 깎인 숫자 / 회복 숫자")]
+    [Tooltip("체력바 근처에 '-8'(피해) / '+5'(회복)을 띄울 글자. 비우면 표시 안 함")]
     public TMP_Text damagePopup;
     public float popupTime = 0.8f;
+    [Tooltip("회복 숫자 색")]
+    public Color healPopupColor = new Color(0.45f, 1f, 0.45f);
+
+    [Header("회복 연출")]
+    [Tooltip("회복할 때 체력바가 잠깐 커지는 정도 (0 = 끄기)")]
+    public float healPulseScale = 0.08f;
+    public float healPulseTime = 0.35f;
 
     [Header("(선택) 몹 공격 게이지")]
     [Tooltip("다음 공격까지 차오르는 Filled 이미지. 비우면 표시 안 함")]
@@ -62,7 +69,9 @@ public class PlayerHUD : MonoBehaviour
     private float shownDelay = 1f;
     private float delayWaitTimer;
     private float flashTimer = 999f;
-    private Coroutine shakeRoutine, barShakeRoutine, popupRoutine;
+    private Coroutine shakeRoutine, barShakeRoutine, popupRoutine, healPulseRoutine;
+    private Color damagePopupColor = Color.white;
+    private Vector3 barBaseScale = Vector3.one;
     private RectTransform barRect;
     private Vector2 barBasePos;
 
@@ -73,13 +82,18 @@ public class PlayerHUD : MonoBehaviour
             hitFlash.raycastTarget = false;
             SetAlpha(hitFlash, 0f);
         }
-        if (damagePopup != null) damagePopup.gameObject.SetActive(false);
+        if (damagePopup != null)
+        {
+            damagePopupColor = damagePopup.color;
+            damagePopup.gameObject.SetActive(false);
+        }
 
         if (hpFill != null)
         {
             barRect = hpFill.transform.parent as RectTransform;
             if (barRect == null) barRect = hpFill.rectTransform;
             barBasePos = barRect.anchoredPosition;
+            barBaseScale = barRect.localScale;
         }
 
         PlayerHealth hp = PlayerHealth.Instance;
@@ -90,6 +104,7 @@ public class PlayerHUD : MonoBehaviour
         }
         hp.OnHealthChanged += HandleHealthChanged;
         hp.OnDamaged += HandleDamaged;
+        hp.OnHealed += HandleHealed;
         HandleHealthChanged(hp.CurrentHP, hp.maxHP);
         shownDelay = hp.Ratio;
     }
@@ -101,6 +116,7 @@ public class PlayerHUD : MonoBehaviour
         {
             hp.OnHealthChanged -= HandleHealthChanged;
             hp.OnDamaged -= HandleDamaged;
+            hp.OnHealed -= HandleHealed;
         }
     }
 
@@ -176,7 +192,7 @@ public class PlayerHUD : MonoBehaviour
         if (damagePopup != null)
         {
             if (popupRoutine != null) StopCoroutine(popupRoutine);
-            popupRoutine = StartCoroutine(Popup(amount));
+            popupRoutine = StartCoroutine(Popup($"-{Mathf.CeilToInt(amount)}", damagePopupColor));
         }
     }
 
@@ -215,10 +231,40 @@ public class PlayerHUD : MonoBehaviour
         barShakeRoutine = null;
     }
 
-    private IEnumerator Popup(float amount)
+    private void HandleHealed(float amount, string reason)
+    {
+        if (damagePopup != null)
+        {
+            if (popupRoutine != null) StopCoroutine(popupRoutine);
+            popupRoutine = StartCoroutine(Popup($"+{Mathf.CeilToInt(amount)}", healPopupColor));
+        }
+        if (barRect != null && healPulseScale > 0f)
+        {
+            if (healPulseRoutine != null) StopCoroutine(healPulseRoutine);
+            healPulseRoutine = StartCoroutine(HealPulse());
+        }
+    }
+
+    // 회복 시 체력바가 살짝 커졌다 돌아옴
+    private IEnumerator HealPulse()
+    {
+        float t = 0f;
+        while (t < healPulseTime)
+        {
+            t += Time.unscaledDeltaTime;
+            float k = Mathf.Sin(Mathf.Clamp01(t / healPulseTime) * Mathf.PI);
+            barRect.localScale = barBaseScale * (1f + healPulseScale * k);
+            yield return null;
+        }
+        barRect.localScale = barBaseScale;
+        healPulseRoutine = null;
+    }
+
+    private IEnumerator Popup(string text, Color color)
     {
         damagePopup.gameObject.SetActive(true);
-        damagePopup.text = $"-{Mathf.CeilToInt(amount)}";
+        damagePopup.text = text;
+        damagePopup.color = color;
         RectTransform rt = damagePopup.rectTransform;
         Vector2 basePos = rt.anchoredPosition;
         float t = 0f;
