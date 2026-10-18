@@ -1815,8 +1815,8 @@ MonoBehaviour:
   bossTurnText: "\uB9C8\uC655\uC758 \uD134!"
   playerTurnColor: {r: 1, g: 0.85, b: 0.3, a: 1}
   bossTurnColor: {r: 0.95, g: 0.25, b: 0.2, a: 1}
-  waitHint: "\uB9C8\uC655\uC758 \uD134\uC785\uB2C8\uB2E4\u2026"
-  castPrompt: {fileID: 0}
+  waitHint: 
+  castPrompt: {fileID: 1164597918}
   turnBannerHold: 2
   promptFadeTime: 0.25
   timeoutText: "\uC2DC\uAC04 \uCD08\uACFC!"

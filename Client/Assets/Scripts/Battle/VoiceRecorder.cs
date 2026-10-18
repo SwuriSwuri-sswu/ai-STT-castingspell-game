@@ -62,6 +62,7 @@ public class VoiceRecorder : MonoBehaviour
     public bool CastInProgress => castPending;
     Vector3 baseScale = Vector3.one;   // 자막 원래 크기 (연출이 끊겨도 크기가 누적되지 않게)
     bool wasCastable;
+    string lastHint;
 
     // 실시간 자막 상태 (발화마다 OnStarted 에서 초기화)
     int lastPartialSeq;
@@ -100,14 +101,21 @@ public class VoiceRecorder : MonoBehaviour
             Debug.LogError("[자막] 씬에 SkillManager 가 없습니다. 주문을 시전할 수 없습니다.");
 
         wasCastable = CanCast;
-        Show(HintText());
+        lastHint = HintText();
+        Show(lastHint);
     }
 
     void Update()
     {
         // 적이 도착하거나 사라지면 안내 문구 변경 (녹음, 해석, 연출 중이 아닐 때만)
+        // 보스전: 턴이 바뀌어 안내 문구만 달라져도(막힘 ↔ 풀림, 문구 변경) 갱신
         bool canCast = CanCast;
-        if (canCast != wasCastable && !Busy) Show(HintText());
+        string hint = HintText();
+        if ((canCast != wasCastable || hint != lastHint) && !Busy)
+        {
+            Show(hint);
+            lastHint = hint;
+        }
         wasCastable = canCast;
     }
 
@@ -349,13 +357,18 @@ public class VoiceRecorder : MonoBehaviour
         sequence = null;
     }
 
-    void ShowHint() => Show(HintText());
+    void ShowHint()
+    {
+        lastHint = HintText();
+        Show(lastHint);
+    }
 
     // 시전 가능 → "주문을 영창하세요." / 보스전에서 내 턴이 아님 → 보스전 안내 / 그 외 → "적이 다가오고 있습니다..."
     static string HintText()
     {
         if (CanCast) return HintReady;
-        if (SkillManager.CastBlocked && !string.IsNullOrEmpty(SkillManager.BlockedHint)) return SkillManager.BlockedHint;
+        // 보스전에서 막혀 있으면 그 안내 문구 (비어 있으면 빈칸)
+        if (SkillManager.CastBlocked) return SkillManager.BlockedHint ?? "";
         return HintWaiting;
     }
 

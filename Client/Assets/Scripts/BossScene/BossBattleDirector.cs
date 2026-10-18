@@ -580,7 +580,8 @@ public class BossBattleDirector : MonoBehaviour
         castTarget = null;
         float total = boss.Phase >= 3 ? phase3TurnTime : playerTurnTime;
 
-        // '나의 턴!' 배너가 떠 있는 동안은 영창 자막을 숨기고 주문도 막아 둠
+        // '나의 턴!' 배너가 떠 있는 동안은 영창 자막을 숨기고 주문도 막아 둠 (안내 문구는 빈칸)
+        Block("");
         SetPrompt(false, true);
         if (hud != null)
         {
