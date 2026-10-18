@@ -84,8 +84,14 @@ public class BossBattleDirector : MonoBehaviour
     public string bossTurnText = "마왕의 턴";
     public Color playerTurnColor = new Color(1f, 0.85f, 0.3f);
     public Color bossTurnColor = new Color(0.95f, 0.25f, 0.2f);
-    [Tooltip("내 턴이 아닐 때 영창 자막 대신 보여 줄 안내")]
+    [Tooltip("내 턴이 아닐 때 영창 자막 대신 보여 줄 안내 (비우면 빈칸)")]
     public string waitHint = "마왕의 턴입니다…";
+    [Tooltip("영창 자막 (Subtitle_Main). 마왕의 턴 동안, 그리고 '나의 턴!'이 떠 있는 동안 숨김")]
+    public GameObject castPrompt;
+    [Tooltip("'나의 턴!'을 보여 주는 시간 (초). 이 시간이 지나야 영창 자막이 나오고 주문을 외칠 수 있음 (제한 시간도 그 뒤부터)")]
+    public float turnBannerHold = 2f;
+    [Tooltip("영창 자막이 나타나는/사라지는 시간")]
+    public float promptFadeTime = 0.25f;
     public string timeoutText = "시간 초과!";
 
     [Header("보스 공격 패턴 (페이즈 1·2·3 확률)")]
@@ -108,6 +114,28 @@ public class BossBattleDirector : MonoBehaviour
     public float minionDamage = 5f;
     [Tooltip("(선택) 하수인이 나타날 때 이펙트")]
     public GameObject minionSpawnEffect;
+
+    [Header("하수인 소환 포탈")]
+    [Tooltip("(선택) 포탈 이펙트 프리팹. 비우면 포탈 없이 바로 나타남")]
+    public GameObject portalPrefab;
+    [Tooltip("포탈이 하수인 자리에서 뒤로(플레이어 반대쪽) 떨어진 거리")]
+    public float portalBehind = 0.6f;
+    [Tooltip("포탈 높이 (하수인 자리 기준)")]
+    public float portalHeight = 0.8f;
+    [Tooltip("포탈 크기 (프리팹 크기에 곱함)")]
+    public float portalScale = 1f;
+    [Tooltip("포탈 회전 보정. 포탈은 기본으로 플레이어를 바라봄 → 누워 있으면 X 90 등으로 세움")]
+    public Vector3 portalRotation = Vector3.zero;
+    [Tooltip("포탈이 커지며 열리는 시간")]
+    public float portalOpenTime = 0.4f;
+    [Tooltip("포탈이 열린 뒤 하수인이 나오기까지")]
+    public float portalLeadTime = 0.4f;
+    [Tooltip("하수인이 포탈에서 걸어 나오는(커지며 앞으로 나오는) 시간")]
+    public float minionEmergeTime = 0.5f;
+    [Tooltip("하수인이 나온 뒤 포탈이 남아 있는 시간")]
+    public float portalLinger = 2f;
+    [Tooltip("포탈이 작아지며 사라지는 시간")]
+    public float portalCloseTime = 0.6f;
     public string summonNotice = "하수인이 소환되었다! 먼저 처치하자!";
 
     [Header("회복")]
@@ -119,7 +147,12 @@ public class BossBattleDirector : MonoBehaviour
     public bool stunOnWeaknessStreak = true;
     [Tooltip("상성 마법을 이만큼 연속으로 맞히면 보스가 기절해 다음 보스 턴을 쉼")]
     public int stunStreak = 2;
-    public string stunNotice = "마왕이 비틀거린다! 공격할 틈이 없다!";
+    [Tooltip("기절하는 순간 뜨는 자막")]
+    public string stunNotice = "마왕이 비틀거린다! 다음 턴은 쉰다!";
+    [Tooltip("기절해서 쉬는 마왕의 턴에 뜨는 자막")]
+    public string stunSkipNotice = "마왕이 정신을 차리지 못하고 있다…";
+    [Tooltip("쉬는 턴에 웅크리고 있는 시간 (그 뒤 일어남)")]
+    public float stunSkipTime = 1.5f;
 
     [Header("결과")]
     public string endingSceneName = "EndingScene";
@@ -169,6 +202,12 @@ public class BossBattleDirector : MonoBehaviour
         }
 
         Block(waitHint);
+        // 영창 자막을 숨겼다 켰다 할 CanvasGroup (입장 연출이 임시로 붙였다 지우는 것과 겹치지 않게 미리 붙여 둠)
+        if (castPrompt != null)
+        {
+            promptGroup = castPrompt.GetComponent<CanvasGroup>();
+            if (promptGroup == null) promptGroup = castPrompt.AddComponent<CanvasGroup>();
+        }
         GameResult.ClearBoss();
         GameResult.IsBossFight = true;
         GameResult.BossMaxTurns = maxTurns;
@@ -230,16 +269,26 @@ public class BossBattleDirector : MonoBehaviour
             if (turnsUsed >= maxTurns) { yield return Defeat(); yield break; }
 
             int targetPhase = boss.PhaseForHP();
+            bool skipSummon = false;
             if (targetPhase > boss.Phase)
             {
+                // 기절 중이었으면 먼저 일어남
+                if (stunned)
+                {
+                    stunned = false;
+                    yield return boss.EndStun();
+                }
                 // 페이즈 전환이 보스 턴을 대신함 (숨 돌릴 틈)
                 while (boss.Phase < targetPhase) yield return PhaseTransition(boss.Phase + 1);
             }
             else if (stunned)
             {
+                // 기절: 이번 보스 턴은 쉼 (공격·하수인 소환 없음) → 일어남
                 stunned = false;
-                Notice(stunNotice);
-                yield return new WaitForSeconds(1.5f);
+                skipSummon = true;
+                Notice(stunSkipNotice);
+                yield return new WaitForSeconds(stunSkipTime);
+                yield return boss.EndStun();
             }
             else
             {
@@ -247,7 +296,7 @@ public class BossBattleDirector : MonoBehaviour
             }
             if (PlayerDead) yield break;
 
-            yield return MaybeSummon();
+            if (!skipSummon) yield return MaybeSummon();
         }
     }
 
@@ -504,13 +553,13 @@ public class BossBattleDirector : MonoBehaviour
     {
         for (float t = 0f; t < time; t += Time.deltaTime)
         {
-            foreach (HiddenUI h in hiddenUI) if (h.group != null) h.group.alpha = h.alpha * (t / time);
+            foreach (HiddenUI h in hiddenUI) if (h.group != null && h.group != promptGroup) h.group.alpha = h.alpha * (t / time);
             yield return null;
         }
         foreach (HiddenUI h in hiddenUI)
         {
             if (h.group == null) continue;
-            h.group.alpha = h.alpha;
+            h.group.alpha = h.group == promptGroup ? 0f : h.alpha; // 영창 자막은 '나의 턴!'이 끝난 뒤에 나타남
             h.group.interactable = h.interactable;
             h.group.blocksRaycasts = h.blocksRaycasts;
             if (h.added) Destroy(h.group);
@@ -529,10 +578,22 @@ public class BossBattleDirector : MonoBehaviour
     {
         castThisTurn = false;
         castTarget = null;
-        Unblock();
-        if (hud != null) hud.ShowBanner(playerTurnText, playerTurnColor);
-
         float total = boss.Phase >= 3 ? phase3TurnTime : playerTurnTime;
+
+        // '나의 턴!' 배너가 떠 있는 동안은 영창 자막을 숨기고 주문도 막아 둠
+        SetPrompt(false, true);
+        if (hud != null)
+        {
+            hud.ShowBanner(playerTurnText, playerTurnColor);
+            hud.SetTimer(total, total);
+        }
+        if (turnBannerHold > 0f) yield return new WaitForSeconds(turnBannerHold);
+        if (PlayerDead || BossDown) yield break;
+
+        // 배너가 끝나면 영창 자막이 나타나고 주문을 외칠 수 있음
+        Unblock();
+        SetPrompt(true);
+
         float remaining = total;
         float grace = 0f;
 
@@ -557,6 +618,7 @@ public class BossBattleDirector : MonoBehaviour
 
         if (!castThisTurn)
         {
+            SetPrompt(false);
             if (!PlayerDead && !BossDown) Notice(timeoutText);
             yield return new WaitForSeconds(1f);
             yield break;
@@ -572,6 +634,33 @@ public class BossBattleDirector : MonoBehaviour
             yield return null;
         }
         yield return new WaitForSeconds(afterHitDelay);
+        SetPrompt(false); // 마왕의 턴 동안 숨김
+    }
+
+    // 영창 자막 보이기 / 숨기기 (꺼 버리지 않고 투명하게만 → 자막 스크립트는 계속 동작)
+    private CanvasGroup promptGroup;
+    private Coroutine promptRoutine;
+
+    private void SetPrompt(bool show, bool instant = false)
+    {
+        if (promptGroup == null) return;
+        if (promptRoutine != null) StopCoroutine(promptRoutine);
+        promptRoutine = null;
+        float target = show ? 1f : 0f;
+        if (instant || promptFadeTime <= 0f) promptGroup.alpha = target;
+        else promptRoutine = StartCoroutine(FadePrompt(target));
+    }
+
+    private IEnumerator FadePrompt(float target)
+    {
+        float from = promptGroup.alpha;
+        for (float t = 0f; t < promptFadeTime; t += Time.deltaTime)
+        {
+            promptGroup.alpha = Mathf.Lerp(from, target, t / promptFadeTime);
+            yield return null;
+        }
+        promptGroup.alpha = target;
+        promptRoutine = null;
     }
 
     private void HandleSpellCast(SpellData spell, EnemyController target, float power)
@@ -599,10 +688,12 @@ public class BossBattleDirector : MonoBehaviour
                 boss.CancelCharge();
                 Notice(chargeBreakNotice);
             }
-            else if (stunOnWeaknessStreak && weaknessStreak >= stunStreak)
+            else if (stunOnWeaknessStreak && weaknessStreak >= stunStreak && !BossDown && !stunned)
             {
                 stunned = true;
                 weaknessStreak = 0;
+                boss.BeginStun();   // Hit_Big → 웅크림 + 머리 위 별
+                Notice(stunNotice);
             }
         }
         else
@@ -696,16 +787,85 @@ public class BossBattleDirector : MonoBehaviour
             dir.y = 0f;
             if (dir.sqrMagnitude > 0.01f) rot = Quaternion.LookRotation(dir);
         }
+        // 포탈: 하수인 자리 뒤쪽에 열림
+        Vector3 back = cam != null ? point.position - cam.transform.position : -point.forward;
+        back.y = 0f;
+        back = back.sqrMagnitude > 0.01f ? back.normalized : Vector3.back;
+        Vector3 portalPos = point.position + back * portalBehind + Vector3.up * portalHeight;
+        GameObject portal = null;
+        if (portalPrefab != null)
+        {
+            Quaternion portalRot = Quaternion.LookRotation(-back) * Quaternion.Euler(portalRotation);
+            portal = Instantiate(portalPrefab, portalPos, portalRot);
+            // 파티클도 오브젝트 크기를 따라 작아지게
+            foreach (ParticleSystem ps in portal.GetComponentsInChildren<ParticleSystem>())
+            {
+                ParticleSystem.MainModule main = ps.main;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            }
+            Vector3 full = portal.transform.localScale * portalScale;
+            portal.transform.localScale = Vector3.zero;
+            yield return ScaleOver(portal.transform, Vector3.zero, full, portalOpenTime, true);
+            if (portalLeadTime > 0f) yield return new WaitForSeconds(portalLeadTime);
+        }
+
         if (minionSpawnEffect != null) EffectUtil.SpawnAndAutoDestroy(minionSpawnEffect, point.position, Quaternion.identity);
 
-        EnemyController m = Instantiate(prefab, point.position, rot);
+        Vector3 emergeFrom = portal != null ? new Vector3(portalPos.x, point.position.y, portalPos.z) : point.position;
+        EnemyController m = Instantiate(prefab, emergeFrom, rot);
         m.canAttack = false;       // 공격은 아래 제한 시간으로
         m.targetPriority = 1;      // 마법이 하수인부터 노림
         m.showKillText = false;    // 처치 자막 자리(Subtitle_Kill)는 '하수인 공격까지 n초'가 씀
         m.OnDied += HandleMinionDied;
         minions.Add(new Minion { enemy = m, fuse = minionFuse });
+
+        // 포탈에서 커지며 앞으로 걸어 나옴
+        if (portal != null && minionEmergeTime > 0f)
+        {
+            Vector3 fullScale = m.transform.localScale;
+            for (float t = 0f; t < minionEmergeTime && m != null; t += Time.deltaTime)
+            {
+                float k = Mathf.SmoothStep(0f, 1f, t / minionEmergeTime);
+                m.transform.position = Vector3.Lerp(emergeFrom, point.position, k);
+                m.transform.localScale = fullScale * Mathf.Lerp(0.3f, 1f, k);
+                yield return null;
+            }
+            if (m != null)
+            {
+                m.transform.position = point.position;
+                m.transform.localScale = fullScale;
+            }
+        }
         Notice(summonNotice);
+
+        // 포탈은 잠시 뒤 작아지며 닫힘 (그동안 다음 진행은 계속)
+        if (portal != null) StartCoroutine(ClosePortal(portal));
         yield return new WaitForSeconds(0.8f);
+    }
+
+    private IEnumerator ClosePortal(GameObject portal)
+    {
+        if (portalLinger > 0f) yield return new WaitForSeconds(portalLinger);
+        if (portal == null) yield break;
+        yield return ScaleOver(portal.transform, portal.transform.localScale, Vector3.zero, portalCloseTime, false);
+        if (portal != null)
+        {
+            float tail = EffectUtil.StopEmitting(portal);
+            Destroy(portal, tail + 0.1f);
+        }
+    }
+
+    // 크기 변화 (열릴 때는 살짝 커졌다가 자리 잡음 / 닫힐 때는 끝으로 갈수록 빠르게)
+    private static IEnumerator ScaleOver(Transform target, Vector3 from, Vector3 to, float time, bool overshoot)
+    {
+        for (float t = 0f; t < time && target != null; t += Time.deltaTime)
+        {
+            float k = Mathf.Clamp01(t / Mathf.Max(0.01f, time));
+            float e = overshoot ? 1f + 2.2f * Mathf.Pow(k - 1f, 3f) + 1.2f * Mathf.Pow(k - 1f, 2f) : k * k;
+            target.localScale = Vector3.LerpUnclamped(from, to, e);
+            yield return null;
+        }
+        if (target != null) target.localScale = to;
     }
 
     private Transform FreeMinionPoint()

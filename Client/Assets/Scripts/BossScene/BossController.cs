@@ -106,6 +106,23 @@ public class BossController : MonoBehaviour
     public AnimationClip deathClip;
     public float crossFade = 0.2f;
 
+    [Header("기절 (상성 마법 연속 적중)")]
+    [Tooltip("Hit_Big 다음 웅크리고 있는 동작 (반복). 예: Crouch_Idle")]
+    public AnimationClip stunIdleClip;
+    [Tooltip("기절에서 깨어나 일어서는 동작. 예: Crouch To Stand")]
+    public AnimationClip stunRecoverClip;
+    [Tooltip("(선택) 머리 위 이펙트 프리팹. 비우면 노란 별이 빙빙 도는 기본 이펙트")]
+    public GameObject stunEffectPrefab;
+    [Tooltip("머리 위로 얼마나 띄울지")]
+    public float starHeight = 0.35f;
+    [Tooltip("별이 도는 원의 반지름")]
+    public float starRadius = 0.35f;
+    public int starCount = 4;
+    public float starSize = 0.2f;
+    [Tooltip("1초에 도는 각도")]
+    public float starSpinSpeed = 200f;
+    public Color starColor = new Color(1f, 0.88f, 0.3f);
+
     [Header("코드 연출 (애니메이션이 없어도 동작)")]
     [Tooltip("Idle 클립이 없을 때 위아래로 떠다니는 정도")]
     public float floatAmount = 0.08f;
@@ -125,7 +142,8 @@ public class BossController : MonoBehaviour
     private Coroutine recoilRoutine;
     private bool holdPose;   // 사망 등 마지막 자세 유지
     private bool seated;
-    private bool chargeHeld; // Casting_1을 팔 든 자세에서 멈춰 둔 상태
+    private bool chargeHeld;
+    private Animator animatorRef; // Casting_1을 팔 든 자세에서 멈춰 둔 상태
 
     // =========================================================
     // 준비
@@ -148,6 +166,7 @@ public class BossController : MonoBehaviour
         {
             animator.applyRootMotion = false;
             animator.runtimeAnimatorController = null; // 클립은 코드로 재생
+            animatorRef = animator;
             player = new ClipPlayer(animator, name);
         }
         basePos = transform.position;
@@ -178,7 +197,7 @@ public class BossController : MonoBehaviour
         player?.Tick(Time.deltaTime);
 
         // 한 번 재생하는 동작이 끝나면 Idle로
-        if (player != null && !holdPose && !seated && player.Current != null && player.Current != idleClip
+        if (player != null && !holdPose && !seated && !IsStunned && player.Current != null && player.Current != idleClip
             && !player.Current.isLooping && player.Elapsed >= player.Current.length - crossFade)
         {
             Play(idleClip);
@@ -495,6 +514,176 @@ public class BossController : MonoBehaviour
     // =========================================================
     // 피격 · 사망
     // =========================================================
+    // =========================================================
+    // 기절: Hit_Big → 웅크린 채 머리 위 별 → (다음 보스 턴) Crouch To Stand → Idle
+    // =========================================================
+    public bool IsStunned { get; private set; }
+    private GameObject stunFx;
+    private readonly List<Transform> stars = new List<Transform>();
+    private Transform headBone;
+
+    public void BeginStun()
+    {
+        if (IsStunned || Enemy == null || Enemy.IsDying) return;
+        IsStunned = true;
+        if (IsCharging) CancelCharge();
+        StartCoroutine(StunRoutine());
+    }
+
+    private IEnumerator StunRoutine()
+    {
+        ShowStars(true);
+        if (hitBigClip != null)
+        {
+            // 상성 피격으로 이미 Hit_Big이 나오고 있으면 이어서, 아니면 새로 재생
+            if (player == null || player.Current != hitBigClip) Play(hitBigClip, 0.08f);
+            float left = hitBigClip.length - (player != null ? player.Elapsed : 0f) - crossFade;
+            if (left > 0f) yield return new WaitForSeconds(left);
+        }
+        if (!IsStunned || Enemy.IsDying) yield break;
+        Play(stunIdleClip != null ? stunIdleClip : idleClip, 0.3f);
+    }
+
+    // 기절에서 깨어남 (BossBattleDirector가 쉬는 턴 끝에 호출)
+    public IEnumerator EndStun()
+    {
+        if (!IsStunned) yield break;
+        IsStunned = false;
+        ShowStars(false);
+        if (Enemy.IsDying) yield break;
+        if (stunRecoverClip != null)
+        {
+            Play(stunRecoverClip, 0.25f);
+            yield return new WaitForSeconds(Mathf.Max(0.1f, stunRecoverClip.length - crossFade));
+        }
+        Play(idleClip);
+    }
+
+    private void ShowStars(bool show)
+    {
+        if (!show)
+        {
+            if (stunFx != null)
+            {
+                float tail = EffectUtil.StopEmitting(stunFx);
+                foreach (Renderer r in stunFx.GetComponentsInChildren<Renderer>()) if (!(r is ParticleSystemRenderer)) r.enabled = false;
+                Destroy(stunFx, tail + 0.1f);
+            }
+            stunFx = null;
+            stars.Clear();
+            return;
+        }
+        if (stunFx != null) return;
+
+        if (headBone == null && animatorRef != null && animatorRef.isHuman) headBone = animatorRef.GetBoneTransform(HumanBodyBones.Head);
+        if (stunEffectPrefab != null)
+        {
+            stunFx = Instantiate(stunEffectPrefab, StarCenter, Quaternion.identity);
+            return;
+        }
+
+        stunFx = new GameObject("StunStars");
+        stunFx.transform.position = StarCenter;
+        Sprite sprite = StarSprite();
+        Shader unlit = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+        Material mat = unlit != null ? new Material(unlit) : null;
+        for (int i = 0; i < Mathf.Max(1, starCount); i++)
+        {
+            GameObject star = new GameObject("Star");
+            star.transform.SetParent(stunFx.transform, false);
+            star.transform.localScale = Vector3.one * starSize;
+            SpriteRenderer sr = star.AddComponent<SpriteRenderer>();
+            sr.sprite = sprite;
+            sr.color = starColor;
+            if (mat != null) sr.sharedMaterial = mat;
+            stars.Add(star.transform);
+        }
+    }
+
+    private Vector3 StarCenter
+    {
+        get
+        {
+            if (headBone != null) return headBone.position + Vector3.up * starHeight;
+            return Enemy != null ? Enemy.AimPoint + Vector3.up * 1.2f : transform.position + Vector3.up * 2f;
+        }
+    }
+
+    // 애니메이션이 적용된 뒤 머리 위치를 따라감
+    private void LateUpdate()
+    {
+        if (stunFx == null) return;
+        stunFx.transform.position = StarCenter;
+        if (stars.Count == 0) return;
+
+        Camera cam = Camera.main;
+        float baseAngle = Time.time * starSpinSpeed;
+        for (int i = 0; i < stars.Count; i++)
+        {
+            float a = (baseAngle + 360f / stars.Count * i) * Mathf.Deg2Rad;
+            Vector3 offset = new Vector3(Mathf.Cos(a) * starRadius, Mathf.Sin(a * 2f + i) * 0.04f, Mathf.Sin(a) * starRadius);
+            stars[i].position = stunFx.transform.position + offset;
+            // 카메라를 바라보며 제자리에서도 살짝 회전 / 뒤쪽으로 갈 때 작아져 원근감
+            Quaternion face = cam != null ? cam.transform.rotation : Quaternion.identity;
+            stars[i].rotation = face * Quaternion.Euler(0f, 0f, Time.time * 160f + i * 40f);
+            float depth = cam != null ? Vector3.Dot(offset, -cam.transform.forward) / Mathf.Max(0.01f, starRadius) : 0f;
+            stars[i].localScale = Vector3.one * starSize * (0.85f + 0.15f * depth);
+        }
+    }
+
+    // 별 모양 스프라이트를 코드로 그림 (한 번만)
+    private static Sprite starSprite;
+    private static Sprite StarSprite()
+    {
+        if (starSprite != null) return starSprite;
+        const int size = 64;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.wrapMode = TextureWrapMode.Clamp;
+        Vector2[] poly = new Vector2[10];
+        for (int k = 0; k < 10; k++)
+        {
+            float ang = Mathf.PI / 2f + k * Mathf.PI / 5f;
+            float r = (k % 2 == 0) ? 0.46f : 0.2f;
+            poly[k] = new Vector2(0.5f + Mathf.Cos(ang) * r, 0.5f + Mathf.Sin(ang) * r);
+        }
+        Color32[] px = new Color32[size * size];
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                // 4번 나눠 찍어 가장자리를 부드럽게
+                int hit = 0;
+                for (int sy = 0; sy < 2; sy++)
+                    for (int sx = 0; sx < 2; sx++)
+                        if (InPolygon(new Vector2((x + 0.25f + sx * 0.5f) / size, (y + 0.25f + sy * 0.5f) / size), poly)) hit++;
+                float a = hit / 4f;
+                // 가운데는 하얗게, 바깥은 은은한 빛
+                float d = Vector2.Distance(new Vector2((x + 0.5f) / size, (y + 0.5f) / size), new Vector2(0.5f, 0.5f));
+                float glow = Mathf.Clamp01(1f - d / 0.5f) * 0.35f;
+                float alpha = Mathf.Max(a, glow * glow);
+                float white = Mathf.Clamp01(1f - d / 0.18f) * a;
+                byte c = (byte)(255 * (0.8f + 0.2f * white));
+                px[y * size + x] = new Color32(255, c, c, (byte)(255 * alpha));
+            }
+        }
+        tex.SetPixels32(px);
+        tex.Apply();
+        starSprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
+        return starSprite;
+    }
+
+    private static bool InPolygon(Vector2 p, Vector2[] poly)
+    {
+        bool inside = false;
+        for (int i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
+        {
+            if ((poly[i].y > p.y) != (poly[j].y > p.y) &&
+                p.x < (poly[j].x - poly[i].x) * (p.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x)
+                inside = !inside;
+        }
+        return inside;
+    }
+
     private void HandleDamaged(EnemyController e, SpellData spell, float damage, float multiplier)
     {
         if (Enemy.IsDying || Enemy.CurrentHP <= 0f) return;
@@ -502,7 +691,8 @@ public class BossController : MonoBehaviour
         AnimationClip clip = big && hitBigClip != null ? hitBigClip
             : (hitClips != null && hitClips.Length > 0 ? hitClips[Random.Range(0, hitClips.Length)] : null);
         // 공격·차지 동작 중에는 피격 동작으로 끊지 않음 (상성 피격은 예외)
-        if (clip != null && (big || player == null || player.Current == idleClip)) Play(clip, 0.08f);
+        // 기절해 웅크린 동안은 자세를 유지 (BeginStun이 Hit_Big → 웅크리기를 직접 재생)
+        if (clip != null && !IsStunned && (big || player == null || player.Current == idleClip)) Play(clip, 0.08f);
 
         if (recoilRoutine != null) StopCoroutine(recoilRoutine);
         recoilRoutine = StartCoroutine(Recoil(big ? hitRecoil * 1.8f : hitRecoil));
@@ -528,6 +718,8 @@ public class BossController : MonoBehaviour
     public IEnumerator DoDeath()
     {
         holdPose = true;
+        IsStunned = false;
+        ShowStars(false);
         DestroyCharge();
         IsCharging = false;
         if (auraLight != null) StartCoroutine(FadeAura());
