@@ -120,6 +120,7 @@ public class VoiceRecorder : MonoBehaviour
                 voiceSender.RecordingStarted += OnStarted;
                 voiceSender.RecordingSubmitted += OnSubmitted;
                 voiceSender.RecordingRejected += OnRejected;
+                voiceSender.RecordingDiscarded += OnDiscarded;
             }
             else
             {
@@ -127,6 +128,7 @@ public class VoiceRecorder : MonoBehaviour
                 voiceSender.RecordingStarted -= OnStarted;
                 voiceSender.RecordingSubmitted -= OnSubmitted;
                 voiceSender.RecordingRejected -= OnRejected;
+                voiceSender.RecordingDiscarded -= OnDiscarded;
             }
         }
         if (voiceSocket != null)
@@ -192,6 +194,12 @@ public class VoiceRecorder : MonoBehaviour
         ShowFailure(reason);
     }
 
+    // 무음이라 조용히 버린 발화: 실패 문구 없이 안내 문구로 되돌린다 (로그는 VoiceSender 가 남긴다)
+    void OnDiscarded()
+    {
+        if (sequence == null) ShowHint();
+    }
+
     // 지금 몹이 쓰러질 예정이거나 쓰러지는 중인지
     static bool IsFinishingEnemy
     {
@@ -206,6 +214,7 @@ public class VoiceRecorder : MonoBehaviour
     {
         // request_id 없는 오류(스펠 목록 오류 등)는 주문과 무관하므로 무시한다 (Console 에는 출력됨)
         if (e == null || string.IsNullOrEmpty(e.RequestId)) return;
+        if (voiceSender != null && voiceSender.IsStaleResult(e.RequestId)) return;   // 늦게 온 오류도 자막에 쓰지 않는다
         Debug.Log($"[자막] 불발: 서버 오류 {e.Code} ({e.Message})");
         ShowFailure(ErrorToMessage(e.Code));
     }
@@ -213,6 +222,8 @@ public class VoiceRecorder : MonoBehaviour
     void OnResult(CastResult r)
     {
         if (r == null) return;
+        // 시간 초과로 포기했거나 이전 요청의 결과면 자막·시전에 쓰지 않는다 (버림 로그는 VoiceSender 가 남긴다)
+        if (voiceSender != null && voiceSender.IsStaleResult(r.RequestId)) return;
         // 결과가 늦게 와서 이미 다음 주문을 말하는 중이면 덮어쓰지 않는다
         if (voiceSender != null && voiceSender.IsRecording) return;
 

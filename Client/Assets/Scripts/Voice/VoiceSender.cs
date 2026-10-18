@@ -68,9 +68,12 @@ public class VoiceSender : MonoBehaviour
     [Tooltip("말 끝 무음 중 남겨 둘 길이(초). 끝 자음이 잘리지 않게 약간 남긴다")]
     [SerializeField] float keepTrailingSilenceSec = 0.1f;
 
+    [Header("무음 차단")]
+    [Tooltip("녹음 전체의 가장 큰 소리(peak, 0~1)가 이보다 작으면 무음으로 보고 판정을 보내지 않는다. 작게 말한 주문이 막히면 낮춘다")]
+    [SerializeField, Range(0f, 0.1f)] float silentPeak = 0.01f;
+
     const float MinRecordingSec = 0.15f;   // 서버 최소 0.1초 + 여유
     const float MaxRecordingSec = 4.9f;    // 서버 최대 5초보다 약간 짧게 (프레임 단위 오차 대비)
-    const float SilentPeak = 0.01f;        // 이보다 작으면 소리가 거의 없는 것으로 판단
 
     /// <summary>현재 VAD (디버그 표시용). 장치 변경 등으로 다시 만들어지기 전에는 null 일 수 있다.</summary>
     public VoiceActivityDetector Vad => vad;
@@ -79,6 +82,7 @@ public class VoiceSender : MonoBehaviour
     public event Action RecordingStarted;            // 발화 수집 시작
     public event Action RecordingSubmitted;          // 발화 전송 시작
     public event Action<string> RecordingRejected;   // 전송하지 못함 (사유)
+    public event Action RecordingDiscarded;          // 무음이라 조용히 버림 (화면 문구 없이 안내로 복귀)
     public event Action<byte[]> UtteranceSent;       // 서버로 보낸 WAV (VoiceDebug 의 디버그 저장용)
 
     /// <summary>
@@ -115,6 +119,12 @@ public class VoiceSender : MonoBehaviour
     float waitDeadline;
     string pendingRequestId;
     bool ignoringCurrentSpeech;
+
+    // 시간 초과로 기다리기를 포기한 요청 (요청 번호 → 보낸 시각). 늦게 도착한 결과를 알아보고 버리는 데 쓴다.
+    // 최근 MaxExpiredRequests 개만 기억한다 (결과가 와도 지우지 않는다: 다른 스크립트도 같은 결과를 확인하기 때문)
+    const int MaxExpiredRequests = 16;
+    readonly Dictionary<string, float> expiredRequests = new Dictionary<string, float>();
+    readonly Queue<string> expiredOrder = new Queue<string>();
 
     // ─────────────────────────────────────────────
     // 키 입력(PushToTalk) 상태
@@ -188,6 +198,7 @@ public class VoiceSender : MonoBehaviour
         // [막기] 안전장치: 서버가 응답하지 않아도 정해진 시간이 지나면 대기를 푼다
         if (waitingForResult && Time.unscaledTime >= waitDeadline)
         {
+            MarkExpired(pendingRequestId ?? CurrentRequestId);   // 이 요청의 결과가 나중에 와도 쓰지 않는다
             ReleaseWait("응답 시간 초과");
             RecordingRejected?.Invoke("주문 해석 시간이 초과되었습니다.");   // 자막이 '해석 중'에 멈추지 않게 알린다
         }
@@ -474,8 +485,7 @@ public class VoiceSender : MonoBehaviour
             return;
         }
 
-        StopStream(cancel: false);   // 남은 조각과 stream_end (서버가 마지막 확정 자막을 보낼 수 있다)
-
+        // 무음 판단에 쓸 peak 를 실시간 자막 마무리보다 먼저 구한다 (무음이면 stream_end 대신 stream_cancel 을 보내야 하므로)
         float[] data = utterance.ToArray();
         float peak = 0f;
         for (int i = 0; i < data.Length; i++) peak = Mathf.Max(peak, Mathf.Abs(data[i]));
@@ -484,10 +494,20 @@ public class VoiceSender : MonoBehaviour
         byte[] wav = EncodeWav(data, sr);
         Debug.Log($"[MIC] 발화 끝: {sec:F2}초 ({why}), {sr}Hz, peak {peak:F3}, {wav.Length} bytes");
 
-        if (peak < SilentPeak)
-            Debug.LogWarning("[MIC] 소리가 거의 들어오지 않았습니다. 마이크 음소거, 장치 선택, 입력 볼륨을 확인하세요.");
+        UtteranceSent?.Invoke(wav);   // VoiceDebug 가 켜져 있으면 디버그 WAV 로 저장한다 (무음으로 막힌 녹음도 저장)
 
-        UtteranceSent?.Invoke(wav);   // VoiceDebug 가 켜져 있으면 디버그 WAV 로 저장한다
+        // [무음 차단] 판정(/analyzing)은 보내지 않고, 실시간 자막(/streaming)은 취소한다.
+        //   화면에는 실패 문구를 띄우지 않고 로그만 남긴다. 결과를 기다리지 않으므로 바로 다시 말할 수 있다.
+        if (peak < silentPeak)
+        {
+            StopStream(cancel: true);
+            Debug.LogWarning($"[MIC] 무음이라 판정을 보내지 않습니다 ({CurrentRequestId}, peak {peak:F3} < {silentPeak:F3}). " +
+                             "계속되면 마이크 음소거, 장치 선택, 입력 볼륨을 확인하세요.");
+            RecordingDiscarded?.Invoke();
+            return;
+        }
+
+        StopStream(cancel: false);   // 남은 조각과 stream_end (서버가 마지막 확정 자막을 보낼 수 있다)
 
         if (voiceSocket == null)
         {
@@ -589,14 +609,58 @@ public class VoiceSender : MonoBehaviour
 
     void OnCastResult(CastResult r)
     {
-        if (r != null && IsMyResult(r.RequestId))
+        if (r == null) return;
+        if (IsStaleResult(r.RequestId))
+        {
+            LogStale(r.RequestId, r.Success ? $"발동 {r.Skill?.Name}" : r.RejectReason);
+            return;
+        }
+        if (IsMyResult(r.RequestId))
             ReleaseWait(r.Success ? "발동" : $"불발 {r.RejectReason}");
     }
 
     void OnServerError(ErrorResponse err)
     {
-        if (err != null && IsMyResult(err.RequestId))
+        if (err == null) return;
+        if (IsStaleResult(err.RequestId))
+        {
+            LogStale(err.RequestId, $"오류 {err.Code}");
+            return;
+        }
+        if (IsMyResult(err.RequestId))
             ReleaseWait($"오류 {err.Code}");
+    }
+
+    /// <summary>
+    /// 이미 쓸모없어진(늦게 도착한) 결과인지. VoiceRecorder(자막·시전)와 PlayerHealth(벌칙)가 결과를 쓰기 전에 확인한다.
+    ///  - 시간 초과로 기다리기를 포기한 요청의 결과
+    ///  - 그 뒤에 새 주문을 말해서 가장 최근 요청이 아닌 결과
+    /// 미리 기억해 둔 정보만 보므로, 어느 스크립트가 결과를 먼저 받아도 같은 답이 나온다.
+    /// 요청 번호가 없는 결과는 판단할 수 없으므로 버리지 않는다 (기존 동작 유지).
+    /// </summary>
+    public bool IsStaleResult(string requestId)
+    {
+        if (string.IsNullOrEmpty(requestId)) return false;
+        if (expiredRequests.ContainsKey(requestId)) return true;
+        return CurrentRequestId != null && requestId != CurrentRequestId;
+    }
+
+    /// <summary>시간 초과로 포기한 요청을 기억한다 (보낸 시각은 로그의 '도착까지 n초' 계산용)</summary>
+    void MarkExpired(string requestId)
+    {
+        if (string.IsNullOrEmpty(requestId) || expiredRequests.ContainsKey(requestId)) return;
+        expiredRequests[requestId] = waitDeadline - resultTimeoutSec;
+        expiredOrder.Enqueue(requestId);
+        while (expiredOrder.Count > MaxExpiredRequests)
+            expiredRequests.Remove(expiredOrder.Dequeue());
+    }
+
+    void LogStale(string requestId, string what)
+    {
+        if (expiredRequests.TryGetValue(requestId, out float sentAt))
+            Debug.Log($"[MIC] 시간 초과된 결과를 버립니다 ({requestId}: {what}, 도착까지 {Time.unscaledTime - sentAt:F1}초)");
+        else
+            Debug.Log($"[MIC] 이전 요청의 결과를 버립니다 ({requestId}: {what}, 지금 요청 {CurrentRequestId})");
     }
 
     /// <summary>

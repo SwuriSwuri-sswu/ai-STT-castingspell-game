@@ -65,6 +65,16 @@ async def receive_skill_list(websocket: WebSocket, header: dict, current: dict |
     for w in warnings:
         log.warning("[%s] 비슷한 스킬 이름: %s", where, w)
 
+    # 새 스펠 목록에 맞는 Whisper 생성 길이 제한을 미리 계산해 둔다 (판정 때는 저장된 값을 쓴다)
+    if voice_runtime.service is not None:
+        try:
+            lim = voice_runtime.service.token_limit(skills)
+            log.info("[%s] 생성 길이 제한 %d (가장 긴 이름 \"%s\" %d토큰, %s)", where, lim.limit,
+                     lim.longest, lim.longest_tokens,
+                     "이전 계산 재사용" if lim.cached else f"계산 {lim.elapsed_ms:.1f}ms")
+        except Exception:
+            log.exception("[%s] 생성 길이 제한 계산 실패 (판정 때 다시 계산)", where)
+
     await send_json(websocket, {
         "type": "skill_list_ack",
         "version": PROTOCOL_VERSION,

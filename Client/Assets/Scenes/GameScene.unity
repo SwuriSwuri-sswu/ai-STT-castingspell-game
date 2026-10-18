@@ -956,6 +956,7 @@ GameObject:
   - component: {fileID: 72393942}
   - component: {fileID: 72393941}
   - component: {fileID: 72393945}
+  - component: {fileID: 72393946}
   m_Layer: 0
   m_Name: VoiceManager
   m_TagString: Untagged
@@ -1006,7 +1007,7 @@ MonoBehaviour:
   showPartials: 1
   partialColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}
   skipTypingIfPartialMatches: 1
-  voiceBonus: {fileID: 0}
+  voiceBonus: {fileID: 72393946}
   showChantText: 1
 --- !u!114 &72393941
 MonoBehaviour:
@@ -1015,7 +1016,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 72393938}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd65006f5338cf34a88aef639bed8469, type: 3}
   m_Name: 
@@ -1049,7 +1050,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38b64766c9a3e6a4a97b8f669ef42ca2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceInput
-  deviceName: Headset Microphone (Realtek(R) Audio)
+  deviceName: 
   requestedSampleRate: 16000
   loopBufferSec: 10
 --- !u!114 &72393943
@@ -1098,7 +1099,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f334a38489baeb542943df082a69aff0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceSocket
-  serverUrl: ws://localhost:8000/ws/voice/analyzing
+  serverUrl: ws://127.0.0.1:8000/ws/voice/analyzing
   unlockedOnly: 1
 --- !u!114 &72393945
 MonoBehaviour:
@@ -1115,6 +1116,27 @@ MonoBehaviour:
   serverUrl: ws://127.0.0.1:8000/ws/voice/streaming
   unlockedOnly: 1
   logPartials: 1
+--- !u!114 &72393946
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 72393938}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d6ec2dfc7aa4a9caab71f68c975ae5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoiceBonusCalculator
+  strongVolumeDb: 6
+  perfectPitchSemitones: 2
+  strongBonus: 1.25
+  perfectBonus: 1.5
+  minSamples: 2
+  windowSize: 10
+  baselineVolumeMin: -40
+  baselineVolumeMax: -15
+  freezeAfterWindow: 0
 --- !u!1 &79414433
 GameObject:
   m_ObjectHideFlags: 0

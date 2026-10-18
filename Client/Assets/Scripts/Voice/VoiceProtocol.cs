@@ -1,17 +1,15 @@
-// ¼­¹ö ÀÀ´ä JSON °ú 1:1 ´ëÀÀ (version 1)
-// ÇÊµå¸íÀº PascalCase, JSON Àº snake_case -> SnakeCaseNamingStrategy ·Î ÀÚµ¿ ¸ÅÇÎ
+ï»¿// ì„œë²„ ì‘ë‹µ JSON ê³¼ 1:1 ëŒ€ì‘ (cast_result ì—ëŠ” version, damage ê°€ ì—†ë‹¤. ë°ë¯¸ì§€ëŠ” Unity ê°€ ê³„ì‚°)
+// í•„ë“œëª…ì€ PascalCase, JSON ì€ snake_case -> SnakeCaseNamingStrategy ë¡œ ìë™ ë§¤í•‘
 
 public class CastResult
 {
     public string Type;          // "cast_result"
-    public int Version;
-    public string RequestId;     // null °¡´É
+    public string RequestId;     // null ê°€ëŠ¥
     public bool Success;
-    public string RejectReason;  // ¹ßµ¿ ½Ã null
-    public SkillInfo Skill;      // ºÒ¹ß ½Ã null
+    public string RejectReason;  // ë°œë™ ì‹œ null
+    public SkillInfo Skill;      // ë¶ˆë°œ ì‹œ null
     public SttInfo Stt;
-    public AudioInfo Audio;      // ¼³Á¤¿¡ µû¶ó ºÒ¹ß ½Ã null
-    public int? Damage;          // °ø½Ä È®Á¤ Àü±îÁö null
+    public AudioInfo Audio;      // ì„¤ì •ì— ë”°ë¼ ë¶ˆë°œ ì‹œ null
     public TimingInfo TimingMs;
 }
 
@@ -28,12 +26,14 @@ public class SttInfo
     public float SecondMatch;
     public float Conf;
     public float NoSpeech;
+    public int Tokens;           // Whisper ê°€ ì‹¤ì œë¡œ ìƒì„±í•œ í† í° ìˆ˜
+    public int? TokenLimit;      // ì ìš©í•œ ìƒì„± ê¸¸ì´ ì œí•œ (null ì´ë©´ ì œí•œ ì—†ìŒ). Tokens ê°€ ì´ ê°’ì— ë‹¿ìœ¼ë©´ ì§€ì–´ë‚¸ ê¸€ìì¼ ê°€ëŠ¥ì„±ì´ ë†’ë‹¤
 }
 
 public class AudioInfo
 {
     public float VolumeDb;
-    public float? PitchHz;       // °ËÃâ ½ÇÆĞ ½Ã null
+    public float? PitchHz;       // ê²€ì¶œ ì‹¤íŒ¨ ì‹œ null
     public float DurationSec;
     public float SpeechSec;
     public int SampleRate;
@@ -52,6 +52,6 @@ public class ErrorResponse
     public string Type;          // "error"
     public int Version;
     public string RequestId;
-    public string Code;          // ºĞ±â´Â ÀÌ °ªÀ¸·Î
+    public string Code;          // ë¶„ê¸°ëŠ” ì´ ê°’ìœ¼ë¡œ
     public string Message;
 }
