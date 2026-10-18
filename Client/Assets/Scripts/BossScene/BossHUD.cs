@@ -38,10 +38,11 @@ public class BossHUD : MonoBehaviour
     public float timerWarnSeconds = 3f;
 
     [Header("턴 배너 ('나의 턴!' / '마왕의 턴')")]
+    [Tooltip("비우면 알림 자막(BattleUIManager의 Notice Text)에 띄움")]
     public TMP_Text bannerText;
     public float bannerTime = 1.2f;
 
-    [Header("(선택) 하수인 경고 '하수인 공격까지 8초'")]
+    [Header("(선택) 하수인 경고 '하수인 공격까지 8초' (Subtitle_Kill을 그대로 넣어도 됨)")]
     public TMP_Text minionText;
 
     private float shownDelay = 1f;
@@ -154,12 +155,14 @@ public class BossHUD : MonoBehaviour
         if (show) minionText.text = $"하수인 공격까지 {Mathf.CeilToInt(seconds)}초";
     }
 
-    // 배너가 없으면 알림 자막으로 대신
+    // 배너 칸을 비워 두면 알림 자막(Subtitle_Notice)에 색을 입혀 띄움 / 글이 비어 있으면 생략
     public void ShowBanner(string text, Color color)
     {
+        if (string.IsNullOrEmpty(text)) return;
         if (bannerText == null)
         {
-            if (BattleUIManager.Instance != null) BattleUIManager.Instance.ShowNotice(text);
+            if (BattleUIManager.Instance != null)
+                BattleUIManager.Instance.ShowNotice($"<color=#{ColorUtility.ToHtmlStringRGB(color)}>{text}</color>");
             return;
         }
         if (bannerRoutine != null) StopCoroutine(bannerRoutine);

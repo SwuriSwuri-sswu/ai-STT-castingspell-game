@@ -333,6 +333,7 @@ public class BossBattleDirector : MonoBehaviour
 
         // 마왕이 일어나며 이름 + 체력바 등장
         yield return boss.DoStandUp();
+        if (boss.HasBattlePoint) yield return DescendWithCamera();
         Notice(entranceNotice);
         if (hud != null) yield return hud.Reveal(boss.bossName);
         yield return new WaitForSeconds(0.4f);
@@ -362,6 +363,26 @@ public class BossBattleDirector : MonoBehaviour
     private void CheckSkip()
     {
         if (allowSkipEntrance && Input.GetKeyDown(KeyCode.Escape)) skipEntrance = true;
+    }
+
+    // 마왕이 왕좌에서 내려오는 동안 카메라가 따라 봄
+    private IEnumerator DescendWithCamera()
+    {
+        Transform ct = Camera.main != null ? Camera.main.transform : null;
+        bool done = false;
+        StartCoroutine(RunThen(boss.DoDescend(), () => done = true));
+        while (!done)
+        {
+            if (ct != null) ct.rotation = Quaternion.Slerp(ct.rotation, LookAtBoss(ct), 1f - Mathf.Exp(-5f * Time.deltaTime));
+            yield return null;
+        }
+        if (ct != null) yield return TurnCamera(ct, LookAtBoss(ct), 0.35f);
+    }
+
+    private static IEnumerator RunThen(IEnumerator routine, System.Action then)
+    {
+        yield return routine;
+        then();
     }
 
     private Quaternion LookAtBoss(Transform ct)
@@ -680,6 +701,7 @@ public class BossBattleDirector : MonoBehaviour
         EnemyController m = Instantiate(prefab, point.position, rot);
         m.canAttack = false;       // 공격은 아래 제한 시간으로
         m.targetPriority = 1;      // 마법이 하수인부터 노림
+        m.showKillText = false;    // 처치 자막 자리(Subtitle_Kill)는 '하수인 공격까지 n초'가 씀
         m.OnDied += HandleMinionDied;
         minions.Add(new Minion { enemy = m, fuse = minionFuse });
         Notice(summonNotice);

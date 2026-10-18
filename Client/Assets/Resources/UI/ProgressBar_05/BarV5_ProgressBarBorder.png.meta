@@ -118,7 +118,7 @@ TextureImporter:
         width: 274
         height: 25
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -127,6 +127,28 @@ TextureImporter:
       bones: []
       spriteID: 2a78910549a1de841bdba0d477586713
       internalID: 1707763404
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: BarV5_ProgressBarBorder_1
+      rect:
+        serializedVersion: 2
+        x: 3
+        y: 3
+        width: 206
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8d3250618c6bee945a9b3486b5e2840d
+      internalID: 1906473994
       vertices: []
       indices: 
       edges: []
@@ -146,6 +168,7 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       BarV5_ProgressBarBorder_0: 1707763404
+      BarV5_ProgressBarBorder_1: 1906473994
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

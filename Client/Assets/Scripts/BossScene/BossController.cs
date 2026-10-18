@@ -50,6 +50,18 @@ public class BossController : MonoBehaviour
     [Tooltip("Sit To Stand 동작의 몇 % 지점에서 지팡이가 나타날지 (1 = 다 일어난 뒤)")]
     [Range(0f, 1f)] public float staffAppearAt = 0.85f;
 
+    [Header("일어난 뒤 왕좌에서 내려오기")]
+    [Tooltip("싸울 자리 (왕좌 계단 아래 빈 오브젝트, 보스 '발' 위치). 비우면 왕좌 앞에 선 채로 싸움")]
+    public Transform battlePoint;
+    [Tooltip("내려오는 데 걸리는 시간 (초)")]
+    public float descendTime = 2.2f;
+    [Tooltip("내려오는 동안 공중에 떠오르는 높이 (0 = 바닥을 미끄러지듯)")]
+    public float descendHover = 0.6f;
+    [Tooltip("(선택) 내려오는 동안 반복할 동작 (걷기·떠다니기 등). 비우면 Idle 자세 그대로 떠서 내려옴")]
+    public AnimationClip descendClip;
+    [Tooltip("(선택) 떠오를 때 / 내려앉을 때 발밑에서 터질 이펙트 (연기·빛 등)")]
+    public GameObject descendEffect;
+
     [Header("차지 (힘 모으기)")]
     [Tooltip("(선택) 손에 맺히는 이펙트. 비우면 커지는 빛 구슬")]
     public GameObject chargePrefab;
@@ -103,6 +115,7 @@ public class BossController : MonoBehaviour
     public EnemyController Enemy { get; private set; }
     public int Phase { get; private set; } = 1;
     public bool IsCharging { get; private set; }
+    public bool HasBattlePoint => battlePoint != null;
     public float HPRatio => Enemy != null ? Mathf.Clamp01(Enemy.CurrentHP / Mathf.Max(1f, maxHP)) : 0f;
     public MagicElement Element => Enemy != null ? Enemy.enemyType : MagicElement.Normal;
 
@@ -270,6 +283,42 @@ public class BossController : MonoBehaviour
             StartCoroutine(ShowStaff());
         }
         Play(idleClip);
+    }
+
+    // 왕좌에서 싸울 자리로 천천히 떠서 내려옴 (플레이어를 바라보는 방향은 유지)
+    public IEnumerator DoDescend()
+    {
+        if (battlePoint == null) yield break;
+        Vector3 from = transform.position;
+        Vector3 to = battlePoint.position;
+        Quaternion fromRot = transform.rotation;
+        Quaternion toRot = fromRot;
+        Camera cam = Camera.main;
+        if (cam != null)
+        {
+            // 지금 플레이어를 보는 각도를 그대로 → 새 자리에서도 플레이어를 정면으로
+            Vector3 a = cam.transform.position - from; a.y = 0f;
+            Vector3 b = cam.transform.position - to; b.y = 0f;
+            if (a.sqrMagnitude > 0.01f && b.sqrMagnitude > 0.01f) toRot = Quaternion.FromToRotation(a.normalized, b.normalized) * fromRot;
+        }
+
+        if (descendClip != null) Play(descendClip);
+        if (descendEffect != null) EffectUtil.SpawnAndAutoDestroy(descendEffect, from, Quaternion.identity);
+
+        float time = Mathf.Max(0.1f, descendTime);
+        for (float t = 0f; t < time; t += Time.deltaTime)
+        {
+            float k = Mathf.SmoothStep(0f, 1f, t / time);
+            transform.position = Vector3.Lerp(from, to, k) + Vector3.up * Mathf.Sin(k * Mathf.PI) * descendHover;
+            transform.rotation = Quaternion.Slerp(fromRot, toRot, k);
+            yield return null;
+        }
+        transform.position = to;
+        transform.rotation = toRot;
+        basePos = to;
+
+        if (descendEffect != null) EffectUtil.SpawnAndAutoDestroy(descendEffect, to, Quaternion.identity);
+        if (descendClip != null) Play(idleClip);
     }
 
     private Vector3 staffScale = Vector3.one;
