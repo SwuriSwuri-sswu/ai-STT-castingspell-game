@@ -1050,7 +1050,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38b64766c9a3e6a4a97b8f669ef42ca2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceInput
-  deviceName: 
+  deviceName: "\uC678\uC7A5 \uB9C8\uC774\uD06C"
   requestedSampleRate: 16000
   loopBufferSec: 10
 --- !u!114 &72393943
