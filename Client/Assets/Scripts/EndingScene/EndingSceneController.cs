@@ -14,6 +14,8 @@ public class EndingSceneController : MonoBehaviour
     public TMP_Text resultText;
     public string gameOverTitle = "GAME OVER";
     public string clearTitle = "STAGE CLEAR";
+    [Tooltip("보스를 물리쳤을 때 제목")]
+    public string bossClearTitle = "VICTORY";
     public Color gameOverColor = new Color(0.85f, 0.15f, 0.15f);
     public Color clearColor = new Color(1f, 0.84f, 0f);
 
@@ -38,18 +40,23 @@ public class EndingSceneController : MonoBehaviour
         bool cleared = GameResult.HasResult && GameResult.Cleared;
         if (titleText != null)
         {
-            titleText.text = cleared ? clearTitle : gameOverTitle;
+            titleText.text = cleared ? (GameResult.IsBossFight ? bossClearTitle : clearTitle) : gameOverTitle;
             titleText.color = cleared ? clearColor : gameOverColor;
         }
         if (resultText != null)
         {
-            resultText.text = GameResult.HasResult
-                ? $"처치한 몬스터  {GameResult.Kills}\n" +
+            if (!GameResult.HasResult) resultText.text = "";
+            else if (GameResult.IsBossFight) resultText.text = BossResultText(cleared);
+            else resultText.text =
+                  $"처치한 몬스터  {GameResult.Kills}\n" +
                   $"배운 스펠  {GameResult.LearnedSpells}\n" +
                   $"버틴 시간  {GameResult.PlayTimeText}\n" +
-                  $"점수  {GameResult.Score}"
-                : "";
+                  $"점수  {GameResult.Score}";
         }
+        // 다시하기: 보스전에서 졌으면 보스전부터, 그 외에는 처음부터
+        retryScene = (!cleared && GameResult.HasResult && !string.IsNullOrEmpty(GameResult.RetryScene))
+            ? GameResult.RetryScene : gameSceneName;
+        GameResult.ClearBoss();
 
         SetAlpha(titleGroup, 0f);
         SetAlpha(resultGroup, 0f);
@@ -100,6 +107,18 @@ public class EndingSceneController : MonoBehaviour
         if (g != null) g.alpha = a;
     }
 
-    public void OnClickRetry() => SceneManager.LoadScene(gameSceneName);
+    private string retryScene;
+
+    private static string BossResultText(bool cleared)
+    {
+        string text = cleared ? $"등급  <b>{GameResult.BossGrade}</b>\n" : $"마왕의 남은 체력  {Mathf.CeilToInt(GameResult.BossHpLeftRatio * 100f)}%\n";
+        text += $"사용한 턴  {GameResult.BossTurnsUsed} / {GameResult.BossMaxTurns}\n" +
+                $"상성 적중률  {Mathf.RoundToInt(GameResult.BossWeaknessRate * 100f)}%\n" +
+                $"배운 스펠  {GameResult.LearnedSpells}";
+        if (cleared) text += $"\n남은 체력  {Mathf.CeilToInt(GameResult.PlayerHpLeft)}";
+        return text;
+    }
+
+    public void OnClickRetry() => SceneManager.LoadScene(string.IsNullOrEmpty(retryScene) ? gameSceneName : retryScene);
     public void OnClickTitle() => SceneManager.LoadScene(titleSceneName);
 }

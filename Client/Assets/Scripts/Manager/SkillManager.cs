@@ -40,7 +40,12 @@ public class SkillManager : MonoBehaviour
 
     // 몹이 스폰포인트에 도착해 있어야 시전 가능 (VoiceRecorder에서 녹음 시작 전에 확인)
     // 도감·설정 창으로 일시정지 중이면 영창을 받지 않음
-    public static bool CanCast => EnemyController.AnyReady && !GamePause.IsPaused;
+    public static bool CanCast => EnemyController.AnyReady && !GamePause.IsPaused && !CastBlocked;
+
+    // 보스전처럼 '내 턴'에만 영창을 받아야 할 때 true (BossBattleDirector가 관리)
+    public static bool CastBlocked { get; set; }
+    // 영창이 막혀 있는 동안 자막에 보여 줄 안내 (비우면 "적이 다가오고 있습니다...")
+    public static string BlockedHint { get; set; }
 
     private void Awake()
     {
@@ -50,6 +55,9 @@ public class SkillManager : MonoBehaviour
             return;
         }
         Instance = this;
+        // 이전 씬(보스전)에서 막아 둔 영창 잠금이 남지 않게
+        CastBlocked = false;
+        BlockedHint = null;
         ResetSpellUnlocks();
     }
 

@@ -28720,7 +28720,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Stage1Director
   enemyManager: {fileID: 0}
   session: {fileID: 0}
-  restEvery: 10
+  restEvery: 2
   restHealRatio: 0.5
   healDelay: 1
   restHoldTime: 2
@@ -28732,7 +28732,7 @@ MonoBehaviour:
   weaknessKillHeal: 5
   challengeButton: {fileID: 276863744}
   challengeButtonLabel: {fileID: 1434978001}
-  challengeUnlockKills: 10
+  challengeUnlockKills: 1
   challengeLabel: "\uB3C4\uC804!"
   skipLabel: "\uAC74\uB108\uB6F0\uAE30"
   promptPanel: {fileID: 656387288}
@@ -37560,7 +37560,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b39955ff91d3e5e4aa027e9ea3cfbbd2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameSessionManager
-  maxStage1Kills: 50
+  maxStage1Kills: 3
   killsPerDropRoll: 3
   dropChance: 1
   lowRankScore: 10
