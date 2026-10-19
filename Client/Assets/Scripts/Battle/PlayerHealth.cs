@@ -4,9 +4,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // 플레이어 체력 (GameScene의 [SYSTEM_MANAGERS] 아래 빈 오브젝트에 붙이기)
-// 체력이 깎이는 경우
-//   1. 몹의 공격 (EnemyController가 일정 시간마다 공격)
-//   2. 주문 실패 패널티 (선택): 알 수 없는 주문 / 불분명한 주문 / 아직 배우지 않은 주문
+// 체력이 깎이는 경우: 몹의 공격만 (EnemyController / 보스전의 BossSpell·하수인)
+//   ※ 음성 인식 실패·배우지 않은 주문으로는 체력이 깎이지 않음
 // 체력이 0이 되면: 몹 스폰·음성 입력 정지 → 슬로모션 → 화면 암전 → EndingScene (게임 오버)
 public class PlayerHealth : MonoBehaviour
 {
@@ -16,16 +15,6 @@ public class PlayerHealth : MonoBehaviour
     public float maxHP = 100f;
     [Tooltip("한 번 맞은 뒤 이 시간 동안은 추가 피해 없음 (연속 피격 방지)")]
     public float invulnerableTime = 0.5f;
-
-    [Header("주문 실패 패널티")]
-    [Tooltip("주문을 잘못 외치면 마력이 역류해서 체력이 조금 깎임")]
-    public bool failPenalty = true;
-    public float failDamage = 4f;
-    [Tooltip("패널티를 줄 서버 불발 사유 (EMPTY·NOISE 같은 '안 들림'은 제외 → 마이크 탓으로 억울하지 않게)")]
-    public string[] penaltyRejectReasons = { "NO_MATCH", "AMBIGUOUS" };
-    [Tooltip("배우지 않은 주문을 외쳤을 때도 패널티")]
-    public bool penalizeUnlearnedSpell = true;
-    [SerializeField] VoiceSocket voiceSocket;
 
     [Header("게임 오버")]
     public string endingSceneName = "EndingScene";
@@ -65,16 +54,11 @@ public class PlayerHealth : MonoBehaviour
 
     private void Start()
     {
-        if (voiceSocket == null) voiceSocket = FindFirstObjectByType<VoiceSocket>();
-        if (voiceSocket != null) voiceSocket.CastResultReceived += HandleCastResult;
-        if (SkillManager.Instance != null) SkillManager.Instance.OnVoiceCastFailed += HandleCastFailed;
         OnHealthChanged?.Invoke(CurrentHP, maxHP);
     }
 
     private void OnDestroy()
     {
-        if (voiceSocket != null) voiceSocket.CastResultReceived -= HandleCastResult;
-        if (SkillManager.Instance != null) SkillManager.Instance.OnVoiceCastFailed -= HandleCastFailed;
         if (Instance == this) Instance = null;
     }
 
@@ -105,22 +89,6 @@ public class PlayerHealth : MonoBehaviour
         OnHealed?.Invoke(healed, reason);
         OnHealthChanged?.Invoke(CurrentHP, maxHP);
         return healed;
-    }
-
-    // ── 주문 실패 패널티 ──
-    private void HandleCastResult(CastResult r)
-    {
-        if (!failPenalty || r == null || r.Success) return;
-        if (Array.IndexOf(penaltyRejectReasons, r.RejectReason) < 0) return;
-        if (!SkillManager.CanCast) return; // 몹이 없거나 쓰러지는 중이면 패널티 없음
-        TakeDamage(failDamage, "주문 실패 (마력 역류)");
-    }
-
-    private void HandleCastFailed(string fail)
-    {
-        if (!failPenalty || !penalizeUnlearnedSpell) return;
-        if (fail != "아직 배우지 않은 주문") return;
-        TakeDamage(failDamage, "배우지 않은 주문 (마력 역류)");
     }
 
     // ── 게임 오버 ──
