@@ -1028,6 +1028,9 @@ MonoBehaviour:
   castTestKey: 99
   unlockKey: 117
   resetKey: 114
+  dropItemPrefab: {fileID: 0}
+  dropOffset: {x: 0, y: 1, z: 0}
+  cameraDropDistance: 4
   show: 1
   screenPosition: {x: 10, y: 260}
   width: 480
@@ -1087,6 +1090,7 @@ MonoBehaviour:
     noiseAdaptRate: 0.02
   resultTimeoutSec: 6
   keepTrailingSilenceSec: 0.1
+  silentPeak: 0.01
 --- !u!114 &72393944
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28015,6 +28019,7 @@ MonoBehaviour:
   uiFadeInDuration: 0.6
   delayBeforeSpawn: 0.3
   startNotice: 
+  skipIntro: 1
   allowSkip: 1
   nextKey: 13
   clickToNext: 1

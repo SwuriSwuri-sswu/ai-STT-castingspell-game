@@ -110,6 +110,10 @@ public class IntroSequence : MonoBehaviour
     [Tooltip("(선택) 게임 시작 때 알림 자막. 비우면 안 띄움")]
     public string startNotice = "";
 
+    [Header("시연용")]
+    [Tooltip("켜면 인트로 없이 바로 UI 표시 + 몹 스폰")]
+    public bool skipIntro = false;
+
     [Header("넘기기")]
     public bool allowSkip = true;
     public KeyCode nextKey = KeyCode.Return;
@@ -166,7 +170,12 @@ public class IntroSequence : MonoBehaviour
     }
 
     private IEnumerator Start()
-    {
+    {   
+        if (skipIntro || (playOnlyFirstTime && PlayerPrefs.GetInt(SeenKey, 0) == 1))
+        {
+            yield return FinishRoutine(instant: true);
+            yield break;
+        }
         if (playOnlyFirstTime && PlayerPrefs.GetInt(SeenKey, 0) == 1)
         {
             yield return FinishRoutine(instant: true);
