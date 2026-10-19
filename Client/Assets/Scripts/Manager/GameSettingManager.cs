@@ -40,6 +40,13 @@ public class GameSettingManager : MonoBehaviour
 
     // 연결된 전체 마이크 목록을 담을 배열
     private string[] availableMics;
+    // 고른 마이크 이름을 이 컴퓨터에 저장하는 키. 빈 문자열 = OS 기본 입력 장치 (Default)
+    private const string MicKey = "SelectedMic";
+
+    // 설정 패널 해상도 드롭다운의 항목 (순서 = 드롭다운 번호). ResolutionDropdown 이 이 목록으로 항목을 채운다
+    public static readonly string[] ResolutionOptions = { "1920x1080", "1600x900", "1280x720" };
+    // 지금 해상도의 드롭다운 번호 (목록에 없으면 0)
+    public int ResolutionIndex => Mathf.Max(0, Array.IndexOf(ResolutionOptions, resolutionOp));
 
     [Serializable]
     public class SceneBgm
@@ -74,6 +81,8 @@ public class GameSettingManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            // 다른 오브젝트의 Start(VoiceRecorder 등)보다 먼저 마이크 설정을 읽어 둔다
+            LoadMicrophoneSetting();
             SetupBgm();
         }
         else
@@ -94,23 +103,8 @@ public class GameSettingManager : MonoBehaviour
     // 시작 시 서버에서 설정값 로드
     private void Start()
     {
-        availableMics = Microphone.devices;
-
-        if (availableMics.Length > 0)
-        {
-            // 기기에 저장된 마이크 이름이 있는지 확인 후 불러오기
-            string savedMic = PlayerPrefs.GetString("SelectedMic", availableMics[0]);
-
-            // 저장된 마이크가 현재 연결된 기기 목록에 있는지 확인
-            if (System.Array.Exists(availableMics, mic => mic == savedMic))
-            {
-                selectedMicName = savedMic;
-            }
-            else
-            {
-                selectedMicName = availableMics[0]; // 없으면 기본 마이크
-            }
-        }
+        // 첫 씬의 VoiceInput 에도 고른 마이크를 적용 (씬 전환 때는 HandleSceneLoaded 에서)
+        ApplyMicrophoneToScene();
 
         // 세션(session-id)이 만들어진 뒤에 서버 설정을 불러온다 (없으면 400 Bad Request)
         LoadSettingsWhenSessionReady();
@@ -240,20 +234,16 @@ public class GameSettingManager : MonoBehaviour
         Debug.Log($"창모드 여부 변경: {isWindowed} (전체화면: {!isWindowed})");
     }
 
-    // 드롭다운 인덱스 기반 해상도 변경 (UI Dropdown 연동)
-    // <param name="index">0: 1080p, 1: 900p, 2: 720p</param>
+    // 드롭다운 인덱스 기반 해상도 변경 (UI Dropdown 연동: ResolutionDropdown)
+    // <param name="index">ResolutionOptions 의 번호 (0: 1080p, 1: 900p, 2: 720p)</param>
+    // 고를 때마다 바로 서버에 저장한다 (PATCH /v1/settings). ※ 에디터 Game 창에서는 해상도가 바뀌지 않으므로 빌드에서 확인
     public void SetResolutionByIndex(int index)
     {
-        switch (index)
-        {
-            case 0: resolutionOp = "1920x1080"; break;
-            case 1: resolutionOp = "1600x900"; break;
-            case 2: resolutionOp = "1280x720"; break;
-            default: resolutionOp = "1920x1080"; break;
-        }
+        resolutionOp = (index >= 0 && index < ResolutionOptions.Length) ? ResolutionOptions[index] : ResolutionOptions[0];
 
         ApplyResolutionString(resolutionOp);
         Debug.Log($"해상도 변경 완료: {resolutionOp}");
+        SaveSettingsToServer();
     }
 
     // 볼륨 조절 전체: <param name="volume">0.0 ~ 1.0 값</param>
@@ -289,20 +279,47 @@ public class GameSettingManager : MonoBehaviour
         }
     }
 
-    // 마이크 장치 변경 (UI Dropdown 연동)
+    // 연결된 마이크 목록을 다시 읽는다 (설정 패널을 열 때 MicDropdown 이 호출 → 게임 중에 꽂은 마이크도 보임)
+    public string[] RefreshMicrophones()
+    {
+        availableMics = Microphone.devices;
+        return availableMics;
+    }
+
+    // 마이크 장치 변경 (UI Dropdown 연동: MicDropdown). 빈 문자열 = OS 기본 입력 장치 (Default)
+    // 이 컴퓨터에 저장하고(서버 전송 X), 지금 씬의 VoiceInput 에 바로 적용한다
+    public void SetMicrophone(string deviceName)
+    {
+        selectedMicName = deviceName ?? "";
+
+        PlayerPrefs.SetString(MicKey, selectedMicName);
+        PlayerPrefs.Save();
+
+        ApplyMicrophoneToScene();
+        Debug.Log($"마이크 변경 및 로컬 저장 완료: {(selectedMicName.Length > 0 ? selectedMicName : "Default (System)")}");
+    }
+
+    // 예전 방식 호환: 연결된 마이크 목록(Microphone.devices)의 번호로 고른다
     public void SetMicrophoneByIndex(int index)
     {
-        if (availableMics == null || availableMics.Length == 0) return;
+        RefreshMicrophones();
+        if (index >= 0 && index < availableMics.Length) SetMicrophone(availableMics[index]);
+    }
 
-        if (index >= 0 && index < availableMics.Length)
+    // 저장된 마이크를 불러온다. 처음 실행이거나 저장한 장치가 지금 연결되어 있지 않으면 OS 기본 장치 (빈 문자열)
+    private void LoadMicrophoneSetting()
+    {
+        RefreshMicrophones();
+        string saved = PlayerPrefs.GetString(MicKey, "");
+        selectedMicName = (saved.Length > 0 && Array.IndexOf(availableMics, saved) >= 0) ? saved : "";
+    }
+
+    // 지금 씬의 VoiceInput 에 고른 마이크를 적용 (VoiceInput 이 다음 프레임에 새 장치로 다시 시작한다)
+    private void ApplyMicrophoneToScene()
+    {
+        foreach (VoiceInput input in FindObjectsByType<VoiceInput>(FindObjectsSortMode.None))
         {
-            selectedMicName = availableMics[index];
-
-            // 변경된 마이크 이름을 기기 로컬에 저장 (서버 전송 X)
-            PlayerPrefs.SetString("SelectedMic", selectedMicName);
-            PlayerPrefs.Save();
-
-            Debug.Log($"마이크 변경 및 로컬 저장 완료: {selectedMicName}");
+            input.DeviceName = selectedMicName;
         }
     }
 
@@ -340,7 +357,11 @@ public class GameSettingManager : MonoBehaviour
         PlayBgmForScene(SceneManager.GetActiveScene().name);
     }
 
-    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode) => PlayBgmForScene(scene.name);
+    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        PlayBgmForScene(scene.name);
+        ApplyMicrophoneToScene();   // 새 씬의 VoiceInput 에도 고른 마이크 적용 (Inspector 값보다 우선)
+    }
 
     // 씬에 맞는 BGM 재생 (같은 곡이면 끊지 않고 이어서)
     private void PlayBgmForScene(string sceneName)
