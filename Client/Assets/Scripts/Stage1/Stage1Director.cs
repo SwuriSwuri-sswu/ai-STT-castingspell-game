@@ -27,9 +27,9 @@ public class Stage1Director : MonoBehaviour
     public float healDelay = 1f;
     [Tooltip("회복 후 다음 진행까지 최소 대기 (초)")]
     public float restHoldTime = 2f;
-    public string restNotice = "몬스터의 발길이 잠시 끊겼다… 숨을 고릅니다.";
+    public string restNotice = "The monsters have paused their march... Take a breather.";
     [Tooltip("{heal} = 회복량")]
-    public string healNotice = "체력이 {heal} 회복되었습니다!";
+    public string healNotice = "Recovered {heal} HP!";
     [Tooltip("휴식 때 도전 패널 띄우기 (끄면 Rest Hold Time 뒤 바로 다음 몹)")]
     public bool askAtRest = true;
 
@@ -44,9 +44,9 @@ public class Stage1Director : MonoBehaviour
     public TMP_Text challengeButtonLabel;
     [Tooltip("이 처치 수부터 버튼 표시")]
     [Min(0)] public int challengeUnlockKills = 10;
-    public string challengeLabel = "마왕에게 도전";
+    public string challengeLabel = "Challenge!";
     [Tooltip("보스 클리어 이력이 있을 때(2회차), 버튼이 처음부터 이 글자로 나타남")]
-    public string skipLabel = "스테이지 1 건너뛰기";
+    public string skipLabel = "Skip";
 
     [Header("도전 확인 패널")]
     [Tooltip("확인 패널 (처음엔 꺼 두기)")]
@@ -57,24 +57,24 @@ public class Stage1Director : MonoBehaviour
     public Button confirmButton;
     [Tooltip("「더 모으기」 버튼")]
     public Button cancelButton;
-    public string promptTitleText = "마왕에게 도전할까요?";
-    public string restTitleText = "잠시 숨을 고르는 중…";
+    public string promptTitleText = "Challenge the Demon Lord?";
+    public string restTitleText = "Catching your breath...";
     [Tooltip("{kills} {max} {spells} {elements} {hp} {hpmax} {missing}")]
     [TextArea(3, 8)]
     public string promptBodyFormat =
-        "처치한 몬스터  {kills} / {max}\n" +
-        "모은 주문  {spells}개\n" +
+        "Monsters defeated  {kills} / {max}\n" +
+        "Spells collected  {spells}\n" +
         "{elements}\n" +
-        "체력  {hp} / {hpmax}\n" +
+        "HP  {hp} / {hpmax}\n" +
         "{missing}";
     [Tooltip("{element} = 아직 하나도 없는 속성들")]
-    public string missingFormat = "<size=85%>아직 {element} 속성 주문이 없습니다.</size>";
-    public string allElementsText = "<size=85%>모든 속성의 주문을 모았습니다!</size>";
+    public string missingFormat = "<size=85%>No {element} spells yet.</size>";
+    public string allElementsText = "<size=85%>You have spells of every element!</size>";
     [Tooltip("속성 사이 구분 기호. 폰트에 없는 글자(·)는 네모로 보이니 / | , 처럼 기본 글자 사용")]
     public string elementSeparator = "   /   ";
 
     [Header("4. 최대 처치 수 도달")]
-    public string limitNotice = "몬스터의 행렬이 끝났다… 마왕의 기운이 느껴진다!";
+    public string limitNotice = "The monster horde has ended... You sense the Demon Lord's presence!";
     [Tooltip("알림 후 보스 씬으로 넘어가기까지 (초)")]
     public float limitMoveDelay = 2.5f;
 
@@ -83,7 +83,7 @@ public class Stage1Director : MonoBehaviour
     [Tooltip("(선택) 검은 화면 CanvasGroup. 비우면 자동 생성")]
     public CanvasGroup fadeOverlay;
     public float fadeOutTime = 1.2f;
-    public string leaveNotice = "마왕의 성으로 향합니다…";
+    public string leaveNotice = "Heading to the Demon Lord's castle...";
 
     private bool busy;          // 휴식 중 / 이동 준비 중
     private bool leaving;       // 씬 이동 시작
@@ -180,7 +180,7 @@ public class Stage1Director : MonoBehaviour
         PlayerHealth hp = PlayerHealth.Instance;
         if (hp != null && restHealRatio > 0f)
         {
-            float healed = hp.Heal(hp.maxHP * restHealRatio, "휴식");
+            float healed = hp.Heal(hp.maxHP * restHealRatio, "Rest");
             if (healed > 0f) Notice(healNotice.Replace("{heal}", Mathf.CeilToInt(healed).ToString()));
         }
         yield return new WaitForSecondsRealtime(restHoldTime);
@@ -207,7 +207,7 @@ public class Stage1Director : MonoBehaviour
     {
         enemy.OnDied -= HandleEnemyDied;
         if (!healOnWeaknessKill || weaknessKillHeal <= 0f || PlayerHealth.Instance == null) return;
-        if (enemy.LastHitMultiplier > 1f) PlayerHealth.Instance.Heal(weaknessKillHeal, "상성 처치");
+        if (enemy.LastHitMultiplier > 1f) PlayerHealth.Instance.Heal(weaknessKillHeal, "Weakness kill");
     }
 
     // =========================================================
@@ -269,11 +269,11 @@ public class Stage1Director : MonoBehaviour
         {
             string hex = ColorUtility.ToHtmlStringRGB(e == MagicElement.Normal ? new Color(0.25f, 0.2f, 0.15f) : EnemyController.ElementColor(e));
             if (elements.Length > 0) elements.Append(elementSeparator);
-            elements.Append($"<color=#{hex}>{EnemyController.ElementToKorean(e)} {count[(int)e]}</color>");
+            elements.Append($"<color=#{hex}>{EnemyController.ElementName(e)} {count[(int)e]}</color>");
             if (e != MagicElement.Normal && count[(int)e] == 0)
             {
                 if (missing.Length > 0) missing.Append(", ");
-                missing.Append($"<color=#{hex}>{EnemyController.ElementToKorean(e)}</color>");
+                missing.Append($"<color=#{hex}>{EnemyController.ElementName(e)}</color>");
             }
         }
 
@@ -318,7 +318,7 @@ public class Stage1Director : MonoBehaviour
         if (!Application.CanStreamedLevelBeLoaded(bossSceneName))
         {
             Debug.LogError($"[Stage1Director] '{bossSceneName}' 씬이 Build Settings에 없습니다. File → Build Profiles(Build Settings)에 추가해 주세요.");
-            Notice($"{bossSceneName}이 Build Settings에 없습니다");
+            Notice($"{bossSceneName} is not in Build Settings");
             busy = false;
             if (!PlayerDead && enemyManager != null) enemyManager.StartSpawning();
             yield break;

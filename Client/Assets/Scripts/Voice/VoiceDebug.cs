@@ -207,7 +207,7 @@ public class VoiceDebug : MonoBehaviour
             if (list.Count > 0)
             {
                 string name = list[UnityEngine.Random.Range(0, list.Count)].spellName;
-                Debug.Log($"[테스트] {name} 시전: {sm.TryCastByVoice(name) ?? "성공"}");
+                Debug.Log($"[테스트] {name} 시전: {sm.TryCastByVoice(name) ?? "OK"}");
             }
         }
         if (Input.GetKeyDown(unlockKey))

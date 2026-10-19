@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using TMPro;
 using UnityEngine;
 
@@ -8,7 +8,7 @@ using UnityEngine;
 /// 시전은 SkillManager.TryCastByVoice 에 요청한다.
 ///
 /// 표시 규칙
-///   - 대기: 적이 있으면 "주문을 영창하세요." (키 입력 모드: "스페이스바를 누른 채 주문을 영창하세요."), 없으면 "적이 다가오고 있습니다..."
+///   - 대기: 적이 있으면 "Chant a spell." (키 입력 모드: "스페이스바를 누른 채 주문을 영창하세요."), 없으면 "An enemy is approaching..."
 ///   - 말하는 중 / 해석 중: 상태 문구. 실시간 자막(VoiceStreamSocket)이 연결되어 있으면 들린 글자를 흐린 색으로 함께 보여 준다
 ///   - 발동: 들린 글자 타이핑 → 스펠 이름 강조 → 시전 → 몹에 맞고 결과 문구가 뜬 뒤 다음 영창 가능
 ///   - 불발, 오류, 시간 초과, 너무 짧음, 적 없음, 시전 실패: 실패 이유를 회색 자막으로 잠시 보여 준 뒤 안내 문구로 복귀
@@ -53,8 +53,8 @@ public class VoiceRecorder : MonoBehaviour
     /// <summary>직전 주문의 성량 (dBFS, 0이 최대). 서버가 계산한 값. 데미지 공식에 사용 가능</summary>
     public float LastVolumeDb { get; private set; } = -80f;
 
-    const string HintReady = "주문을 영창하세요.";
-    const string HintWaiting = "적이 다가오고 있습니다...";
+    const string HintReady = "Chant a spell.";
+    const string HintWaiting = "An enemy is approaching...";
 
     Coroutine sequence;
     bool castPending;   // 판정 성공 ~ 마법이 몹에 맞고 결과 문구가 뜬 뒤까지 (이 사이에는 새 주문을 받지 않는다)
@@ -154,8 +154,8 @@ public class VoiceRecorder : MonoBehaviour
     }
 
     // ── 상태 표시 ──
-    const string RecordingText = "[ 마법 영창 중... ]";
-    const string AnalyzingText = "[ 마나 흐름 해석 중... ]";
+    const string RecordingText = "[ Chanting... ]";
+    const string AnalyzingText = "[ Reading the mana... ]";
 
     void OnStarted()
     {
@@ -319,7 +319,7 @@ public class VoiceRecorder : MonoBehaviour
         // 연출이 끝난 직후 시전 (연출 중 적이 사라졌거나 이펙트가 없으면 여기서 실패)
         SkillManager sm = SkillManager.Instance;
         EnemyController target = EnemyManager.Instance != null ? EnemyManager.Instance.CurrentEnemy : null;
-        string fail = sm != null ? sm.TryCastByVoice(spellName, chant.power) : "SkillManager 없음";
+        string fail = sm != null ? sm.TryCastByVoice(spellName, chant.power) : "NO_SKILL_MANAGER";
         if (fail != null)
         {
             castPending = false;
@@ -374,7 +374,7 @@ public class VoiceRecorder : MonoBehaviour
         Show(lastHint);
     }
 
-    // 시전 가능 → "주문을 영창하세요." / 보스전에서 내 턴이 아님 → 보스전 안내 / 그 외 → "적이 다가오고 있습니다..."
+    // 시전 가능 → "Chant a spell." / 보스전에서 내 턴이 아님 → 보스전 안내 / 그 외 → "An enemy is approaching..."
     static string HintText()
     {
         if (CanCast) return HintReady;
@@ -419,11 +419,11 @@ public class VoiceRecorder : MonoBehaviour
         switch (reason)
         {
             case "EMPTY":
-            case "EMPTY_TEXT": return "주문이 들리지 않았습니다.";
-            case "NOISE": return "잡음만 들렸습니다. 다시 외쳐 주세요.";
-            case "NO_MATCH": return "알 수 없는 주문입니다...";
-            case "AMBIGUOUS": return "주문이 불분명합니다. 또박또박 외쳐 주세요.";
-            default: return "주문이 실패했습니다.";
+            case "EMPTY_TEXT": return "No spell was heard.";
+            case "NOISE": return "Only noise was heard. Try again.";
+            case "NO_MATCH": return "Unknown spell...";
+            case "AMBIGUOUS": return "The spell was unclear. Speak clearly.";
+            default: return "The spell failed.";
         }
     }
 
@@ -432,10 +432,10 @@ public class VoiceRecorder : MonoBehaviour
     {
         switch (code)
         {
-            case "TOO_SHORT": return "주문이 너무 짧습니다.";
-            case "TOO_LONG": return "주문이 너무 깁니다.";
-            case "NOT_READY": return "마법서를 펼치는 중입니다... 잠시 후 다시 외쳐 주세요.";
-            default: return "주문 해석에 실패했습니다.";
+            case "TOO_SHORT": return "The spell was too short.";
+            case "TOO_LONG": return "The spell was too long.";
+            case "NOT_READY": return "Opening the spellbook... Try again in a moment.";
+            default: return "Couldn't read the spell.";
         }
     }
 
@@ -444,10 +444,10 @@ public class VoiceRecorder : MonoBehaviour
     {
         switch (fail)
         {
-            case "알 수 없는 주문": return "알 수 없는 주문입니다...";
-            case "아직 배우지 않은 주문": return $"아직 배우지 않은 주문입니다: {spellName}";
-            case "공격할 적이 없음": return "공격할 적이 없습니다.";
-            default: return "마법이 발동하지 않았습니다.";
+            case SkillManager.FailUnknown: return "Unknown spell...";
+            case SkillManager.FailNotLearned: return $"You haven't learned this spell yet: {spellName}";
+            case SkillManager.FailNoTarget: return "No enemy to attack.";
+            default: return "The magic didn't activate.";
         }
     }
 

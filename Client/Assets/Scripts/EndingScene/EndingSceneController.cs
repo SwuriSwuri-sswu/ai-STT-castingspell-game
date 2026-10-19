@@ -48,10 +48,10 @@ public class EndingSceneController : MonoBehaviour
             if (!GameResult.HasResult) resultText.text = "";
             else if (GameResult.IsBossFight) resultText.text = BossResultText(cleared);
             else resultText.text =
-                  $"처치한 몬스터  {GameResult.Kills}\n" +
-                  $"배운 스펠  {GameResult.LearnedSpells}\n" +
-                  $"버틴 시간  {GameResult.PlayTimeText}\n" +
-                  $"점수  {GameResult.Score}";
+                  $"Monsters defeated  {GameResult.Kills}\n" +
+                  $"Spells learned  {GameResult.LearnedSpells}\n" +
+                  $"Time survived  {GameResult.PlayTimeText}\n" +
+                  $"Score  {GameResult.Score}";
         }
         // 다시하기: 보스전에서 졌으면 보스전부터, 그 외에는 처음부터
         retryScene = (!cleared && GameResult.HasResult && !string.IsNullOrEmpty(GameResult.RetryScene))
@@ -111,11 +111,11 @@ public class EndingSceneController : MonoBehaviour
 
     private static string BossResultText(bool cleared)
     {
-        string text = cleared ? $"등급  <b>{GameResult.BossGrade}</b>\n" : $"마왕의 남은 체력  {Mathf.CeilToInt(GameResult.BossHpLeftRatio * 100f)}%\n";
-        text += $"사용한 턴  {GameResult.BossTurnsUsed} / {GameResult.BossMaxTurns}\n" +
-                $"상성 적중률  {Mathf.RoundToInt(GameResult.BossWeaknessRate * 100f)}%\n" +
-                $"배운 스펠  {GameResult.LearnedSpells}";
-        if (cleared) text += $"\n남은 체력  {Mathf.CeilToInt(GameResult.PlayerHpLeft)}";
+        string text = cleared ? $"Grade  <b>{GameResult.BossGrade}</b>\n" : $"Demon Lord HP left  {Mathf.CeilToInt(GameResult.BossHpLeftRatio * 100f)}%\n";
+        text += $"Turns used  {GameResult.BossTurnsUsed} / {GameResult.BossMaxTurns}\n" +
+                $"Weakness hit rate  {Mathf.RoundToInt(GameResult.BossWeaknessRate * 100f)}%\n" +
+                $"Spells learned  {GameResult.LearnedSpells}";
+        if (cleared) text += $"\nHP left  {Mathf.CeilToInt(GameResult.PlayerHpLeft)}";
         return text;
     }
 

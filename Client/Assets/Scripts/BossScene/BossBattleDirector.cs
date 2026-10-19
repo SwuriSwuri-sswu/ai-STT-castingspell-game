@@ -48,7 +48,7 @@ public class BossBattleDirector : MonoBehaviour
     [Tooltip("줌인할 때 숨길 것 (지팡이 WandRig 등, 같이 확대되면 어색함)")]
     public GameObject[] hideDuringZoom;
     [Tooltip("줌인할 때 자막 (비우면 없음)")]
-    public string zoomNotice = "왕좌에 누군가가 앉아 있다…";
+    public string zoomNotice = "Someone is sitting on the throne...";
 
     [Header("입장 동안 숨길 UI (체력바·버튼·자막 등)")]
     [Tooltip("꺼지지 않고 투명하게만 → 보스전 시작 때 서서히 나타남")]
@@ -62,14 +62,18 @@ public class BossBattleDirector : MonoBehaviour
     public TMPro.TMP_Text tutorialText;
     [TextArea(4, 10)]
     public string tutorialContent =
-        "<b>턴제 전투!</b> 나의 턴마다 <b>주문을 한 번</b> 외칠 수 있습니다.\n" +
-        "마왕은 체력이 줄 때마다 <b>속성이 바뀝니다.</b> 위쪽의 '약점'을 노리세요.\n" +
-        "상성 마법으로 맞히면 체력을 회복하고, 마왕이 모으는 마법도 끊어낼 수 있습니다.\n" +
-        "하수인이 나타나면 먼저 처치하세요!\n" +
-        "<b>30턴</b> 안에 마왕을 쓰러뜨려야 합니다.";
+        "<size=120%>Turn-based battle!</size>\n" +
+        "You can chant one spell on each of your turns.\n" +
+        "The Demon Lord's element changes as his HP drops.\n" +
+        "Watch the <color=#FF5555>color</color> of his HP bar!\n\n" +
+        "Hitting him with a strong element heals you\n" +
+        "and can break the magic he is charging.\n\n" +
+        "If minions appear, defeat them first!\n" +
+        "You must defeat the Demon Lord within <size=120%>30 turns</size>.\n\n" +
+        "Good luck...";
     [Tooltip("안내를 보여 주는 시간 (클릭 / Enter로 바로 닫기)")]
     public float tutorialTime = 7f;
-    public string entranceNotice = "침묵의 마왕이 모습을 드러냈다!";
+    public string entranceNotice = "The Demon Lord of Silence has appeared!";
 
     [Header("턴")]
     public float playerTurnTime = 10f;
@@ -80,27 +84,27 @@ public class BossBattleDirector : MonoBehaviour
     public float castGraceTime = 4f;
     [Tooltip("마법이 맞은 뒤 보스 턴까지")]
     public float afterHitDelay = 1f;
-    public string playerTurnText = "나의 턴!";
-    public string bossTurnText = "마왕의 턴";
+    public string playerTurnText = "Your turn!";
+    public string bossTurnText = "Demon Lord's turn!";
     public Color playerTurnColor = new Color(1f, 0.85f, 0.3f);
     public Color bossTurnColor = new Color(0.95f, 0.25f, 0.2f);
     [Tooltip("내 턴이 아닐 때 영창 자막 대신 보여 줄 안내 (비우면 빈칸)")]
-    public string waitHint = "마왕의 턴입니다…";
+    public string waitHint = "";
     [Tooltip("영창 자막 (Subtitle_Main). 마왕의 턴 동안, 그리고 '나의 턴!'이 떠 있는 동안 숨김")]
     public GameObject castPrompt;
     [Tooltip("'나의 턴!'을 보여 주는 시간 (초). 이 시간이 지나야 영창 자막이 나오고 주문을 외칠 수 있음 (제한 시간도 그 뒤부터)")]
     public float turnBannerHold = 2f;
     [Tooltip("영창 자막이 나타나는/사라지는 시간")]
     public float promptFadeTime = 0.25f;
-    public string timeoutText = "시간 초과!";
+    public string timeoutText = "Time's up!";
 
     [Header("보스 공격 패턴 (페이즈 1·2·3 확률)")]
     public float[] chargeChance = { 0f, 0.35f, 0.3f };
     public float[] doubleChance = { 0f, 0f, 0.3f };
     [Tooltip("{weak} = 약점 속성")]
-    public string chargeNotice = "마왕이 힘을 모으고 있다! {weak} 속성 마법으로 끊어내자!";
-    public string chargeBreakNotice = "마왕의 마법을 끊어냈다!";
-    public string chargeReleaseNotice = "모아 둔 마법이 터진다!";
+    public string chargeNotice = "The Demon Lord is charging power! Break it with {weak} magic!";
+    public string chargeBreakNotice = "You broke the Demon Lord's spell!";
+    public string chargeReleaseNotice = "The charged magic explodes!";
 
     [Header("하수인 (페이즈 2부터)")]
     [Tooltip("하급 몹 프리팹들 (랜덤)")]
@@ -136,7 +140,7 @@ public class BossBattleDirector : MonoBehaviour
     public float portalLinger = 2f;
     [Tooltip("포탈이 작아지며 사라지는 시간")]
     public float portalCloseTime = 0.6f;
-    public string summonNotice = "하수인이 소환되었다! 먼저 처치하자!";
+    public string summonNotice = "A minion has been summoned! Defeat it first!";
 
     [Header("회복")]
     [Range(0f, 1f)] public float phaseHealRatio = 0.3f;
@@ -148,16 +152,16 @@ public class BossBattleDirector : MonoBehaviour
     [Tooltip("상성 마법을 이만큼 연속으로 맞히면 보스가 기절해 다음 보스 턴을 쉼")]
     public int stunStreak = 2;
     [Tooltip("기절하는 순간 뜨는 자막")]
-    public string stunNotice = "마왕이 비틀거린다! 다음 턴은 쉰다!";
+    public string stunNotice = "The Demon Lord staggers! He'll skip his next turn!";
     [Tooltip("기절해서 쉬는 마왕의 턴에 뜨는 자막")]
-    public string stunSkipNotice = "마왕이 정신을 차리지 못하고 있다…";
+    public string stunSkipNotice = "The Demon Lord is still dazed...";
     [Tooltip("쉬는 턴에 웅크리고 있는 시간 (그 뒤 일어남)")]
     public float stunSkipTime = 1.5f;
 
     [Header("결과")]
     public string endingSceneName = "EndingScene";
-    public string victoryNotice = "침묵의 마왕을 물리쳤다!";
-    public string turnOutNotice = "시간이 다했다… 마왕의 침묵이 성을 뒤덮는다.";
+    public string victoryNotice = "You defeated the Demon Lord of Silence!";
+    public string turnOutNotice = "Time has run out... The Demon Lord's silence engulfs the castle.";
     public float fadeOutTime = 1.5f;
     [Tooltip("등급 기준 점수 (S / A / B, 나머지는 C). 점수 = 남은 턴 40 + 상성 적중률 30 + 남은 체력 20 + 영창 세기 10")]
     public float gradeS = 70f, gradeA = 55f, gradeB = 40f;
@@ -505,7 +509,7 @@ public class BossBattleDirector : MonoBehaviour
         if (tutorialPanel == null) yield break;
         if (tutorialText != null && !string.IsNullOrWhiteSpace(tutorialContent))
         {
-            tutorialText.text = tutorialContent.Replace("30턴", maxTurns + "턴");
+            tutorialText.text = tutorialContent.Replace("30 turns", maxTurns + " turns");
         }
         CanvasGroup g = tutorialPanel.GetComponent<CanvasGroup>();
         if (g == null) g = tutorialPanel.AddComponent<CanvasGroup>();
@@ -682,7 +686,7 @@ public class BossBattleDirector : MonoBehaviour
         {
             weaknessHits++;
             weaknessStreak++;
-            if (PlayerHealth.Instance != null) PlayerHealth.Instance.Heal(weaknessHitHeal, "상성 적중");
+            if (PlayerHealth.Instance != null) PlayerHealth.Instance.Heal(weaknessHitHeal, "Weakness hit");
 
             if (boss.IsCharging)
             {
@@ -729,7 +733,7 @@ public class BossBattleDirector : MonoBehaviour
             }
             else if (r < pDouble + pCharge)
             {
-                string weak = EnemyController.TryGetWeakness(boss.Element, out MagicElement w) ? EnemyController.ElementToKorean(w) : "";
+                string weak = EnemyController.TryGetWeakness(boss.Element, out MagicElement w) ? EnemyController.ElementName(w) : "";
                 Notice(chargeNotice.Replace("{weak}", weak));
                 yield return boss.BeginCharge();
             }
@@ -751,15 +755,15 @@ public class BossBattleDirector : MonoBehaviour
     {
         MagicElement next = boss.phaseElements != null && boss.phaseElements.Length >= newPhase ? boss.phaseElements[newPhase - 1] : boss.Element;
         string hex = ColorUtility.ToHtmlStringRGB(BossController.ElementColorOf(next));
-        Notice($"마왕이 <color=#{hex}>{EnemyController.ElementToKorean(next)}</color> 속성의 힘을 두른다!");
+        Notice($"The Demon Lord takes on the power of <color=#{hex}>{EnemyController.ElementName(next)}</color>!");
         StartCoroutine(ShakeCamera(0.9f, 0.08f));
         yield return boss.DoPowerUp(newPhase);
         RefreshHUD();
 
         if (PlayerHealth.Instance != null && phaseHealRatio > 0f)
         {
-            float healed = PlayerHealth.Instance.Heal(PlayerHealth.Instance.maxHP * phaseHealRatio, "페이즈 전환");
-            if (healed > 0f) Notice($"마왕이 힘을 모으는 사이 숨을 돌렸다! 체력 +{Mathf.CeilToInt(healed)}");
+            float healed = PlayerHealth.Instance.Heal(PlayerHealth.Instance.maxHP * phaseHealRatio, "Phase change");
+            if (healed > 0f) Notice($"You caught your breath while he powered up! HP +{Mathf.CeilToInt(healed)}");
         }
         yield return new WaitForSeconds(1f);
     }
@@ -915,7 +919,7 @@ public class BossBattleDirector : MonoBehaviour
             m.transform.position = Vector3.Lerp(start, lunge, t / 0.12f);
             yield return null;
         }
-        if (PlayerHealth.Instance != null) PlayerHealth.Instance.TakeDamage(minionDamage, "하수인의 공격");
+        if (PlayerHealth.Instance != null) PlayerHealth.Instance.TakeDamage(minionDamage, "Minion attack");
 
         // 공격 후 사라짐
         if (m == null) yield break;
@@ -933,7 +937,7 @@ public class BossBattleDirector : MonoBehaviour
     {
         m.OnDied -= HandleMinionDied;
         minions.RemoveAll(x => x.enemy == m);
-        if (PlayerHealth.Instance != null && minionKillHeal > 0f) PlayerHealth.Instance.Heal(minionKillHeal, "하수인 처치");
+        if (PlayerHealth.Instance != null && minionKillHeal > 0f) PlayerHealth.Instance.Heal(minionKillHeal, "Minion defeated");
     }
 
     private void ClearMinions()

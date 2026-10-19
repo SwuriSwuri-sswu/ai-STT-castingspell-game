@@ -37,16 +37,19 @@ public class IntroSequence : MonoBehaviour
     [TextArea(5, 12)]
     public List<string> storyPages = new List<string>
     {
-        "목소리에 마법이 깃드는 세계.\n" +
-        "주문을 소리 내어 외치면, 세상이 그 말에 답했다.\n\n" +
-        "그러던 어느 날, <color=#A0281E><b>침묵의 마왕</b></color>이 깨어나\n" +
-        "마법서의 주문들을 산산이 흩어 버렸다.",
+        "A lazy king who has never learned a single spell.\n" +
+        "Once again, he won't budge from his throne.\n\n" +
+        "But then... the <color=#A0281E><b>Demon Lord of Silence</b></color> awoke\n" +
+        "and scattered the spells of the grimoire to the winds.",
 
-        "흩어진 주문들은 몬스터들의 몸속으로 숨어들었다.\n" +
-        "<b>몬스터를 많이 쓰러뜨릴수록, 더 많은 주문을 되찾을 수 있다.</b>\n\n" +
-        "스테이지 2에서 기다리는 <color=#A0281E><b>침묵의 마왕</b></color>을 물리치려면\n" +
-        "되도록 많은 주문을 모아 두어야 한다.\n\n" +
-        "견습 마법사여, 지팡이를 들어라.",
+        "The scattered spells hid inside the monsters,\n" +
+        "and the monsters began swarming toward the castle.\n\n" +
+        "For a king too lazy even to walk, only one option remains:\n" +
+        "<b>chant the spells out loud.</b>",
+
+        "The more monsters you defeat, the more spells you recover.\n\n" +
+        "To defeat the <color=#A0281E><b>Demon Lord of Silence</b></color>,\n" +
+        "gather as many spells as you can.",
     };
     [Tooltip("1초에 치는 글자 수")]
     public float charsPerSecond = 28f;
@@ -71,19 +74,20 @@ public class IntroSequence : MonoBehaviour
     [Tooltip("{도감}처럼 중괄호로 쓴 부분이 아래 아이콘 이미지로 바뀜")]
     [TextArea(5, 12)]
     public string guideContent =
-        "<b>[Space]</b>를 누른 채 주문을 외치면 마법이 나갑니다.\n" +
-        "<b>상성</b>: 물 → 불 → 풀 → 물 순서로 강합니다.\n" +
-        "<b>체력</b>이 0이 되면 게임 오버! 몬스터의 공격 게이지를 잘 보세요.\n\n" +
-        "{도감} 지금까지 수집한 마법과 몬스터에 대한 도감입니다.\n" +
-        "{지팡이} 지금 쓰는 지팡이를 확인합니다.\n" +
-        "{설정} 음량을 조절합니다.\n" +
-        "{음악} 배경음악을 켜고 끕니다.";
+        "Hold <b>[Space]</b> and chant a spell to cast magic.\n" +
+        "<b>Elements</b>: Water > Fire > Grass > Water.\n" +
+        "When your <b>HP</b> hits 0, it's game over!\n" +
+        "Open the book to check each monster's attack power.\n\n" +
+        "{Book}: Your collection of spells and monsters.\n" +
+        "{Wand}: Check the wand you are using.\n" +
+        "{Settings}: Open the settings.\n" +
+        "{Music}: Turn the background music on or off.";
     public List<GuideIcon> guideIcons = new List<GuideIcon>
     {
-        new GuideIcon { key = "도감" },
-        new GuideIcon { key = "지팡이" },
-        new GuideIcon { key = "설정" },
-        new GuideIcon { key = "음악" },
+        new GuideIcon { key = "Book" },
+        new GuideIcon { key = "Wand" },
+        new GuideIcon { key = "Settings" },
+        new GuideIcon { key = "Music" },
     };
     [Tooltip("아이콘 크기 (줄 높이 기준 배수). 1 = 글자 줄 높이와 같음")]
     public float iconScale = 1.2f;
@@ -310,7 +314,7 @@ public class IntroSequence : MonoBehaviour
             string token = "{" + icon.key + "}";
             string pad = $"<space={Mathf.Max(0f, iconSpace - 1f) * 0.5f:0.##}em>";
             string replace = icon.sprite != null
-                ? $"{pad}<link=\"icon{i}\"><color=#00000000>가</color></link>{pad}"
+                ? $"{pad}<link=\"icon{i}\"><color=#00000000>M</color></link>{pad}"
                 : $"<b>{icon.key}</b>:";
             content = content.Replace(token, replace);
         }

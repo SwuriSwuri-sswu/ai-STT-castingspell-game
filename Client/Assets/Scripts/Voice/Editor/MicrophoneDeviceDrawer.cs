@@ -32,7 +32,7 @@ public class MicrophoneDeviceDrawer : PropertyDrawer
     {
         if (property.propertyType != SerializedPropertyType.String)
         {
-            EditorGUI.LabelField(position, label.text, "[MicrophoneDevice] 는 string 필드에만 사용할 수 있습니다");
+            EditorGUI.LabelField(position, label.text, "[MicrophoneDevice] can only be used on string fields");
             return;
         }
 
@@ -49,7 +49,7 @@ public class MicrophoneDeviceDrawer : PropertyDrawer
         // 시스템 기본 장치 (빈 문자열)
         r.y += Line + Gap;
         bool isDefault = string.IsNullOrEmpty(current);
-        if (EditorGUI.ToggleLeft(r, "(시스템 기본 장치)", isDefault) && !isDefault)
+        if (EditorGUI.ToggleLeft(r, "(System default device)", isDefault) && !isDefault)
             property.stringValue = "";
 
         // 연결된 장치 목록. 이미 선택된 항목을 다시 눌러도 해제되지 않는다 (항상 하나는 선택된 상태)
@@ -64,7 +64,7 @@ public class MicrophoneDeviceDrawer : PropertyDrawer
         if (devices.Length == 0)
         {
             r.y += Line + Gap;
-            EditorGUI.LabelField(r, "연결된 마이크가 없습니다");
+            EditorGUI.LabelField(r, "No microphone connected");
         }
 
         // 저장된 장치가 지금 연결되어 있지 않은 경우
@@ -72,7 +72,7 @@ public class MicrophoneDeviceDrawer : PropertyDrawer
         {
             r.y += Line + Gap;
             Rect box = new Rect(r.x, r.y, r.width, Line * 2);
-            EditorGUI.HelpBox(box, $"'{current}' 이(가) 연결되어 있지 않아 시스템 기본 장치를 사용합니다.", MessageType.Warning);
+            EditorGUI.HelpBox(box, $"'{current}' is not connected, so the system default device is used.", MessageType.Warning);
         }
 
         EditorGUI.indentLevel--;

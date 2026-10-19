@@ -12,8 +12,8 @@ public struct ChantResult
 
     public string LogText => tier switch
     {
-        ChantTier.Strong => "강한 영창!",
-        ChantTier.Perfect => "완벽한 영창!",
+        ChantTier.Strong => "Strong chant!",
+        ChantTier.Perfect => "Perfect chant!",
         _ => null
     };
 }

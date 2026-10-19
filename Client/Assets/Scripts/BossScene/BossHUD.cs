@@ -106,18 +106,18 @@ public class BossHUD : MonoBehaviour
         if (tintBarByElement && hpFill != null) hpFill.color = color;
         if (elementText == null) return;
         string hex = ColorUtility.ToHtmlStringRGB(color);
-        string text = $"<color=#{hex}>{EnemyController.ElementToKorean(element)} 속성</color>";
+        string text = $"<color=#{hex}>{EnemyController.ElementName(element)}</color>";
         if (EnemyController.TryGetWeakness(element, out MagicElement weak))
         {
             string weakHex = ColorUtility.ToHtmlStringRGB(EnemyController.ElementColor(weak));
-            text += $"   약점: <color=#{weakHex}>{EnemyController.ElementToKorean(weak)}</color>";
+            text += $"   Weakness: <color=#{weakHex}>{EnemyController.ElementName(weak)}</color>";
         }
         elementText.text = text;
     }
 
     public void SetTurnsLeft(int turns)
     {
-        if (turnsText != null) turnsText.text = $"남은 턴 {Mathf.Max(0, turns)}";
+        if (turnsText != null) turnsText.text = $"Turns left {Mathf.Max(0, turns)}";
     }
 
     // remaining < 0 이면 숨김
@@ -152,7 +152,7 @@ public class BossHUD : MonoBehaviour
         if (minionText == null) return;
         bool show = seconds >= 0f;
         minionText.gameObject.SetActive(show);
-        if (show) minionText.text = $"하수인 공격까지 {Mathf.CeilToInt(seconds)}초";
+        if (show) minionText.text = $"Minion attacks in {Mathf.CeilToInt(seconds)}s";
     }
 
     // 배너 칸을 비워 두면 알림 자막(Subtitle_Notice)에 색을 입혀 띄움 / 글이 비어 있으면 생략

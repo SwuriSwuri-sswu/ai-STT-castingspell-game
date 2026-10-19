@@ -3,11 +3,10 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// �÷��̾� ü�� (GameScene�� [SYSTEM_MANAGERS] �Ʒ� �� ������Ʈ�� ���̱�)
-// ü���� ���̴� ���
-//   1. ���� ���� (EnemyController�� ���� �ð����� ����)
-//   2. �ֹ� ���� �г�Ƽ (����): �� �� ���� �ֹ� / �Һи��� �ֹ� / ���� ����� ���� �ֹ�
-// ü���� 0�� �Ǹ�: �� ���������� �Է� ���� �� ���θ�� �� ȭ�� ���� �� EndingScene (���� ����)
+// 플레이어 체력 (GameScene의 [SYSTEM_MANAGERS] 아래 빈 오브젝트에 붙이기)
+// 체력이 깎이는 경우: 몹의 공격만 (EnemyController / 보스전의 BossSpell·하수인)
+//   ※ 음성 인식 실패·배우지 않은 주문으로는 체력이 깎이지 않음
+// 체력이 0이 되면: 몹 스폰·음성 입력 정지 → 슬로모션 → 화면 암전 → EndingScene (게임 오버)
 public class PlayerHealth : MonoBehaviour
 {
     public static PlayerHealth Instance { get; private set; }
@@ -17,17 +16,7 @@ public class PlayerHealth : MonoBehaviour
     [Tooltip("�� �� ���� �� �� �ð� ������ �߰� ���� ���� (���� �ǰ� ����)")]
     public float invulnerableTime = 0.5f;
 
-    [Header("�ֹ� ���� �г�Ƽ")]
-    [Tooltip("�ֹ��� �߸� ��ġ�� ������ �����ؼ� ü���� ���� ����")]
-    public bool failPenalty = true;
-    public float failDamage = 4f;
-    [Tooltip("�г�Ƽ�� �� ���� �ҹ� ���� (EMPTY��NOISE ���� '�� �鸲'�� ���� �� ����ũ ſ���� ������� �ʰ�)")]
-    public string[] penaltyRejectReasons = { "NO_MATCH", "AMBIGUOUS" };
-    [Tooltip("����� ���� �ֹ��� ������ ���� �г�Ƽ")]
-    public bool penalizeUnlearnedSpell = true;
-    [SerializeField] VoiceSocket voiceSocket;
-
-    [Header("���� ����")]
+    [Header("게임 오버")]
     public string endingSceneName = "EndingScene";
     [Tooltip("������ �� �������� ���� (���� �ð� ��)")]
     public float slowMotionTime = 1.2f;
@@ -65,16 +54,11 @@ public class PlayerHealth : MonoBehaviour
 
     private void Start()
     {
-        if (voiceSocket == null) voiceSocket = FindFirstObjectByType<VoiceSocket>();
-        if (voiceSocket != null) voiceSocket.CastResultReceived += HandleCastResult;
-        if (SkillManager.Instance != null) SkillManager.Instance.OnVoiceCastFailed += HandleCastFailed;
         OnHealthChanged?.Invoke(CurrentHP, maxHP);
     }
 
     private void OnDestroy()
     {
-        if (voiceSocket != null) voiceSocket.CastResultReceived -= HandleCastResult;
-        if (SkillManager.Instance != null) SkillManager.Instance.OnVoiceCastFailed -= HandleCastFailed;
         if (Instance == this) Instance = null;
     }
 
@@ -107,23 +91,7 @@ public class PlayerHealth : MonoBehaviour
         return healed;
     }
 
-    // ���� �ֹ� ���� �г�Ƽ ����
-    private void HandleCastResult(CastResult r)
-    {
-        if (!failPenalty || r == null || r.Success) return;
-        if (Array.IndexOf(penaltyRejectReasons, r.RejectReason) < 0) return;
-        if (!SkillManager.CanCast) return; // ���� ���ų� �������� ���̸� �г�Ƽ ����
-        TakeDamage(failDamage, "�ֹ� ���� (���� ����)");
-    }
-
-    private void HandleCastFailed(string fail)
-    {
-        if (!failPenalty || !penalizeUnlearnedSpell) return;
-        if (fail != "���� ����� ���� �ֹ�") return;
-        TakeDamage(failDamage, "����� ���� �ֹ� (���� ����)");
-    }
-
-    // ���� ���� ���� ����
+    // ── 게임 오버 ──
     private void Die()
     {
         if (IsDead) return;

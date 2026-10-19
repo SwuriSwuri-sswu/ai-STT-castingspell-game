@@ -286,7 +286,7 @@ public class DropItem : MonoBehaviour
                 {
                     name = $"<color=#{ColorUtility.ToHtmlStringRGB(GetTierColor())}>{spell.spellName}</color>";
                 }
-                BattleUIManager.Instance.ShowNotice($"{name} 스펠을 획득했습니다!");
+                BattleUIManager.Instance.ShowNotice($"New spell learned: {name}!");
             }
         }
 

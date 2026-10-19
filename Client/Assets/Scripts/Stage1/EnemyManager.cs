@@ -225,8 +225,8 @@ public class EnemyManager : MonoBehaviour
         CurrentEnemy.OnReady += HandleEnemyReady;
         lastPrefab = prefab;
 
-        Debug.Log($"[EnemyManager] {EnemyController.RankToKorean(CurrentEnemy.rank)} " +
-                  $"{EnemyController.ElementToKorean(CurrentEnemy.enemyType)} 속성 몬스터 등장!");
+        Debug.Log($"[EnemyManager] {EnemyController.RankName(CurrentEnemy.rank)} " +
+                  $"{EnemyController.ElementName(CurrentEnemy.enemyType)} 속성 몬스터 등장!");
         // 몹 도감 기록 + 등장 자막
         bool isNew = MonsterCollection.Encounter(prefab.gameObject.name);
         if (showAppearText && BattleUIManager.Instance != null)
@@ -245,7 +245,7 @@ public class EnemyManager : MonoBehaviour
     {
         string name = enemy.DisplayName;
         string hex = ColorUtility.ToHtmlStringRGB(EnemyController.ElementColor(enemy.enemyType));
-        string text = $"<color=#{hex}>{name}</color>{EnemyController.Josa(name, "이", "가")} 나타났습니다!";
+        string text = $"<color=#{hex}>{name}</color> appeared!";
         if (isNew && !string.IsNullOrEmpty(newEncounterText))
         {
             string newHex = ColorUtility.ToHtmlStringRGB(newEncounterColor);

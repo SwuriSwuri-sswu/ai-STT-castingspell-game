@@ -60,9 +60,9 @@ public class MonsterBookUI : MonoBehaviour
 
     [Header("설명 문구 ({name} {rank} {element} {interval} {damage} {weakness} {kills})")]
     [TextArea(3, 5)]
-    public string descFormat = "{name} <size=75%>{rank}</size>  {element}\n공격 속도: {interval}초마다 {damage} 공격\n약점: {weakness}";
-    public string weaknessFormat = "{weak} 속성 마법";
-    public string noWeaknessText = "없음";
+    public string descFormat = "{name} <size=85%>{rank}</size>\n<size=85%>{kills} defeated</size>\n<size=85%>{damage} dmg every {interval}s</size>\n<size=85%>Weakness: {weakness}</size>";
+    public string weaknessFormat = "{weak} spells";
+    public string noWeaknessText = "None";
     [TextArea(1, 3)]
     public string lockedText = "???";
     public string newBadge = "NEW";
@@ -267,13 +267,13 @@ public class MonsterBookUI : MonoBehaviour
         if (EnemyController.TryGetWeakness(mob.enemyType, out MagicElement weak))
         {
             string weakHex = ColorUtility.ToHtmlStringRGB(EnemyController.ElementColor(weak));
-            weakness = weaknessFormat.Replace("{weak}", $"<color=#{weakHex}>{EnemyController.ElementToKorean(weak)}</color>");
+            weakness = weaknessFormat.Replace("{weak}", $"<color=#{weakHex}>{EnemyController.ElementName(weak)}</color>");
         }
 
         return descFormat
             .Replace("{name}", name)
-            .Replace("{rank}", EnemyController.RankToKorean(mob.rank))
-            .Replace("{element}", EnemyController.ElementToKorean(mob.enemyType))
+            .Replace("{rank}", EnemyController.RankName(mob.rank))
+            .Replace("{element}", EnemyController.ElementName(mob.enemyType))
             .Replace("{interval}", interval.ToString("0.#"))
             .Replace("{damage}", damage.ToString("0.#"))
             .Replace("{weakness}", weakness)

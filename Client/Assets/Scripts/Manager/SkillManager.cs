@@ -370,12 +370,18 @@ public class SkillManager : MonoBehaviour
         return fail;
     }
 
+    // TryCastByVoice 실패 사유 (VoiceRecorder가 플레이어용 문구로 바꿔 표시)
+    public const string FailUnknown = "UNKNOWN_SPELL";
+    public const string FailNotLearned = "NOT_LEARNED";
+    public const string FailNoTarget = "NO_TARGET";
+    public const string FailCast = "CAST_FAILED";   // 타겟 또는 이펙트 없음
+
     private string TryCastByVoiceInternal(string spellName, float power)
     {
         SpellData spell = FindSpell(spellName);
-        if (spell == null) return "알 수 없는 주문";
-        if (!IsUnlocked(spell)) return "아직 배우지 않은 주문";
-        if (!CanCast) return "공격할 적이 없음";
-        return CastSpell(spell.spellName, power) ? null : "시전 실패 (타겟 또는 이펙트 없음)";
+        if (spell == null) return FailUnknown;
+        if (!IsUnlocked(spell)) return FailNotLearned;
+        if (!CanCast) return FailNoTarget;
+        return CastSpell(spell.spellName, power) ? null : FailCast;
     }
 }
