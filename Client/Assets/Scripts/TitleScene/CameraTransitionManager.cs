@@ -5,31 +5,31 @@ using UnityEngine.UI;
 
 public class CameraTransitionManager : MonoBehaviour
 {
-    [Header("Ä«¸Þ¶ó ¼³Á¤")]
+    [Header("Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½")]
     public Camera mainCamera;
 
-    [Header("µµÂøÁö ÁÂÇ¥ ¿ÀºêÁ§Æ®")]
+    [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ç¥ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®")]
     public Transform throneZoomTarget;
     public Transform firstPersonTarget;
 
-    [Header("UI Á¦¾î")]
+    [Header("UI ï¿½ï¿½ï¿½ï¿½")]
     public CanvasGroup titleUIGroup;
     public Image blackFadeScreen;
 
-    [Header("Ä«¸Þ¶ó ¿¬Ãâ ½Ã°£ ¼³Á¤")]
+    [Header("Ä«ï¿½Þ¶ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½")]
     public float uiFadeDuration = 0.5f;
     public float zoomDuration = 2.0f;
     public float holdDuration = 1.0f;
     public float firstPersonDuration = 1.5f;
 
-    [Header("È­¸é ÆäÀÌµå ¿¬Ãâ ½Ã°£ (¿äÃ»ÇÏ½Å Å¸ÀÌ¹Ö)")]
-    public float delayBeforeFadeOut = 0.5f;      // 1. 1ÀÎÄª ÀüÈ¯ ÈÄ ´ë±â ½Ã°£ (0.5ÃÊ)
-    public float screenFadeOutDuration = 1.5f;   // 2. È­¸é ÆäÀÌµå ¾Æ¿ô ½Ã°£ (1.5ÃÊ)
-    public float blackScreenHoldDuration = 1.0f; // 3. °ËÀº È­¸é À¯Áö ½Ã°£ (1.0ÃÊ)
+    [Header("È­ï¿½ï¿½ ï¿½ï¿½ï¿½Ìµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½ (ï¿½ï¿½Ã»ï¿½Ï½ï¿½ Å¸ï¿½Ì¹ï¿½)")]
+    public float delayBeforeFadeOut = 0.5f;      // 1. 1ï¿½ï¿½Äª ï¿½ï¿½È¯ ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½ (0.5ï¿½ï¿½)
+    public float screenFadeOutDuration = 1.5f;   // 2. È­ï¿½ï¿½ ï¿½ï¿½ï¿½Ìµï¿½ ï¿½Æ¿ï¿½ ï¿½Ã°ï¿½ (1.5ï¿½ï¿½)
+    public float blackScreenHoldDuration = 1.0f; // 3. ï¿½ï¿½ï¿½ï¿½ È­ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½ (1.0ï¿½ï¿½)
 
     private void Start()
     {
-        // Å¸ÀÌÆ² ¾À ½ÃÀÛ ½Ã °ËÀº È­¸éÀ» ¿Ïº®ÇÏ°Ô ¼û±è (½ÃÀÛ ½Ã ÆäÀÌµåÀÎ ¹æÁö)
+        // Å¸ï¿½ï¿½Æ² ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È­ï¿½ï¿½ï¿½ï¿½ ï¿½Ïºï¿½ï¿½Ï°ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½Ìµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
         if (blackFadeScreen != null)
         {
             Color c = blackFadeScreen.color;
@@ -52,7 +52,7 @@ public class CameraTransitionManager : MonoBehaviour
         Quaternion startRot = mainCamera.transform.rotation;
         float elapsedTime = 0f;
 
-        // ÁÜÀÎ ¿¬Ãâ
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         while (elapsedTime < zoomDuration)
         {
             float t = Mathf.SmoothStep(0f, 1f, elapsedTime / zoomDuration);
@@ -64,14 +64,14 @@ public class CameraTransitionManager : MonoBehaviour
         mainCamera.transform.position = throneZoomTarget.position;
         mainCamera.transform.rotation = throneZoomTarget.rotation;
 
-        // ¿ÕÁÂ ¾Õ ´ë±â
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½
         yield return new WaitForSeconds(holdDuration);
 
         elapsedTime = 0f;
         Vector3 zoomPos = mainCamera.transform.position;
         Quaternion zoomRot = mainCamera.transform.rotation;
 
-        // 1ÀÎÄª È¸Àü ¿¬Ãâ
+        // 1ï¿½ï¿½Äª È¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         while (elapsedTime < firstPersonDuration)
         {
             float t = Mathf.SmoothStep(0f, 1f, elapsedTime / firstPersonDuration);
@@ -83,10 +83,10 @@ public class CameraTransitionManager : MonoBehaviour
         mainCamera.transform.position = firstPersonTarget.position;
         mainCamera.transform.rotation = firstPersonTarget.rotation;
 
-        // 1. 1ÀÎÄª ¿Ï·á ÈÄ Àá±ñ ´ë±â (0.5ÃÊ)
+        // 1. 1ï¿½ï¿½Äª ï¿½Ï·ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ (0.5ï¿½ï¿½)
         yield return new WaitForSeconds(delayBeforeFadeOut);
 
-        // 2. °ËÀº È­¸éÀ¸·Î ÆäÀÌµå ¾Æ¿ô (1.5ÃÊ)
+        // 2. ï¿½ï¿½ï¿½ï¿½ È­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ìµï¿½ ï¿½Æ¿ï¿½ (1.5ï¿½ï¿½)
         if (blackFadeScreen != null)
         {
             blackFadeScreen.gameObject.SetActive(true);
@@ -104,11 +104,12 @@ public class CameraTransitionManager : MonoBehaviour
             blackFadeScreen.color = fadeColor;
         }
 
-        // 3. ¿ÏÀüÈ÷ ±î¸ÅÁø »óÅÂ·Î ´ë±â (1.0ÃÊ)
+        // 3. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Â·ï¿½ ï¿½ï¿½ï¿½ (1.0ï¿½ï¿½)
         yield return new WaitForSeconds(blackScreenHoldDuration);
 
-        // 4. °ÔÀÓ ¾À ·Îµå
-        SceneManager.LoadScene("GameScene");
+        // 4. ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Îµï¿½
+        string nextScene = Application.CanStreamedLevelBeLoaded("simul") ? "simul" : "GameScene";
+        SceneManager.LoadScene(nextScene);
     }
 
     private IEnumerator FadeOutUI()
