@@ -1,40 +1,38 @@
-﻿using System;
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// 플레이어 체력 (GameScene의 [SYSTEM_MANAGERS] 아래 빈 오브젝트에 붙이기)
-// 체력이 깎이는 경우
-//   1. 몹의 공격 (EnemyController가 일정 시간마다 공격)
-//   2. 주문 실패 패널티 (선택): 알 수 없는 주문 / 불분명한 주문 / 아직 배우지 않은 주문
-// 체력이 0이 되면: 몹 스폰·음성 입력 정지 → 슬로모션 → 화면 암전 → EndingScene (게임 오버)
+// �÷��̾� ü�� (GameScene�� [SYSTEM_MANAGERS] �Ʒ� �� ������Ʈ�� ���̱�)
+// ü���� ���̴� ���
+//   1. ���� ���� (EnemyController�� ���� �ð����� ����)
+//   2. �ֹ� ���� �г�Ƽ (����): �� �� ���� �ֹ� / �Һи��� �ֹ� / ���� ����� ���� �ֹ�
+// ü���� 0�� �Ǹ�: �� ���������� �Է� ���� �� ���θ�� �� ȭ�� ���� �� EndingScene (���� ����)
 public class PlayerHealth : MonoBehaviour
 {
     public static PlayerHealth Instance { get; private set; }
 
-    [Header("체력")]
+    [Header("ü��")]
     public float maxHP = 100f;
-    [Tooltip("한 번 맞은 뒤 이 시간 동안은 추가 피해 없음 (연속 피격 방지)")]
+    [Tooltip("�� �� ���� �� �� �ð� ������ �߰� ���� ���� (���� �ǰ� ����)")]
     public float invulnerableTime = 0.5f;
 
-    [Header("주문 실패 패널티")]
-    [Tooltip("주문을 잘못 외치면 마력이 역류해서 체력이 조금 깎임")]
+    [Header("�ֹ� ���� �г�Ƽ")]
+    [Tooltip("�ֹ��� �߸� ��ġ�� ������ �����ؼ� ü���� ���� ����")]
     public bool failPenalty = true;
     public float failDamage = 4f;
-    [Tooltip("패널티를 줄 서버 불발 사유 (EMPTY·NOISE 같은 '안 들림'은 제외 → 마이크 탓으로 억울하지 않게)")]
+    [Tooltip("�г�Ƽ�� �� ���� �ҹ� ���� (EMPTY��NOISE ���� '�� �鸲'�� ���� �� ����ũ ſ���� ������� �ʰ�)")]
     public string[] penaltyRejectReasons = { "NO_MATCH", "AMBIGUOUS" };
-    [Tooltip("배우지 않은 주문을 외쳤을 때도 패널티")]
+    [Tooltip("����� ���� �ֹ��� ������ ���� �г�Ƽ")]
     public bool penalizeUnlearnedSpell = true;
     [SerializeField] VoiceSocket voiceSocket;
-    [Tooltip("비우면 자동으로 찾음. 시간 초과로 버린 늦은 판정 결과에는 패널티를 주지 않기 위해 사용")]
-    [SerializeField] VoiceSender voiceSender;
 
-    [Header("게임 오버")]
+    [Header("���� ����")]
     public string endingSceneName = "EndingScene";
-    [Tooltip("쓰러질 때 느려지는 연출 (실제 시간 초)")]
+    [Tooltip("������ �� �������� ���� (���� �ð� ��)")]
     public float slowMotionTime = 1.2f;
     [Range(0.05f, 1f)] public float slowMotionScale = 0.3f;
-    [Tooltip("(선택) 화면을 까맣게 덮을 CanvasGroup. 비우면 바로 넘어감")]
+    [Tooltip("(����) ȭ���� ��İ� ���� CanvasGroup. ���� �ٷ� �Ѿ")]
     public CanvasGroup fadeOverlay;
     public float fadeTime = 1f;
 
@@ -42,12 +40,12 @@ public class PlayerHealth : MonoBehaviour
     public bool IsDead { get; private set; }
     public float Ratio => maxHP > 0f ? CurrentHP / maxHP : 0f;
 
-    // (현재, 최대)
+    // (����, �ִ�)
     public event Action<float, float> OnHealthChanged;
-    // (깎인 양, 이유)
+    // (���� ��, ����)
     public event Action<float, string> OnDamaged;
     public event Action OnDied;
-    // (회복한 양, 이유)
+    // (ȸ���� ��, ����)
     public event Action<float, string> OnHealed;
 
     private float lastHitTime = -999f;
@@ -68,7 +66,6 @@ public class PlayerHealth : MonoBehaviour
     private void Start()
     {
         if (voiceSocket == null) voiceSocket = FindFirstObjectByType<VoiceSocket>();
-        if (voiceSender == null) voiceSender = FindFirstObjectByType<VoiceSender>();
         if (voiceSocket != null) voiceSocket.CastResultReceived += HandleCastResult;
         if (SkillManager.Instance != null) SkillManager.Instance.OnVoiceCastFailed += HandleCastFailed;
         OnHealthChanged?.Invoke(CurrentHP, maxHP);
@@ -88,14 +85,14 @@ public class PlayerHealth : MonoBehaviour
         lastHitTime = Time.time;
 
         CurrentHP = Mathf.Max(0f, CurrentHP - amount);
-        Debug.Log($"[플레이어] {reason} -{amount} → 체력 {CurrentHP}/{maxHP}");
+        Debug.Log($"[�÷��̾�] {reason} -{amount} �� ü�� {CurrentHP}/{maxHP}");
         OnDamaged?.Invoke(amount, reason);
         OnHealthChanged?.Invoke(CurrentHP, maxHP);
 
         if (CurrentHP <= 0f) Die();
     }
 
-    // 실제로 회복된 양을 돌려줌 (이미 가득 차 있으면 0)
+    // ������ ȸ���� ���� ������ (�̹� ���� �� ������ 0)
     public float Heal(float amount, string reason = "")
     {
         if (IsDead || amount <= 0f) return 0f;
@@ -104,38 +101,37 @@ public class PlayerHealth : MonoBehaviour
         float healed = CurrentHP - before;
         if (healed <= 0f) return 0f;
 
-        Debug.Log($"[플레이어] {reason} +{healed} → 체력 {CurrentHP}/{maxHP}");
+        Debug.Log($"[�÷��̾�] {reason} +{healed} �� ü�� {CurrentHP}/{maxHP}");
         OnHealed?.Invoke(healed, reason);
         OnHealthChanged?.Invoke(CurrentHP, maxHP);
         return healed;
     }
 
-    // ── 주문 실패 패널티 ──
+    // ���� �ֹ� ���� �г�Ƽ ����
     private void HandleCastResult(CastResult r)
     {
         if (!failPenalty || r == null || r.Success) return;
-        if (voiceSender != null && voiceSender.IsStaleResult(r.RequestId)) return; // 시간 초과로 버린 늦은 결과 → 패널티 없음
         if (Array.IndexOf(penaltyRejectReasons, r.RejectReason) < 0) return;
-        if (!SkillManager.CanCast) return; // 몹이 없거나 쓰러지는 중이면 패널티 없음
-        TakeDamage(failDamage, "주문 실패 (마력 역류)");
+        if (!SkillManager.CanCast) return; // ���� ���ų� �������� ���̸� �г�Ƽ ����
+        TakeDamage(failDamage, "�ֹ� ���� (���� ����)");
     }
 
     private void HandleCastFailed(string fail)
     {
         if (!failPenalty || !penalizeUnlearnedSpell) return;
-        if (fail != "아직 배우지 않은 주문") return;
-        TakeDamage(failDamage, "배우지 않은 주문 (마력 역류)");
+        if (fail != "���� ����� ���� �ֹ�") return;
+        TakeDamage(failDamage, "����� ���� �ֹ� (���� ����)");
     }
 
-    // ── 게임 오버 ──
+    // ���� ���� ���� ����
     private void Die()
     {
         if (IsDead) return;
         IsDead = true;
-        Debug.Log("[플레이어] 쓰러졌습니다. 게임 오버");
+        Debug.Log("[�÷��̾�] ���������ϴ�. ���� ����");
         OnDied?.Invoke();
 
-        // 몹 스폰·음성 입력 정지
+        // �� ���������� �Է� ����
         if (EnemyManager.Instance != null) EnemyManager.Instance.StopSpawning();
         VoiceSender sender = FindFirstObjectByType<VoiceSender>();
         if (sender != null) sender.enabled = false;
@@ -144,7 +140,7 @@ public class PlayerHealth : MonoBehaviour
 
         GameResult.Record(false, Time.time - startTime);
 
-        // 서버에 종료 기록 (서버 매니저가 있을 때만)
+        // ������ ���� ��� (���� �Ŵ����� ���� ����)
         if (GameManager.Instance != null && NetworkManager.Instance != null)
         {
             GameManager.Instance.SetState(GameState.GameOver);
@@ -155,11 +151,11 @@ public class PlayerHealth : MonoBehaviour
 
     private IEnumerator GameOverSequence()
     {
-        // 슬로모션
+        // ���θ��
         Time.timeScale = slowMotionScale;
         yield return new WaitForSecondsRealtime(slowMotionTime);
 
-        // 암전
+        // ����
         if (fadeOverlay != null)
         {
             fadeOverlay.gameObject.SetActive(true);
