@@ -1016,7 +1016,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 72393938}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd65006f5338cf34a88aef639bed8469, type: 3}
   m_Name: 
@@ -1050,7 +1050,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38b64766c9a3e6a4a97b8f669ef42ca2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceInput
-  deviceName: "\uC678\uC7A5 \uB9C8\uC774\uD06C"
+  deviceName: Microphone Array (AMD Audio Device)
   requestedSampleRate: 16000
   loopBufferSec: 10
 --- !u!114 &72393943
@@ -1087,6 +1087,7 @@ MonoBehaviour:
     noiseAdaptRate: 0.02
   resultTimeoutSec: 6
   keepTrailingSilenceSec: 0.1
+  silentPeak: 0.01
 --- !u!114 &72393944
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1100,7 +1101,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceSocket
   serverUrl: ws://127.0.0.1:8000/ws/voice/analyzing
-  unlockedOnly: 1
+  unlockedOnly: 0
 --- !u!114 &72393945
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1114,7 +1115,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceStreamSocket
   serverUrl: ws://127.0.0.1:8000/ws/voice/streaming
-  unlockedOnly: 1
+  unlockedOnly: 0
   logPartials: 1
 --- !u!114 &72393946
 MonoBehaviour:
@@ -45347,6 +45348,7 @@ MonoBehaviour:
   - AMBIGUOUS
   penalizeUnlearnedSpell: 1
   voiceSocket: {fileID: 0}
+  voiceSender: {fileID: 0}
   endingSceneName: EndingScene
   slowMotionTime: 1.2
   slowMotionScale: 0.3
