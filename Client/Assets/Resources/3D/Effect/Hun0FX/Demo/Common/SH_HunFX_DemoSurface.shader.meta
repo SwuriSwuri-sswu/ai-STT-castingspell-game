@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 519a66ac72e4aa90f1adee9bf15bae94
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 321082
+  packageName: (Free)StylizedVFX Fire Pack
+  packageVersion: 2.0.0
+  assetPath: Assets/Hun0FX/Demo/Common/SH_HunFX_DemoSurface.shader
+  uploadId: 1012432

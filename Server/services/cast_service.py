@@ -2,7 +2,7 @@
 WAV 바이트 -> 디코딩 -> 받아쓰기 + 음향 분석 -> 스킬 판정 -> 응답 dict
 
 ws_server.py 는 이 모듈의 CastService.process() 만 호출한다.
-데미지 계산은 아직 미정이므로 응답의 "damage" 는 항상 None 이다.
+데미지는 Unity 가 계산하므로 응답에 넣지 않는다.
 """
 
 import logging
@@ -12,7 +12,7 @@ import numpy as np
 
 from . import skill_matcher as sm
 from .audio_analysis import TARGET_SR, analyze_array, decode_wav
-from .stt import COMPUTE_TYPE, CPU_THREADS, DEVICE, MODEL_SIZE, SpeechRecognizer, SttResult
+from .stt import COMPUTE_TYPE, CPU_THREADS, DEVICE, MODEL_SIZE, SpeechRecognizer, SttResult, TokenLimit
 
 log = logging.getLogger("voice")
 
@@ -100,6 +100,15 @@ class CastService:
         t = np.arange(TARGET_SR, dtype=np.float32) / TARGET_SR
         analyze_array((0.1 * np.sin(2 * np.pi * 220 * t)).astype(np.float32), TARGET_SR)
 
+    def token_limit(self, skills: dict | None = None) -> TokenLimit:
+        """이 스펠 목록에 맞는 생성 길이 제한. 판정은 별칭으로도 맞추므로 이름과 별칭을 모두 넣어 가장 긴 것을 찾는다.
+
+        같은 목록이면 저장해 둔 값을 쓴다. 스펠 목록을 받을 때(websocket.receive_skill_list) 미리 한 번 계산된다.
+        """
+        skills = sm.SKILLS if skills is None else skills
+        phrases = [p for info in skills.values() for p in (info["name"], *info.get("aliases", []))]
+        return self.stt.token_limit(phrases)
+
     def partial_text(self, audio: np.ndarray, skills: dict | None = None) -> str:
         """중간 자막(/streaming)용 받아쓰기. 판정·음향 분석 없이 들린 글자만 돌려준다.
 
@@ -108,7 +117,8 @@ class CastService:
         나중에 중간 자막만 다른 엔진(혼합 방식)으로 바꿀 때는 이 함수만 교체한다.
         """
         skills = sm.SKILLS if skills is None else skills
-        stt = self.stt.transcribe(audio, initial_prompt=sm.build_initial_prompt(skills))
+        stt = self.stt.transcribe(audio, initial_prompt=sm.build_initial_prompt(skills),
+                                  max_new_tokens=self.token_limit(skills).limit)
         if stt.no_speech > MAX_NO_SPEECH_PROB:
             return ""
         return stt.text
@@ -134,9 +144,14 @@ class CastService:
         if dur > MAX_AUDIO_SEC:
             raise CastError("TOO_LONG", f"{dur:.3f}s > {MAX_AUDIO_SEC}s")
 
-        # ② 받아쓰기: 이 연결의 스킬 이름을 힌트로 준다
+        # ② 받아쓰기: 이 연결의 스킬 이름을 힌트로 주고, 생성 길이는 가장 긴 스킬 이름에 맞춰 제한한다
         t1 = time.perf_counter()
-        stt = self.stt.transcribe(audio, initial_prompt=sm.build_initial_prompt(skills))
+        lim = self.token_limit(skills)
+        stt = self.stt.transcribe(audio, initial_prompt=sm.build_initial_prompt(skills),
+                                  max_new_tokens=lim.limit)
+        # 생성 토큰 수: 서버 로그에 남기고, 응답의 stt.tokens / stt.token_limit 에도 넣는다
+        log.info("  [STT] %s 생성 토큰 %d/%d (%dms)", request_id or "-", stt.tokens, lim.limit,
+                 round((time.perf_counter() - t1) * 1000))
 
         # ③ 음향 분석 (같은 배열 사용)
         t2 = time.perf_counter()
@@ -155,7 +170,6 @@ class CastService:
         t4 = time.perf_counter()
         return {
             "type": "cast_result",
-            "version": PROTOCOL_VERSION,
             "request_id": request_id,
             "success": success,
             "reject_reason": reason,
@@ -166,9 +180,10 @@ class CastService:
                 "second_match": round(m.second_match, 3) if m else 0.0,
                 "conf": round(stt.conf, 3),
                 "no_speech": round(stt.no_speech, 3),
+                "tokens": stt.tokens,             # 실제로 생성한 토큰 수
+                "token_limit": stt.token_limit,   # 적용한 생성 길이 제한. tokens 가 이 값에 닿으면 지어낸 글자일 가능성이 높다
             },
             "audio": audio_stats if (success or INCLUDE_AUDIO_ON_REJECT) else None,
-            "damage": None,  # 데미지 공식 확정 전까지 비워 둔다
             "timing_ms": {
                 "decode": round((t1 - t0) * 1000),
                 "stt": round((t2 - t1) * 1000),
