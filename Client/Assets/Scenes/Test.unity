@@ -756,9 +756,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkillManager
   wandTip: {fileID: 1265771641}
   spellDatabase:
-  - {fileID: 11400000, guid: 7d20e6226471b49428012800481d9c7c, type: 2}
   - {fileID: 11400000, guid: 0c4975f8465bf624db1e3d6de8d5a8b1, type: 2}
   - {fileID: 11400000, guid: 4c4e598823894e84dbca375f12af2427, type: 2}
+  - {fileID: 11400000, guid: 7d20e6226471b49428012800481d9c7c, type: 2}
   - {fileID: 11400000, guid: ddbbde01ec4a43842a8968377aaa56b7, type: 2}
   - {fileID: 11400000, guid: 4f7001ceb352cc246a55ea16d9006b8b, type: 2}
   - {fileID: 11400000, guid: c48210b1fb5c1ef4d8915887485c3b1f, type: 2}

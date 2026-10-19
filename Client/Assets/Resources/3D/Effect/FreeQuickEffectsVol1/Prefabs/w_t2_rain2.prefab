@@ -4906,7 +4906,7 @@ GameObject:
   - component: {fileID: 5180115428734980742}
   - component: {fileID: 8844990179053068957}
   m_Layer: 0
-  m_Name: "vfx_Meteor\u3141\u3134\u3147aRain_02"
+  m_Name: w_t2_rain2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
