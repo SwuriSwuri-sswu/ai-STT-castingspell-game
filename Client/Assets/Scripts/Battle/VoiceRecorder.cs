@@ -58,8 +58,11 @@ public class VoiceRecorder : MonoBehaviour
 
     Coroutine sequence;
     bool castPending;   // 판정 성공 ~ 마법이 몹에 맞고 결과 문구가 뜬 뒤까지 (이 사이에는 새 주문을 받지 않는다)
+    /// <summary>판정에 성공해서 시전 연출 중인지 (보스전 턴 타이머가 이 동안 끊지 않도록)</summary>
+    public bool CastInProgress => castPending;
     Vector3 baseScale = Vector3.one;   // 자막 원래 크기 (연출이 끊겨도 크기가 누적되지 않게)
     bool wasCastable;
+    string lastHint;
 
     // 실시간 자막 상태 (발화마다 OnStarted 에서 초기화)
     int lastPartialSeq;
@@ -98,14 +101,21 @@ public class VoiceRecorder : MonoBehaviour
             Debug.LogError("[자막] 씬에 SkillManager 가 없습니다. 주문을 시전할 수 없습니다.");
 
         wasCastable = CanCast;
-        Show(wasCastable ? HintReady : HintWaiting);
+        lastHint = HintText();
+        Show(lastHint);
     }
 
     void Update()
     {
         // 적이 도착하거나 사라지면 안내 문구 변경 (녹음, 해석, 연출 중이 아닐 때만)
+        // 보스전: 턴이 바뀌어 안내 문구만 달라져도(막힘 ↔ 풀림, 문구 변경) 갱신
         bool canCast = CanCast;
-        if (canCast != wasCastable && !Busy) Show(canCast ? HintReady : HintWaiting);
+        string hint = HintText();
+        if ((canCast != wasCastable || hint != lastHint) && !Busy)
+        {
+            Show(hint);
+            lastHint = hint;
+        }
         wasCastable = canCast;
     }
 
@@ -358,7 +368,20 @@ public class VoiceRecorder : MonoBehaviour
         sequence = null;
     }
 
-    void ShowHint() => Show(CanCast ? HintReady : HintWaiting);
+    void ShowHint()
+    {
+        lastHint = HintText();
+        Show(lastHint);
+    }
+
+    // 시전 가능 → "주문을 영창하세요." / 보스전에서 내 턴이 아님 → 보스전 안내 / 그 외 → "적이 다가오고 있습니다..."
+    static string HintText()
+    {
+        if (CanCast) return HintReady;
+        // 보스전에서 막혀 있으면 그 안내 문구 (비어 있으면 빈칸)
+        if (SkillManager.CastBlocked) return SkillManager.BlockedHint ?? "";
+        return HintWaiting;
+    }
 
     // 스펠 속성에 맞는 자막 색 (스펠을 못 찾으면 노말 색)
     Color SpellColor(string spellName)

@@ -58,9 +58,11 @@ public class WandCaster : MonoBehaviour
     [Tooltip("강한 영창(power 1.5)일 때 휘두르는 크기 배율")]
     public float strongCastScale = 1.4f;
 
-    // 쉬는 자세 (월드 기준)
-    private Vector3 restPos;
-    private Quaternion restRot;
+    // 쉬는 자세 (부모 = 카메라 기준). 카메라가 걸어가거나 돌아도 지팡이가 따라옴
+    private Vector3 restLocalPos;
+    private Quaternion restLocalRot;
+    private Vector3 RestPos => transform.parent != null ? transform.parent.TransformPoint(restLocalPos) : restLocalPos;
+    private Quaternion RestRot => transform.parent != null ? transform.parent.rotation * restLocalRot : restLocalRot;
     private float channelWeight;
     private float castTimer = -1f;
     private float castScale = 1f;
@@ -71,8 +73,8 @@ public class WandCaster : MonoBehaviour
 
     private void Start()
     {
-        restPos = transform.position;
-        restRot = transform.rotation;
+        restLocalPos = transform.localPosition;
+        restLocalRot = transform.localRotation;
         if (viewCamera == null) viewCamera = Camera.main;
         if (voiceSender == null) voiceSender = FindFirstObjectByType<VoiceSender>();
     }
@@ -103,7 +105,7 @@ public class WandCaster : MonoBehaviour
         castTimer = 0f;
         // power 1.0 → 1배, 1.5 → strongCastScale배
         castScale = Mathf.Lerp(1f, strongCastScale, Mathf.Clamp01((power - 1f) / 0.5f));
-        castAimDir = target != null ? (target.AimPoint - restPos).normalized : Vector3.zero;
+        castAimDir = target != null ? (target.AimPoint - RestPos).normalized : Vector3.zero;
     }
 
     private void LateUpdate()
@@ -188,8 +190,8 @@ public class WandCaster : MonoBehaviour
             if (castTimer >= CastDuration) castTimer = -1f;
         }
 
-        transform.position = restPos + posOffset;
-        transform.rotation = rotOffset * restRot;
+        transform.position = RestPos + posOffset;
+        transform.rotation = rotOffset * RestRot;
     }
 
     private void SetChannelEffect(bool on)
