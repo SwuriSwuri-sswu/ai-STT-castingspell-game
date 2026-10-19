@@ -17,7 +17,8 @@ public class StreamPartial
     public int Version;
     public string RequestId;   // VoiceSender.CurrentRequestId 와 같은 번호
     public int Seq;            // 발화 안에서 1부터 늘어나는 순번
-    public string Text;        // 지금까지 들린 글자 전체 (확정 아님)
+    public string Text;        // 지금까지 들린 글자 전체 (확정 아님, 한글. 로그용)
+    public string TextRoman;   // 화면 자막용 로마자 (발음대로). 서버에 koroman 이 없거나 예전 서버면 null
     public float AudioSec;     // 서버가 받은 소리 길이 (초)
     public int ElapsedMs;      // 서버 처리 시간 (ms)
     public string Engine;      // "vosk" / "whisper"

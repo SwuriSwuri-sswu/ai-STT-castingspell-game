@@ -224,6 +224,7 @@ GameObject:
   - component: {fileID: 6707074}
   - component: {fileID: 6707073}
   - component: {fileID: 6707072}
+  - component: {fileID: 6707078}
   m_Layer: 0
   m_Name: VoiceManager
   m_TagString: Untagged
@@ -385,8 +386,29 @@ MonoBehaviour:
   showPartials: 1
   partialColor: {r: 0.75, g: 0.75, b: 0.75, a: 1}
   skipTypingIfPartialMatches: 1
-  voiceBonus: {fileID: 0}
+  voiceBonus: {fileID: 6707078}
   showChantText: 1
+--- !u!114 &6707078
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6707070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d6ec2dfc7aa4a9caab71f68c975ae5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VoiceBonusCalculator
+  strongVolumeDb: 6
+  perfectPitchSemitones: 2
+  strongBonus: 1.25
+  perfectBonus: 1.5
+  minSamples: 2
+  windowSize: 10
+  baselineVolumeMin: -40
+  baselineVolumeMax: -15
+  freezeAfterWindow: 0
 --- !u!1 &21718611
 GameObject:
   m_ObjectHideFlags: 0

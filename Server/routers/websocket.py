@@ -8,6 +8,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from services import voice_runtime
 from services import partial_vosk
+from services import romanize
 from services import skill_matcher as sm
 from services.cast_service import CastError, PROTOCOL_VERSION, build_error
 from services.stream_session import StreamError, StreamSession, to_16k
@@ -100,7 +101,8 @@ async def receive_skill_list(websocket: WebSocket, header: dict, current: dict |
 #   바이너리 PCM16 모노 리틀엔디언 조각 (약 0.1초씩, 헤더 없음)                   발화 중
 #   텍스트 {"type": "stream_end", "request_id": "..."}                            발화 끝
 #   텍스트 {"type": "stream_cancel", "request_id": "..."}                         발화 버림
-#   응답: {"type": "partial", "request_id", "seq", "text", "audio_sec", "elapsed_ms", "engine"}
+#   응답: {"type": "partial", "request_id", "seq", "text", "text_roman", "audio_sec", "elapsed_ms", "engine"}
+#         text_roman: 화면 자막용 로마자 (발음대로, services/romanize.py). koroman 이 없으면 null → 클라이언트는 text 를 보여 준다
 #         vosk: 들린 글자가 바뀔 때마다 / whisper: 받은 소리가 PARTIAL_INTERVAL_SEC 늘어날 때마다. 최종 판정은 /analyzing 이 한다 (같은 request_id).
 #
 # 규칙
@@ -152,6 +154,7 @@ async def voice_streaming(websocket: WebSocket):
                 "request_id": s.request_id,
                 "seq": seq,
                 "text": text,
+                "text_roman": romanize.to_roman(text),
                 "audio_sec": round(audio_sec, 2),
                 "elapsed_ms": ms,
                 "engine": "whisper",
@@ -229,6 +232,7 @@ async def voice_streaming(websocket: WebSocket):
                             "request_id": s.request_id,
                             "seq": s.seq,
                             "text": text,
+                            "text_roman": romanize.to_roman(text),
                             "audio_sec": round(s.audio_sec, 2),
                             "elapsed_ms": ms,
                             "engine": "vosk",

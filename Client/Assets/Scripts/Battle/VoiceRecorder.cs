@@ -17,7 +17,7 @@ public class VoiceRecorder : MonoBehaviour
 {
     [Header("자막")]
     public TextMeshProUGUI subtitleText;
-    public float typingSpeed = 0.05f;             // 글자당 출력 시간 (초)
+    public float typingSpeed = 0.05f;             // (현재 사용 안 함: 발동 때 들린 글자 타이핑을 뺐음) 글자당 출력 시간 (초)
     [SerializeField] float failHoldSec = 1.5f;    // 실패 이유를 보여 주는 시간 (초)
     [Tooltip("마법이 몹에 맞은 뒤(효과가 있었다 등) 다음 영창을 받기까지 기다리는 시간 (초)")]
     [SerializeField] float afterHitHoldSec = 1f;
@@ -41,8 +41,10 @@ public class VoiceRecorder : MonoBehaviour
     [SerializeField] bool showPartials = true;
     [Tooltip("중간 자막 색 (확정이 아니라는 표시로 흐리게)")]
     [SerializeField] Color partialColor = new Color(0.75f, 0.75f, 0.75f);
-    [Tooltip("마지막 중간 자막이 최종 판정 글자와 같으면 한 글자씩 타이핑하는 연출을 건너뛴다")]
+    [Tooltip("(현재 사용 안 함: 발동 때 들린 글자 타이핑을 뺐음) 마지막 중간 자막이 최종 판정 글자와 같으면 타이핑 연출을 건너뛴다")]
+#pragma warning disable 0414   // 칸만 남겨 둔 설정 (값을 읽지 않음)
     [SerializeField] bool skipTypingIfPartialMatches = true;
+#pragma warning restore 0414
 
     [Header("영창 보너스")]
     [Tooltip("비워 두면 같은 오브젝트의 VoiceBonusCalculator 를 사용")]
@@ -66,7 +68,7 @@ public class VoiceRecorder : MonoBehaviour
 
     // 실시간 자막 상태 (발화마다 OnStarted 에서 초기화)
     int lastPartialSeq;
-    string lastPartialText;
+    string lastPartialText;   // 화면에 보여 준 중간 자막 (로마자, 없으면 한글)
 
     // 스폰포인트에 도착한 적이 있어야 시전 가능
     static bool CanCast => SkillManager.CanCast;
@@ -174,7 +176,9 @@ public class VoiceRecorder : MonoBehaviour
     void OnPartial(StreamPartial p)
     {
         if (!showPartials || p == null || voiceSender == null) return;
-        if (string.IsNullOrWhiteSpace(p.Text)) return;
+        // 화면에는 발음대로 쓴 로마자. 서버에 koroman 이 없거나 예전 서버면(null) 한글 그대로
+        string shown = p.TextRoman ?? p.Text;
+        if (string.IsNullOrWhiteSpace(shown)) return;   // "[24]" 처럼 표기만 들린 경우 등
 
         // 지금 발화의 것이고, 앞서 보여 준 것보다 새 것만 (늦게 온 예전 발화나 순서가 뒤바뀐 결과는 버린다)
         if (p.RequestId != voiceSender.CurrentRequestId || p.Seq <= lastPartialSeq) return;
@@ -183,7 +187,7 @@ public class VoiceRecorder : MonoBehaviour
         if (sequence != null || castPending) return;
 
         lastPartialSeq = p.Seq;
-        lastPartialText = p.Text.Trim();
+        lastPartialText = shown.Trim();
         Show(voiceSender.IsRecording
             ? PartialLine(lastPartialText)
             : PartialLine(lastPartialText) + "\n" + AnalyzingText);
@@ -268,34 +272,17 @@ public class VoiceRecorder : MonoBehaviour
         if (!r.Success)
         {
             Debug.Log($"[자막] 불발: {r.RejectReason} (들린 글자 \"{r.Stt?.Text}\")");
-            ShowFailure(RejectToMessage(r.RejectReason), r.Stt?.Text);
+            ShowFailure(RejectToMessage(r.RejectReason));   // 화면에는 실패 문구만 (들린 글자는 위 로그에만)
             return;
         }
-        sequence = StartCoroutine(SuccessSequence(r.Stt?.Text, r.Skill?.Name, chant));
+        sequence = StartCoroutine(SuccessSequence(r.Skill?.Name, chant));
     }
 
-    // ── 발동 연출: 들린 글자 타이핑 → 스펠 이름 강조 → 시전 → 잠시 뒤 지움 ──
-    IEnumerator SuccessSequence(string rawText, string spellName, ChantResult chant)
+    // ── 발동 연출: 판정이 오면 바로 스펠 이름 강조(속성 색) → 시전 → 잠시 뒤 지움 ──
+    //    (들린 글자 타이핑 단계는 뺐음. 들린 글자는 [발동] 로그에 남는다)
+    IEnumerator SuccessSequence(string spellName, ChantResult chant)
     {
         castPending = true;
-        bool partialMatched = skipTypingIfPartialMatches && SameText(lastPartialText, rawText);
-        if (subtitleText != null && !string.IsNullOrEmpty(rawText) && partialMatched)
-        {
-            // 실시간 자막으로 이미 보여 준 글자 → 타이핑 없이 확정된 글자로 바꿔 잠깐 보여 준다
-            subtitleText.text = $"\"{rawText}\"";
-            yield return new WaitForSeconds(0.3f);
-        }
-        else if (subtitleText != null && !string.IsNullOrEmpty(rawText))
-        {
-            subtitleText.text = "\"";
-            foreach (char c in rawText)
-            {
-                subtitleText.text += c;
-                yield return new WaitForSeconds(typingSpeed);
-            }
-            subtitleText.text += "\"";
-            yield return new WaitForSeconds(0.5f);
-        }
 
         if (subtitleText != null)
         {
