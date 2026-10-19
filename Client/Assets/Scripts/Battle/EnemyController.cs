@@ -19,14 +19,17 @@ public class EnemyController : MonoBehaviour
     {
         EnemyController nearest = null;
         float best = float.MaxValue;
+        int bestPriority = int.MinValue;
         foreach (EnemyController enemy in aliveEnemies)
         {
             // 스폰포인트에 도착하지 않았거나, 쓰러지는 중이거나,
             // 이미 날아가는 마법만으로 쓰러질 몹은 새 타겟이 될 수 없음
             if (enemy == null || !enemy.IsTargetable) continue;
+            // 우선순위가 높은 몹부터 (보스전 하수인 등), 같으면 가까운 몹
             float d = (enemy.AimPoint - from).sqrMagnitude;
-            if (d < best)
+            if (enemy.targetPriority > bestPriority || (enemy.targetPriority == bestPriority && d < best))
             {
+                bestPriority = enemy.targetPriority;
                 best = d;
                 nearest = enemy;
             }
@@ -56,6 +59,10 @@ public class EnemyController : MonoBehaviour
     [Tooltip("체크하면 등급에 따라 HP 자동 설정 (하급 20 / 중급 50 / 상급 100)")]
     public bool useRankDefaultHP = true;
     public float maxHP = 20f;
+    [Tooltip("마법이 여러 몹 중 누구를 먼저 노릴지 (높을수록 먼저). 보통 0, 보스전 하수인은 1")]
+    public int targetPriority = 0;
+    [Tooltip("쓰러질 때 '하급 물 속성 몬스터 처치!' 자막 표시 (보스는 끄기)")]
+    public bool showKillText = true;
 
     [Header("애니메이션")]
     public Animator anim;
@@ -157,6 +164,8 @@ public class EnemyController : MonoBehaviour
 
     // HP가 0이 된 순간 (Death 애니메이션 시작 시점)
     public event Action<EnemyController> OnDied;
+    // 마법에 맞은 순간 (몹, 스펠, 실제 데미지, 상성 배율). 보스전 HUD·회복 판정 등에 사용
+    public event Action<EnemyController, SpellData, float, float> OnDamaged;
     // Death 애니메이션·드랍까지 끝나고 맵에서 사라지는 순간 (다음 몹 스폰 기준)
     public event Action<EnemyController> OnDespawned;
 
@@ -567,6 +576,14 @@ public class EnemyController : MonoBehaviour
     // =========================================================
     // 피격
     // =========================================================
+    // 최대 체력을 바꾸고 가득 채움 (보스처럼 등급 기본값이 아닌 체력을 쓸 때)
+    public void ResetHP(float newMaxHP)
+    {
+        maxHP = Mathf.Max(1f, newMaxHP);
+        CurrentHP = maxHP;
+        PendingDamage = 0f;
+    }
+
     // 이펙트 연출 시간만큼 기다린 뒤 데미지를 주고 싶을 때 사용
     // power: 영창 보너스 (VoiceBonusCalculator 결과, 기본 1.0)
     public void ReceiveSpell(SpellData spell, float delay, float power = 1f)
@@ -617,6 +634,7 @@ public class EnemyController : MonoBehaviour
         PendingDamage = Mathf.Max(0f, PendingDamage - finalDamage);
         CurrentHP -= finalDamage;
         LastHitMultiplier = multiplier;
+        OnDamaged?.Invoke(this, spell, finalDamage, multiplier);
 
         Debug.Log($"[{gameObject.name}] {spell.spellName} 적중! 데미지: {finalDamage} (영창: {power}x, 상성: {multiplier}x) 남은 HP: {CurrentHP}");
 
@@ -721,7 +739,7 @@ public class EnemyController : MonoBehaviour
         }
 
         // 처치 자막
-        if (BattleUIManager.Instance != null)
+        if (showKillText && BattleUIManager.Instance != null)
         {
             string hex = ColorUtility.ToHtmlStringRGB(ElementColor(enemyType));
             BattleUIManager.Instance.ShowKill(
