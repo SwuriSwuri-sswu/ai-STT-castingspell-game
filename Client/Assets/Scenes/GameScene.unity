@@ -39995,6 +39995,7 @@ GameObject:
   - component: {fileID: 1113444743}
   - component: {fileID: 1113444742}
   - component: {fileID: 1113444741}
+  - component: {fileID: 1113444744}
   m_Layer: 5
   m_Name: MicSetting_Dropdown
   m_TagString: Untagged
@@ -40126,6 +40127,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1113444739}
   m_CullTransparentMesh: 1
+--- !u!114 &1113444744
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1113444739}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b519e7c5137e4a341a79ea16a98dd5d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MicDropdown
 --- !u!1 &1119072180
 GameObject:
   m_ObjectHideFlags: 0
@@ -51611,6 +51624,7 @@ GameObject:
   - component: {fileID: 1937725754}
   - component: {fileID: 1937725753}
   - component: {fileID: 1937725752}
+  - component: {fileID: 1937725755}
   m_Layer: 5
   m_Name: Resolution_Dropdown
   m_TagString: Untagged
@@ -51742,6 +51756,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1937725750}
   m_CullTransparentMesh: 1
+--- !u!114 &1937725755
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1937725750}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8959282c279b7e74bb5ec78715c7e97b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ResolutionDropdown
 --- !u!1 &1938596228
 GameObject:
   m_ObjectHideFlags: 0
