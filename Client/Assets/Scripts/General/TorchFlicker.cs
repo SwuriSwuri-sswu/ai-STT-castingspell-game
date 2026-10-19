@@ -1,15 +1,15 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
-// È¶ºÒ¡¤¸ğ´ÚºÒ ºÒºûÀÌ ÀÏ··ÀÌ°Ô (Point Light¿¡ ºÙÀÌ±â)
-// ¹à±â¿Í À§Ä¡¸¦ »ìÂ¦¾¿ Èçµé¾î¼­ ºÒ²ÉÀÌ »ì¾Æ ÀÖ´Â ´À³¦À» ÁÜ
+// íšƒë¶ˆÂ·ëª¨ë‹¥ë¶ˆ ë¶ˆë¹›ì´ ì¼ë ì´ê²Œ (Point Lightì— ë¶™ì´ê¸°)
+// ë°ê¸°ì™€ ìœ„ì¹˜ë¥¼ ì‚´ì§ì”© í”ë“¤ì–´ì„œ ë¶ˆê½ƒì´ ì‚´ì•„ ìˆëŠ” ëŠë‚Œì„ ì¤Œ
 [RequireComponent(typeof(Light))]
 public class TorchFlicker : MonoBehaviour
 {
-    [Tooltip("¹à±â°¡ Èçµé¸®´Â Á¤µµ (0.2 = ¡¾20%)")]
+    [Tooltip("ë°ê¸°ê°€ í”ë“¤ë¦¬ëŠ” ì •ë„ (0.2 = Â±20%)")]
     [Range(0f, 1f)] public float intensityAmount = 0.2f;
-    [Tooltip("ºÒºû À§Ä¡°¡ Èçµé¸®´Â °Å¸® (±×¸²ÀÚ¡¤¸í¾ÏÀÌ °°ÀÌ ÀÏ··ÀÓ)")]
+    [Tooltip("ë¶ˆë¹› ìœ„ì¹˜ê°€ í”ë“¤ë¦¬ëŠ” ê±°ë¦¬ (ê·¸ë¦¼ìÂ·ëª…ì•”ì´ ê°™ì´ ì¼ë ì„)")]
     public float moveAmount = 0.03f;
-    [Tooltip("ÀÏ··ÀÌ´Â ¼Óµµ")]
+    [Tooltip("ì¼ë ì´ëŠ” ì†ë„")]
     public float speed = 6f;
 
     private Light lightSource;
@@ -22,14 +22,14 @@ public class TorchFlicker : MonoBehaviour
         lightSource = GetComponent<Light>();
         baseIntensity = lightSource.intensity;
         baseLocalPos = transform.localPosition;
-        seed = Random.value * 100f; // È¶ºÒ¸¶´Ù µû·Î ÀÏ··ÀÌ°Ô
+        seed = Random.value * 100f; // íšƒë¶ˆë§ˆë‹¤ ë”°ë¡œ ì¼ë ì´ê²Œ
     }
 
     private void Update()
     {
         float t = Time.time * speed + seed;
         float n = Mathf.PerlinNoise(t, seed) * 2f - 1f;                 // -1 ~ 1
-        float flick = Mathf.PerlinNoise(t * 3f, seed + 7f) * 2f - 1f;   // ºü¸¥ ÀÜ¶³¸²
+        float flick = Mathf.PerlinNoise(t * 3f, seed + 7f) * 2f - 1f;   // ë¹ ë¥¸ ì”ë–¨ë¦¼
         lightSource.intensity = baseIntensity * (1f + (n * 0.7f + flick * 0.3f) * intensityAmount);
 
         transform.localPosition = baseLocalPos + new Vector3(

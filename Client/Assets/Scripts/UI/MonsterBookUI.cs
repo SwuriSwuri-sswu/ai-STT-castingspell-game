@@ -1,36 +1,36 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// ¸÷ µµ°¨ (MonsterPanel¿¡ ºÙÀÌ±â)
+// ëª¹ ë„ê° (MonsterPanelì— ë¶™ì´ê¸°)
 //
-// ±¸¼º (ÀÌ¸§ ±ÔÄ¢¸¸ ¸ÂÃß¸é ÀÚµ¿ ÀÎ½Ä)
-//   MonsterPanel                ¡ç ÀÌ ½ºÅ©¸³Æ®
-//     ¦§ MonsterPanel_1          ¡ç ÆäÀÌÁö (ÀÌ¸§ÀÌ "MonsterPanel_¼ıÀÚ" ¡æ ¼ø¼­´ë·Î ÆäÀÌÁö)
-//     ¦¢   ¦§ Normal  ¡ç ¼Ó¼º ¹­À½ (Sections¿¡ µî·Ï)
-//     ¦¢   ¦¢   ¦§ Normal_Title / Normal_Icon / (¼±ÅÃ) Normal_Count
-//     ¦¢   ¦¢   ¦¦ Mob_Slot ¡¿ N    ¡ç ÀÌ¸§¿¡ "Mob_Slot"ÀÌ µé¾î°£ ¿ÀºêÁ§Æ® = ¸÷ ÇÑ Ä­
-//     ¦¢   ¦¢       ¦§ (RawImage)  ¡ç ÃÊ»óÈ­
-//     ¦¢   ¦¢       ¦¦ (TextMeshPro) ¡ç ¼³¸í
-//     ¦¢   ¦§ Fire ¡¦
-//     ¦¢   ¦¦ Arrow (Button)      ¡ç ´ÙÀ½ Àå (¸¶Áö¸· Àå¿¡¼­´Â ÀÌÀü Àå)
-//     ¦¦ MonsterPanel_2 ¡¦
+// êµ¬ì„± (ì´ë¦„ ê·œì¹™ë§Œ ë§ì¶”ë©´ ìë™ ì¸ì‹)
+//   MonsterPanel                â† ì´ ìŠ¤í¬ë¦½íŠ¸
+//     â”œ MonsterPanel_1          â† í˜ì´ì§€ (ì´ë¦„ì´ "MonsterPanel_ìˆ«ì" â†’ ìˆœì„œëŒ€ë¡œ í˜ì´ì§€)
+//     â”‚   â”œ Normal  â† ì†ì„± ë¬¶ìŒ (Sectionsì— ë“±ë¡)
+//     â”‚   â”‚   â”œ Normal_Title / Normal_Icon / (ì„ íƒ) Normal_Count
+//     â”‚   â”‚   â”” Mob_Slot Ã— N    â† ì´ë¦„ì— "Mob_Slot"ì´ ë“¤ì–´ê°„ ì˜¤ë¸Œì íŠ¸ = ëª¹ í•œ ì¹¸
+//     â”‚   â”‚       â”œ (RawImage)  â† ì´ˆìƒí™”
+//     â”‚   â”‚       â”” (TextMeshPro) â† ì„¤ëª…
+//     â”‚   â”œ Fire â€¦
+//     â”‚   â”” Arrow (Button)      â† ë‹¤ìŒ ì¥ (ë§ˆì§€ë§‰ ì¥ì—ì„œëŠ” ì´ì „ ì¥)
+//     â”” MonsterPanel_2 â€¦
 //
-// Ç¥½Ã
-//   - ¸¸³­ ¸÷: ÃÊ»óÈ­ + ÀÌ¸§(¼Ó¼º »ö) ¡¤ µî±Ş ¡¤ ¼Ó¼º / °ø°İ ¼Óµµ¿Í µ¥¹ÌÁö / ¾àÁ¡
-//   - ¸ø ¸¸³­ ¸÷: °ËÀº ½Ç·ç¿§ + ???
-//   - Ã³À½ ¸¸³­ µÚ ¾ÆÁ÷ µµ°¨¿¡¼­ ¾È º» ¸÷: NEW
+// í‘œì‹œ
+//   - ë§Œë‚œ ëª¹: ì´ˆìƒí™” + ì´ë¦„(ì†ì„± ìƒ‰) Â· ë“±ê¸‰ Â· ì†ì„± / ê³µê²© ì†ë„ì™€ ë°ë¯¸ì§€ / ì•½ì 
+//   - ëª» ë§Œë‚œ ëª¹: ê²€ì€ ì‹¤ë£¨ì—£ + ???
+//   - ì²˜ìŒ ë§Œë‚œ ë’¤ ì•„ì§ ë„ê°ì—ì„œ ì•ˆ ë³¸ ëª¹: NEW
 public class MonsterBookUI : MonoBehaviour
 {
     [Serializable]
     public class ElementSection
     {
         public MagicElement element;
-        [Tooltip("ÀÌ ¼Ó¼º Ä­µéÀÌ µé¾î ÀÖ´Â ºÎ¸ğ (¿¹: MonsterPanel_1/Fire)")]
+        [Tooltip("ì´ ì†ì„± ì¹¸ë“¤ì´ ë“¤ì–´ ìˆëŠ” ë¶€ëª¨ (ì˜ˆ: MonsterPanel_1/Fire)")]
         public Transform root;
-        [Tooltip("(¼±ÅÃ) ¸¸³­ ¸÷ ¼ö '2 / 7'")]
+        [Tooltip("(ì„ íƒ) ë§Œë‚œ ëª¹ ìˆ˜ '2 / 7'")]
         public TMP_Text countText;
         [NonSerialized] public List<Slot> slots;
     }
@@ -42,38 +42,38 @@ public class MonsterBookUI : MonoBehaviour
         public TMP_Text desc;
     }
 
-    [Header("¸÷ ¸ñ·Ï (ºñ¿ì¸é EnemyManager¿¡ µî·ÏµÈ ¸÷)")]
-    [Tooltip("TitleSceneÃ³·³ EnemyManager°¡ ¾ø´Â ¾À¿¡¼­´Â ¸÷ ÇÁ¸®ÆÕÀ» ÀüºÎ ³Ö¾î ÁÖ¼¼¿ä")]
+    [Header("ëª¹ ëª©ë¡ (ë¹„ìš°ë©´ EnemyManagerì— ë“±ë¡ëœ ëª¹)")]
+    [Tooltip("TitleSceneì²˜ëŸ¼ EnemyManagerê°€ ì—†ëŠ” ì”¬ì—ì„œëŠ” ëª¹ í”„ë¦¬íŒ¹ì„ ì „ë¶€ ë„£ì–´ ì£¼ì„¸ìš”")]
     public List<EnemyController> allMonsters = new List<EnemyController>();
 
-    [Header("¼Ó¼º ¹­À½ (Normal / Fire / Water / Grass)")]
+    [Header("ì†ì„± ë¬¶ìŒ (Normal / Fire / Water / Grass)")]
     public List<ElementSection> sections = new List<ElementSection>();
-    [Tooltip("¸÷ ÇÑ Ä­À¸·Î ÀÎ½ÄÇÒ ¿ÀºêÁ§Æ® ÀÌ¸§ (Æ÷ÇÔµÇ¸é ÀÎ½Ä, ´ë¼Ò¹®ÀÚ ¹«½Ã)")]
+    [Tooltip("ëª¹ í•œ ì¹¸ìœ¼ë¡œ ì¸ì‹í•  ì˜¤ë¸Œì íŠ¸ ì´ë¦„ (í¬í•¨ë˜ë©´ ì¸ì‹, ëŒ€ì†Œë¬¸ì ë¬´ì‹œ)")]
     public string slotKeyword = "Mob_Slot";
-    [Tooltip("¸÷ ¼öº¸´Ù Ä­ÀÌ ¸¹À¸¸é ³²´Â Ä­ ¼û±â±â")]
+    [Tooltip("ëª¹ ìˆ˜ë³´ë‹¤ ì¹¸ì´ ë§ìœ¼ë©´ ë‚¨ëŠ” ì¹¸ ìˆ¨ê¸°ê¸°")]
     public bool hideUnusedSlots = true;
 
-    [Header("ÆäÀÌÁö (ºñ¿ì¸é 'MonsterPanel_1, _2¡¦' ÀÚ½ÄÀ» ÀÚµ¿À¸·Î)")]
+    [Header("í˜ì´ì§€ (ë¹„ìš°ë©´ 'MonsterPanel_1, _2â€¦' ìì‹ì„ ìë™ìœ¼ë¡œ)")]
     public List<GameObject> pages = new List<GameObject>();
-    [Tooltip("ÆäÀÌÁö ¾ÈÀÇ ¹öÆ° Áß ÀÌ¸§¿¡ ÀÌ ´Ü¾î°¡ ÀÖÀ¸¸é ³Ñ±â±â ¹öÆ°À¸·Î ÀÚµ¿ ¿¬°á")]
+    [Tooltip("í˜ì´ì§€ ì•ˆì˜ ë²„íŠ¼ ì¤‘ ì´ë¦„ì— ì´ ë‹¨ì–´ê°€ ìˆìœ¼ë©´ ë„˜ê¸°ê¸° ë²„íŠ¼ìœ¼ë¡œ ìë™ ì—°ê²°")]
     public string arrowKeyword = "Arrow";
 
-    [Header("¼³¸í ¹®±¸ ({name} {rank} {element} {interval} {damage} {weakness} {kills})")]
+    [Header("ì„¤ëª… ë¬¸êµ¬ ({name} {rank} {element} {interval} {damage} {weakness} {kills})")]
     [TextArea(3, 5)]
-    public string descFormat = "{name} <size=75%>{rank}</size>  {element}\n°ø°İ ¼Óµµ: {interval}ÃÊ¸¶´Ù {damage} °ø°İ\n¾àÁ¡: {weakness}";
-    public string weaknessFormat = "{weak} ¼Ó¼º ¸¶¹ı";
-    public string noWeaknessText = "¾øÀ½";
+    public string descFormat = "{name} <size=75%>{rank}</size>  {element}\nê³µê²© ì†ë„: {interval}ì´ˆë§ˆë‹¤ {damage} ê³µê²©\nì•½ì : {weakness}";
+    public string weaknessFormat = "{weak} ì†ì„± ë§ˆë²•";
+    public string noWeaknessText = "ì—†ìŒ";
     [TextArea(1, 3)]
     public string lockedText = "???";
     public string newBadge = "NEW";
 
-    [Header("»ö")]
-    [Tooltip("¸ø ¸¸³­ ¸÷ ÃÊ»óÈ­ (°ËÀº ½Ç·ç¿§)")]
+    [Header("ìƒ‰")]
+    [Tooltip("ëª» ë§Œë‚œ ëª¹ ì´ˆìƒí™” (ê²€ì€ ì‹¤ë£¨ì—£)")]
     public Color silhouetteColor = new Color(0f, 0f, 0f, 0.85f);
     public Color descColor = new Color(0.29f, 0.18f, 0.10f);
     public Color lockedDescColor = new Color(0.29f, 0.18f, 0.10f, 0.4f);
     public Color newBadgeColor = new Color(0.85f, 0.35f, 0.05f);
-    [Tooltip("µµ°¨¿¡¼­ ³ë¸» ¸÷ ÀÌ¸§ »ö (°ÔÀÓ È­¸é ÀÚ¸·ÀÇ ±İ»öÀº ±×´ë·Î)")]
+    [Tooltip("ë„ê°ì—ì„œ ë…¸ë§ ëª¹ ì´ë¦„ ìƒ‰ (ê²Œì„ í™”ë©´ ìë§‰ì˜ ê¸ˆìƒ‰ì€ ê·¸ëŒ€ë¡œ)")]
     public Color normalNameColor = Color.black;
 
     private bool initialized;
@@ -102,7 +102,7 @@ public class MonsterBookUI : MonoBehaviour
     private void HandlePhotoReady(string key) => Refresh();
 
     // =========================================================
-    // ÃÊ±âÈ­: Ä­¡¤ÆäÀÌÁö¡¤È­»ìÇ¥ ÀÚµ¿ ÀÎ½Ä
+    // ì´ˆê¸°í™”: ì¹¸Â·í˜ì´ì§€Â·í™”ì‚´í‘œ ìë™ ì¸ì‹
     // =========================================================
     private void Initialize()
     {
@@ -136,7 +136,7 @@ public class MonsterBookUI : MonoBehaviour
             pages.Sort((a, b) => string.Compare(a.name, b.name, StringComparison.OrdinalIgnoreCase));
         }
 
-        // °¢ ÆäÀÌÁöÀÇ È­»ìÇ¥ ¹öÆ° ¿¬°á
+        // ê° í˜ì´ì§€ì˜ í™”ì‚´í‘œ ë²„íŠ¼ ì—°ê²°
         for (int i = 0; i < pages.Count; i++)
         {
             foreach (Button button in pages[i].GetComponentsInChildren<Button>(true))
@@ -147,7 +147,7 @@ public class MonsterBookUI : MonoBehaviour
                 if (!isPrev && !isNext)
                 {
                     if (n.IndexOf(arrowKeyword.ToLowerInvariant(), StringComparison.Ordinal) < 0) continue;
-                    // ±×³É "Arrow": ¸¶Áö¸· ÀåÀÌ¸é ÀÌÀü, ¾Æ´Ï¸é ´ÙÀ½
+                    // ê·¸ëƒ¥ "Arrow": ë§ˆì§€ë§‰ ì¥ì´ë©´ ì´ì „, ì•„ë‹ˆë©´ ë‹¤ìŒ
                     isPrev = i == pages.Count - 1 && pages.Count > 1;
                     isNext = !isPrev;
                 }
@@ -158,11 +158,11 @@ public class MonsterBookUI : MonoBehaviour
 
         int slotCount = 0;
         foreach (ElementSection s in sections) slotCount += s.slots.Count;
-        Debug.Log($"[MonsterBookUI] ÆäÀÌÁö {pages.Count}Àå, ¸÷ Ä­ {slotCount}°³, ¸÷ {Monsters().Count}Á¾");
+        Debug.Log($"[MonsterBookUI] í˜ì´ì§€ {pages.Count}ì¥, ëª¹ ì¹¸ {slotCount}ê°œ, ëª¹ {Monsters().Count}ì¢…");
     }
 
     // =========================================================
-    // ÆäÀÌÁö ³Ñ±â±â (¹öÆ° OnClick¿¡ Á÷Á¢ ¿¬°áÇØµµ µÊ)
+    // í˜ì´ì§€ ë„˜ê¸°ê¸° (ë²„íŠ¼ OnClickì— ì§ì ‘ ì—°ê²°í•´ë„ ë¨)
     // =========================================================
     public void NextPage() => ShowPage(currentPage + 1);
     public void PrevPage() => ShowPage(currentPage - 1);
@@ -178,7 +178,7 @@ public class MonsterBookUI : MonoBehaviour
     }
 
     // =========================================================
-    // ³»¿ë Ã¤¿ì±â
+    // ë‚´ìš© ì±„ìš°ê¸°
     // =========================================================
     private List<EnemyController> Monsters()
     {
@@ -195,7 +195,7 @@ public class MonsterBookUI : MonoBehaviour
         {
             if (section.slots == null) continue;
 
-            // ÀÌ ¼Ó¼º ¸÷À» µî±Ş(ÇÏ±Ş¡æ»ó±Ş) ¡æ ÀÌ¸§ ¼øÀ¸·Î
+            // ì´ ì†ì„± ëª¹ì„ ë“±ê¸‰(í•˜ê¸‰â†’ìƒê¸‰) â†’ ì´ë¦„ ìˆœìœ¼ë¡œ
             List<EnemyController> list = all.FindAll(m => m != null && m.enemyType == section.element);
             list.Sort((a, b) =>
             {
@@ -221,7 +221,7 @@ public class MonsterBookUI : MonoBehaviour
                 bool known = MonsterCollection.IsEncountered(key);
                 if (known) met++;
 
-                // ÃÊ»óÈ­: ¸¸³µÀ¸¸é ¿ø·¡ »ö, ¸ø ¸¸³µÀ¸¸é °ËÀº ½Ç·ç¿§
+                // ì´ˆìƒí™”: ë§Œë‚¬ìœ¼ë©´ ì›ë˜ ìƒ‰, ëª» ë§Œë‚¬ìœ¼ë©´ ê²€ì€ ì‹¤ë£¨ì—£
                 if (slot.portrait != null)
                 {
                     Texture2D photo = MonsterPhotoStudio.GetPhoto(mob);
@@ -280,7 +280,7 @@ public class MonsterBookUI : MonoBehaviour
             .Replace("{kills}", MonsterCollection.GetKills(mob.gameObject.name).ToString());
     }
 
-    [ContextMenu("¸÷ µµ°¨ ±â·Ï ÃÊ±âÈ­ (Å×½ºÆ®¿ë)")]
+    [ContextMenu("ëª¹ ë„ê° ê¸°ë¡ ì´ˆê¸°í™” (í…ŒìŠ¤íŠ¸ìš©)")]
     private void ClearRecord()
     {
         MonsterCollection.Clear();

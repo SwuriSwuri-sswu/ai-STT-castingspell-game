@@ -1,10 +1,10 @@
-using System.Collections.Generic;
+ï»¿using System.Collections.Generic;
 using UnityEngine;
 
-// ¸÷ µµ°¨ ±â·Ï (°ÔÀÓÀ» ²°´Ù ÄÑµµ À¯Áö)
-//   - ¸¸³­ Àû ÀÖ´Â ¸÷ (ÃÖÃÊ Á¶¿ì ½Ã "New!" Ç¥½Ã, µµ°¨¿¡¼­ ??? ¡æ °ø°³)
-//   - ¸÷º° Ã³Ä¡ ¼ö
-// ÀúÀå À§Ä¡: PlayerPrefs (ÀÌ ÄÄÇ»ÅÍ¿¡¸¸ ÀúÀå). Å° = ÇÁ¸®ÆÕ ÀÌ¸§ (¿¹: High_Demon)
+// ëª¹ ë„ê° ê¸°ë¡ (ê²Œì„ì„ ê»ë‹¤ ì¼œë„ ìœ ì§€)
+//   - ë§Œë‚œ ì  ìˆëŠ” ëª¹ (ìµœì´ˆ ì¡°ìš° ì‹œ "New!" í‘œì‹œ, ë„ê°ì—ì„œ ??? â†’ ê³µê°œ)
+//   - ëª¹ë³„ ì²˜ì¹˜ ìˆ˜
+// ì €ì¥ ìœ„ì¹˜: PlayerPrefs (ì´ ì»´í“¨í„°ì—ë§Œ ì €ì¥). í‚¤ = í”„ë¦¬íŒ¹ ì´ë¦„ (ì˜ˆ: High_Demon)
 public static class MonsterCollection
 {
     private const string EncounteredKey = "MonsterCollection.Encountered";
@@ -20,7 +20,7 @@ public static class MonsterCollection
 
     public static bool IsEncountered(string key) { Load(); return !string.IsNullOrEmpty(key) && encountered.Contains(key); }
 
-    // ¸÷ÀÌ µîÀåÇÒ ¶§ È£Ãâ (EnemyManager). Ã³À½ ¸¸³­ ¸÷ÀÌ¸é true
+    // ëª¹ì´ ë“±ì¥í•  ë•Œ í˜¸ì¶œ (EnemyManager). ì²˜ìŒ ë§Œë‚œ ëª¹ì´ë©´ true
     public static bool Encounter(string key)
     {
         if (string.IsNullOrEmpty(key)) return false;
@@ -48,7 +48,7 @@ public static class MonsterCollection
         return !string.IsNullOrEmpty(key) && kills.TryGetValue(key, out int n) ? n : 0;
     }
 
-    // µµ°¨¿¡¼­ È®ÀÎÇß´ÂÁö (NEW Ç¥½Ã¿ë)
+    // ë„ê°ì—ì„œ í™•ì¸í–ˆëŠ”ì§€ (NEW í‘œì‹œìš©)
     public static bool IsSeen(string key) { Load(); return seen.Contains(key); }
 
     public static void MarkSeen(IEnumerable<string> keys)
@@ -67,7 +67,7 @@ public static class MonsterCollection
         PlayerPrefs.DeleteKey(SeenKey);
         PlayerPrefs.DeleteKey(KillsKey);
         PlayerPrefs.Save();
-        Debug.Log("[MonsterCollection] ¸÷ µµ°¨ ±â·ÏÀ» ÃÊ±âÈ­Çß½À´Ï´Ù.");
+        Debug.Log("[MonsterCollection] ëª¹ ë„ê° ê¸°ë¡ì„ ì´ˆê¸°í™”í–ˆìŠµë‹ˆë‹¤.");
     }
 
     private static void Load()

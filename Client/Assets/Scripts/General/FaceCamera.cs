@@ -1,10 +1,10 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
-// Ç×»ó Ä«¸Ş¶ó¸¦ ¹Ù¶óº¸°Ô (°¡Â¥ ÇØ, ºû ¹øÁü °°Àº Æò¸é ¿ÀºêÁ§Æ®¿ë)
-// Ä«¸Ş¶ó°¡ ¿òÁ÷¿©µµ(ÀÔÀå ¿¬Ãâ µî) ³³ÀÛÇØ º¸ÀÌÁö ¾ÊÀ½
+// í•­ìƒ ì¹´ë©”ë¼ë¥¼ ë°”ë¼ë³´ê²Œ (ê°€ì§œ í•´, ë¹› ë²ˆì§ ê°™ì€ í‰ë©´ ì˜¤ë¸Œì íŠ¸ìš©)
+// ì¹´ë©”ë¼ê°€ ì›€ì§ì—¬ë„(ì…ì¥ ì—°ì¶œ ë“±) ë‚©ì‘í•´ ë³´ì´ì§€ ì•ŠìŒ
 public class FaceCamera : MonoBehaviour
 {
-    [Tooltip("ºñ¿ì¸é Main Camera")]
+    [Tooltip("ë¹„ìš°ë©´ Main Camera")]
     public Camera target;
 
     private void LateUpdate()

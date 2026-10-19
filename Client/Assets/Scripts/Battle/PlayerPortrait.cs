@@ -1,43 +1,43 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-// Ã¼·Â¹Ù ¿· ÁÖÀÎ°ø ÃÊ»óÈ­ (3D Ä³¸¯ÅÍ¸¦ º°µµ Ä«¸Ş¶ó·Î Âï¾î¼­ UI¿¡ Ç¥½Ã)
+// ì²´ë ¥ë°” ì˜† ì£¼ì¸ê³µ ì´ˆìƒí™” (3D ìºë¦­í„°ë¥¼ ë³„ë„ ì¹´ë©”ë¼ë¡œ ì°ì–´ì„œ UIì— í‘œì‹œ)
 //
-// ±¸¼º
-//   [PortraitStudio]  ¡ç ¸Ê¿¡¼­ ¸Ö¸® ¶³¾îÁø °÷ (¿¹: À§Ä¡ 0, -100, 0)
-//       ¦§ PortraitFox     (fox.glb + Animator: ¾Æ·¡ Controller)
-//       ¦¦ PortraitCamera  (Culling Mask = Portrait ·¹ÀÌ¾î¸¸, Target Texture = RenderTexture)
+// êµ¬ì„±
+//   [PortraitStudio]  â† ë§µì—ì„œ ë©€ë¦¬ ë–¨ì–´ì§„ ê³³ (ì˜ˆ: ìœ„ì¹˜ 0, -100, 0)
+//       â”œ PortraitFox     (fox.glb + Animator: ì•„ë˜ Controller)
+//       â”” PortraitCamera  (Culling Mask = Portrait ë ˆì´ì–´ë§Œ, Target Texture = RenderTexture)
 //   Canvas
-//       ¦¦ Portrait        ¡ç RawImage (Texture = °°Àº RenderTexture) + ÀÌ ½ºÅ©¸³Æ®
+//       â”” Portrait        â† RawImage (Texture = ê°™ì€ RenderTexture) + ì´ ìŠ¤í¬ë¦½íŠ¸
 //
-// ¹İÀÀ
-//   - Æò¼Ò: Idle
-//   - ¸Â¾ÒÀ» ¶§: Hit Æ®¸®°Å + ÃÊ»óÈ­°¡ ºÓ°Ô ¹øÂ½ÀÌ¸ç Èçµé¸²
-//   - Ã¼·ÂÀÌ ÀûÀ» ¶§: ÃÊ»óÈ­°¡ ÀºÀºÇÏ°Ô ºÓÀººû
-//   - ¾²·¯Á³À» ¶§: Down Æ®¸®°Å + È¸»öÀ¸·Î
+// ë°˜ì‘
+//   - í‰ì†Œ: Idle
+//   - ë§ì•˜ì„ ë•Œ: Hit íŠ¸ë¦¬ê±° + ì´ˆìƒí™”ê°€ ë¶‰ê²Œ ë²ˆì©ì´ë©° í”ë“¤ë¦¼
+//   - ì²´ë ¥ì´ ì ì„ ë•Œ: ì´ˆìƒí™”ê°€ ì€ì€í•˜ê²Œ ë¶‰ì€ë¹›
+//   - ì“°ëŸ¬ì¡Œì„ ë•Œ: Down íŠ¸ë¦¬ê±° + íšŒìƒ‰ìœ¼ë¡œ
 public class PlayerPortrait : MonoBehaviour
 {
-    [Header("¿¬°á")]
-    [Tooltip("ÃÊ»óÈ­¿ë Ä³¸¯ÅÍÀÇ Animator")]
+    [Header("ì—°ê²°")]
+    [Tooltip("ì´ˆìƒí™”ìš© ìºë¦­í„°ì˜ Animator")]
     public Animator portraitAnimator;
-    [Tooltip("ÃÊ»óÈ­¸¦ º¸¿© ÁÖ´Â RawImage (ºñ¿ì¸é ÀÌ ¿ÀºêÁ§Æ®¿¡¼­ Ã£À½)")]
+    [Tooltip("ì´ˆìƒí™”ë¥¼ ë³´ì—¬ ì£¼ëŠ” RawImage (ë¹„ìš°ë©´ ì´ ì˜¤ë¸Œì íŠ¸ì—ì„œ ì°¾ìŒ)")]
     public RawImage portraitImage;
 
-    [Header("Animator Æ®¸®°Å ÀÌ¸§ (¾øÀ¸¸é ºñ¿ö µÎ±â)")]
+    [Header("Animator íŠ¸ë¦¬ê±° ì´ë¦„ (ì—†ìœ¼ë©´ ë¹„ì›Œ ë‘ê¸°)")]
     public string hitTrigger = "Hit";
     public string downTrigger = "Down";
 
-    [Header("ÇÇ°İ ¿¬Ãâ")]
+    [Header("í”¼ê²© ì—°ì¶œ")]
     public Color hitTint = new Color(1f, 0.35f, 0.35f);
     public float hitTintTime = 0.35f;
-    [Tooltip("Èçµé¸®´Â Å©±â (ÇÈ¼¿)")]
+    [Tooltip("í”ë“¤ë¦¬ëŠ” í¬ê¸° (í”½ì…€)")]
     public float shake = 10f;
     public float shakeTime = 0.3f;
-    [Tooltip("¸ÂÀ» ¶§ »ìÂ¦ ÀÛ¾ÆÁ³´Ù µ¹¾Æ¿À´Â Á¤µµ")]
+    [Tooltip("ë§ì„ ë•Œ ì‚´ì§ ì‘ì•„ì¡Œë‹¤ ëŒì•„ì˜¤ëŠ” ì •ë„")]
     public float punch = 0.08f;
 
-    [Header("Ã¼·Â »óÅÂ Ç¥½Ã")]
+    [Header("ì²´ë ¥ ìƒíƒœ í‘œì‹œ")]
     [Range(0f, 1f)] public float lowHpThreshold = 0.3f;
     public Color lowHpTint = new Color(1f, 0.75f, 0.75f);
     public Color deadTint = new Color(0.45f, 0.45f, 0.45f);
@@ -62,7 +62,7 @@ public class PlayerPortrait : MonoBehaviour
         PlayerHealth hp = PlayerHealth.Instance;
         if (hp == null)
         {
-            Debug.LogWarning("[PlayerPortrait] ¾À¿¡ PlayerHealth°¡ ¾ø½À´Ï´Ù.");
+            Debug.LogWarning("[PlayerPortrait] ì”¬ì— PlayerHealthê°€ ì—†ìŠµë‹ˆë‹¤.");
             return;
         }
         hp.OnDamaged += HandleDamaged;
@@ -84,12 +84,12 @@ public class PlayerPortrait : MonoBehaviour
         if (portraitImage == null) return;
         PlayerHealth hp = PlayerHealth.Instance;
 
-        // ±âº» »ö: ¾²·¯Áü > ÀúÃ¼·Â > Æò¼Ò
+        // ê¸°ë³¸ ìƒ‰: ì“°ëŸ¬ì§ > ì €ì²´ë ¥ > í‰ì†Œ
         if (hp != null && hp.IsDead) baseColor = deadTint;
         else if (hp != null && hp.Ratio <= lowHpThreshold) baseColor = lowHpTint;
         else baseColor = Color.white;
 
-        // ¸ÂÀº Á÷ÈÄ ºÓ°Ô ¹øÂ½ ¡æ ±âº» »öÀ¸·Î
+        // ë§ì€ ì§í›„ ë¶‰ê²Œ ë²ˆì© â†’ ê¸°ë³¸ ìƒ‰ìœ¼ë¡œ
         hitTimer += Time.unscaledDeltaTime;
         float k = Mathf.Clamp01(hitTimer / Mathf.Max(0.01f, hitTintTime));
         portraitImage.color = Color.Lerp(hitTint, baseColor, k);

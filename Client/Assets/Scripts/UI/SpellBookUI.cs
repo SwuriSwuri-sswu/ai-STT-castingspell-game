@@ -1,28 +1,28 @@
-using System;
+ï»¿using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// ½ºÆç µµ°¨ (SpellPanel¿¡ ºÙÀÌ±â)
-// ÆĞ³ÎÀÌ ¿­¸± ¶§¸¶´Ù ¹è¿î ½ºÆçÀ» ¼Ó¼º ¡æ ´Ü°è(1/2/3) Ä­¿¡ ¹è¿î ¼ø¼­´ë·Î Ã¤¿ó´Ï´Ù.
-//   - °ÔÀÓ ¾À (SkillManager ÀÖÀ½): ÀÌ¹ø ÆÇ¿¡¼­ ¹è¿î ½ºÆç
-//   - Å¸ÀÌÆ² ¾À (SkillManager ¾øÀ½): Áö±İ±îÁö ÇÑ ¹øÀÌ¶óµµ ¹è¿î ½ºÆç (SpellCollection ´©Àû ±â·Ï)
+// ìŠ¤í  ë„ê° (SpellPanelì— ë¶™ì´ê¸°)
+// íŒ¨ë„ì´ ì—´ë¦´ ë•Œë§ˆë‹¤ ë°°ìš´ ìŠ¤í ì„ ì†ì„± â†’ ë‹¨ê³„(1/2/3) ì¹¸ì— ë°°ìš´ ìˆœì„œëŒ€ë¡œ ì±„ì›ë‹ˆë‹¤.
+//   - ê²Œì„ ì”¬ (SkillManager ìˆìŒ): ì´ë²ˆ íŒì—ì„œ ë°°ìš´ ìŠ¤í 
+//   - íƒ€ì´í‹€ ì”¬ (SkillManager ì—†ìŒ): ì§€ê¸ˆê¹Œì§€ í•œ ë²ˆì´ë¼ë„ ë°°ìš´ ìŠ¤í  (SpellCollection ëˆ„ì  ê¸°ë¡)
 //
-// Ä­ ÀÚµ¿ ÀÎ½Ä: °¢ ¼Ó¼º ¹­À½(Normal / Fire / Water / Grass) ¾Æ·¡¿¡¼­
-//   ÀÌ¸§¿¡ "Spell_Tier1" / "Spell_Tier2" / "Spell_Tier3"ÀÌ µé¾î°£ ¿ÀºêÁ§Æ®¸¦ Hierarchy ¼ø¼­´ë·Î Ã£½À´Ï´Ù.
-//   (´ë¼Ò¹®ÀÚ ¹«½Ã: Spell_TIer1µµ ÀÎ½Ä. ÀÌ¸§ ¾ÕºÎºĞÀº »ó°ü¾øÀ½)
-// °¢ Ä­ ¾È¿¡ ±ÛÀÚ(TextMeshPro)°¡ ¾øÀ¸¸é Label TemplateÀ» º¹Á¦ÇØ¼­ ÀÚµ¿À¸·Î ¸¸µé¾î Áİ´Ï´Ù.
+// ì¹¸ ìë™ ì¸ì‹: ê° ì†ì„± ë¬¶ìŒ(Normal / Fire / Water / Grass) ì•„ë˜ì—ì„œ
+//   ì´ë¦„ì— "Spell_Tier1" / "Spell_Tier2" / "Spell_Tier3"ì´ ë“¤ì–´ê°„ ì˜¤ë¸Œì íŠ¸ë¥¼ Hierarchy ìˆœì„œëŒ€ë¡œ ì°¾ìŠµë‹ˆë‹¤.
+//   (ëŒ€ì†Œë¬¸ì ë¬´ì‹œ: Spell_TIer1ë„ ì¸ì‹. ì´ë¦„ ì•ë¶€ë¶„ì€ ìƒê´€ì—†ìŒ)
+// ê° ì¹¸ ì•ˆì— ê¸€ì(TextMeshPro)ê°€ ì—†ìœ¼ë©´ Label Templateì„ ë³µì œí•´ì„œ ìë™ìœ¼ë¡œ ë§Œë“¤ì–´ ì¤ë‹ˆë‹¤.
 public class SpellBookUI : MonoBehaviour
 {
     [Serializable]
     public class ElementSection
     {
         public MagicElement element;
-        [Tooltip("ÀÌ ¼Ó¼º Ä­µéÀÌ µé¾î ÀÖ´Â ºÎ¸ğ (¿¹: SpellPanel/Fire)")]
+        [Tooltip("ì´ ì†ì„± ì¹¸ë“¤ì´ ë“¤ì–´ ìˆëŠ” ë¶€ëª¨ (ì˜ˆ: SpellPanel/Fire)")]
         public Transform root;
-        [Tooltip("(¼±ÅÃ) ¼öÁı ÇöÈ² '2 / 7'À» Ç¥½ÃÇÒ ±ÛÀÚ")]
+        [Tooltip("(ì„ íƒ) ìˆ˜ì§‘ í˜„í™© '2 / 7'ì„ í‘œì‹œí•  ê¸€ì")]
         public TMP_Text countText;
 
         [NonSerialized] public List<Image>[] slots;
@@ -30,59 +30,59 @@ public class SpellBookUI : MonoBehaviour
 
     public enum BookSource
     {
-        Auto,        // °ÔÀÓ ¾ÀÀÌ¸é ÀÌ¹ø ÆÇ, Å¸ÀÌÆ² ¾ÀÀÌ¸é ´©Àû ±â·Ï
-        CurrentRun,  // ÀÌ¹ø ÆÇ¿¡¼­ ¹è¿î ½ºÆç
-        Collection,  // Áö±İ±îÁö ÇÑ ¹øÀÌ¶óµµ ¹è¿î ½ºÆç (´©Àû)
+        Auto,        // ê²Œì„ ì”¬ì´ë©´ ì´ë²ˆ íŒ, íƒ€ì´í‹€ ì”¬ì´ë©´ ëˆ„ì  ê¸°ë¡
+        CurrentRun,  // ì´ë²ˆ íŒì—ì„œ ë°°ìš´ ìŠ¤í 
+        Collection,  // ì§€ê¸ˆê¹Œì§€ í•œ ë²ˆì´ë¼ë„ ë°°ìš´ ìŠ¤í  (ëˆ„ì )
     }
 
-    [Header("º¸¿© ÁÙ ±â·Ï")]
+    [Header("ë³´ì—¬ ì¤„ ê¸°ë¡")]
     public BookSource source = BookSource.Auto;
-    [Tooltip("ÀüÃ¼ ½ºÆç ¸ñ·Ï. Å¸ÀÌÆ² ¾ÀÃ³·³ SkillManager°¡ ¾ø´Â ¾À¿¡¼­´Â ²À ³Ö¾î ÁÖ¼¼¿ä.\n" +
-             "(Project Ã¢ °Ë»ö¿¡ t:SpellData ¡æ ÀüºÎ ¼±ÅÃ ¡æ ÀÌ ¸ñ·Ï ÀÌ¸§ À§·Î µå·¡±×)\n" +
-             "SkillManager°¡ ÀÖ´Â ¾À¿¡¼­´Â ºñ¿ö µÎ¸é SkillManagerÀÇ ¸ñ·ÏÀ» »ç¿ëÇÕ´Ï´Ù.")]
+    [Tooltip("ì „ì²´ ìŠ¤í  ëª©ë¡. íƒ€ì´í‹€ ì”¬ì²˜ëŸ¼ SkillManagerê°€ ì—†ëŠ” ì”¬ì—ì„œëŠ” ê¼­ ë„£ì–´ ì£¼ì„¸ìš”.\n" +
+             "(Project ì°½ ê²€ìƒ‰ì— t:SpellData â†’ ì „ë¶€ ì„ íƒ â†’ ì´ ëª©ë¡ ì´ë¦„ ìœ„ë¡œ ë“œë˜ê·¸)\n" +
+             "SkillManagerê°€ ìˆëŠ” ì”¬ì—ì„œëŠ” ë¹„ì›Œ ë‘ë©´ SkillManagerì˜ ëª©ë¡ì„ ì‚¬ìš©í•©ë‹ˆë‹¤.")]
     public List<SpellData> allSpells = new List<SpellData>();
 
-    [Header("¼Ó¼º ¹­À½ (Normal / Fire / Water / Grass)")]
+    [Header("ì†ì„± ë¬¶ìŒ (Normal / Fire / Water / Grass)")]
     public List<ElementSection> sections = new List<ElementSection>();
 
-    [Header("Ä­ ¾ÈÀÇ ±ÛÀÚ")]
-    [Tooltip("Ä­ ¾È¿¡ ³ÖÀ» ±ÛÀÚÀÇ °ßº». ÆùÆ®¡¤Å©±â¡¤¿Ü°û¼±À» ¿©±â¼­ ²Ù¹Ì¸é ¸ğµç Ä­¿¡ ¶È°°ÀÌ º¹Á¦µË´Ï´Ù.\n" +
-             "(¾À¿¡ ÇÏ³ª ¸¸µé¾î µÎ°í ²¨ µÎ¼¼¿ä)")]
+    [Header("ì¹¸ ì•ˆì˜ ê¸€ì")]
+    [Tooltip("ì¹¸ ì•ˆì— ë„£ì„ ê¸€ìì˜ ê²¬ë³¸. í°íŠ¸Â·í¬ê¸°Â·ì™¸ê³½ì„ ì„ ì—¬ê¸°ì„œ ê¾¸ë¯¸ë©´ ëª¨ë“  ì¹¸ì— ë˜‘ê°™ì´ ë³µì œë©ë‹ˆë‹¤.\n" +
+             "(ì”¬ì— í•˜ë‚˜ ë§Œë“¤ì–´ ë‘ê³  êº¼ ë‘ì„¸ìš”)")]
     public TMP_Text labelTemplate;
 
-    [Header("Ç¥½Ã ¹æ½Ä")]
-    [Tooltip("¾ÆÁ÷ ¸ø ¹è¿î ½ºÆçÀ» '???'·Î Ç¥½Ã (²ô¸é ºóÄ­)")]
+    [Header("í‘œì‹œ ë°©ì‹")]
+    [Tooltip("ì•„ì§ ëª» ë°°ìš´ ìŠ¤í ì„ '???'ë¡œ í‘œì‹œ (ë„ë©´ ë¹ˆì¹¸)")]
     public bool showLockedAsUnknown = true;
     public string unknownText = "???";
-    [Tooltip("±× ´Ü°è¿¡ ½ºÆçÀÌ 2°³»ÓÀÌ¸é 3¹øÂ° Ä­Àº ¼û±è ¡æ Ä­ °³¼ö = ½ÇÁ¦ ½ºÆç °³¼ö")]
+    [Tooltip("ê·¸ ë‹¨ê³„ì— ìŠ¤í ì´ 2ê°œë¿ì´ë©´ 3ë²ˆì§¸ ì¹¸ì€ ìˆ¨ê¹€ â†’ ì¹¸ ê°œìˆ˜ = ì‹¤ì œ ìŠ¤í  ê°œìˆ˜")]
     public bool hideUnusedSlots = true;
 
-    [Header("»ö")]
-    [Tooltip("¹è¿î ½ºÆç ÀÌ¸§ (¾çÇÇÁö À§¿¡¼­ Àß º¸ÀÌ´Â ÁøÇÑ °¥»ö ÃßÃµ)")]
+    [Header("ìƒ‰")]
+    [Tooltip("ë°°ìš´ ìŠ¤í  ì´ë¦„ (ì–‘í”¼ì§€ ìœ„ì—ì„œ ì˜ ë³´ì´ëŠ” ì§„í•œ ê°ˆìƒ‰ ì¶”ì²œ)")]
     public Color learnedColor = new Color(0.29f, 0.18f, 0.10f);
-    [Tooltip("¸ø ¹è¿î ½ºÆç '???'")]
+    [Tooltip("ëª» ë°°ìš´ ìŠ¤í  '???'")]
     public Color lockedColor = new Color(0.29f, 0.18f, 0.10f, 0.35f);
-    [Tooltip("¸ø ¹è¿î Ä­ÀÇ ¹Ù(ÀÌ¹ÌÁö)¸¦ Èå¸®°Ô")]
+    [Tooltip("ëª» ë°°ìš´ ì¹¸ì˜ ë°”(ì´ë¯¸ì§€)ë¥¼ íë¦¬ê²Œ")]
     [Range(0f, 1f)] public float lockedSlotAlpha = 0.55f;
-    [Tooltip("Áö³­¹ø¿¡ µµ°¨À» ¿¬ µÚ »õ·Î ¹è¿î ½ºÆç")]
+    [Tooltip("ì§€ë‚œë²ˆì— ë„ê°ì„ ì—° ë’¤ ìƒˆë¡œ ë°°ìš´ ìŠ¤í ")]
     public Color newColor = new Color(0.85f, 0.35f, 0.05f);
 
-    [Header("»õ ½ºÆç °­Á¶")]
-    [Tooltip("»õ·Î ¹è¿î ½ºÆç Ä­ÀÌ ÅëÅë Æ¢´Â ¿¬Ãâ")]
+    [Header("ìƒˆ ìŠ¤í  ê°•ì¡°")]
+    [Tooltip("ìƒˆë¡œ ë°°ìš´ ìŠ¤í  ì¹¸ì´ í†µí†µ íŠ€ëŠ” ì—°ì¶œ")]
     public bool popNewSlots = true;
     public float popScale = 1.15f;
     public float popDuration = 0.35f;
 
-    // µµ°¨¿¡¼­ ÀÌ¹Ì È®ÀÎÇÑ ½ºÆç (ÆĞ³ÎÀ» ´İÀ» ¶§ 'È®ÀÎÇÔ'À¸·Î Ã³¸®)
+    // ë„ê°ì—ì„œ ì´ë¯¸ í™•ì¸í•œ ìŠ¤í  (íŒ¨ë„ì„ ë‹«ì„ ë•Œ 'í™•ì¸í•¨'ìœ¼ë¡œ ì²˜ë¦¬)
     private readonly HashSet<SpellData> seen = new HashSet<SpellData>();
     private readonly List<SpellData> newlyShown = new List<SpellData>();
     private bool initialized;
 
-    // °ßº» ±ÛÀÚ°¡ 'Ä­ ±âÁØÀ¸·Î' ¾îµğ¿¡ ¾î¶² Å©±â·Î ³õ¿© ÀÖ´ÂÁö (¸ğµç Ä­¿¡ ¶È°°ÀÌ Àû¿ë)
+    // ê²¬ë³¸ ê¸€ìê°€ 'ì¹¸ ê¸°ì¤€ìœ¼ë¡œ' ì–´ë””ì— ì–´ë–¤ í¬ê¸°ë¡œ ë†“ì—¬ ìˆëŠ”ì§€ (ëª¨ë“  ì¹¸ì— ë˜‘ê°™ì´ ì ìš©)
     private bool hasTemplateLayout;
-    private Vector2 templateOffset;   // Ä­ Áß½É ±âÁØ À§Ä¡ (Ä­ÀÇ ·ÎÄÃ ´ÜÀ§)
-    private Vector2 templateSize;     // °ßº» Å©±â (°ßº» ÀÚ½ÅÀÇ ·ÎÄÃ ´ÜÀ§)
-    private Vector3 templateScale;    // Ä­ ¾È¿¡¼­ °ßº»°ú ¶È°°ÀÌ º¸ÀÌ°Ô ÇÒ ¹èÀ²
+    private Vector2 templateOffset;   // ì¹¸ ì¤‘ì‹¬ ê¸°ì¤€ ìœ„ì¹˜ (ì¹¸ì˜ ë¡œì»¬ ë‹¨ìœ„)
+    private Vector2 templateSize;     // ê²¬ë³¸ í¬ê¸° (ê²¬ë³¸ ìì‹ ì˜ ë¡œì»¬ ë‹¨ìœ„)
+    private Vector3 templateScale;    // ì¹¸ ì•ˆì—ì„œ ê²¬ë³¸ê³¼ ë˜‘ê°™ì´ ë³´ì´ê²Œ í•  ë°°ìœ¨
     private readonly Dictionary<Transform, Vector3> baseScales = new Dictionary<Transform, Vector3>();
 
     private void OnEnable()
@@ -91,7 +91,7 @@ public class SpellBookUI : MonoBehaviour
         Refresh();
 
         SkillManager sm = SkillManager.Instance;
-        if (sm != null) sm.SpellsChanged += Refresh; // ¿­·Á ÀÖ´Â µ¿¾È ¹è¿ì¸é ¹Ù·Î ¹İ¿µ
+        if (sm != null) sm.SpellsChanged += Refresh; // ì—´ë ¤ ìˆëŠ” ë™ì•ˆ ë°°ìš°ë©´ ë°”ë¡œ ë°˜ì˜
     }
 
     private void OnDisable()
@@ -99,14 +99,14 @@ public class SpellBookUI : MonoBehaviour
         SkillManager sm = SkillManager.Instance;
         if (sm != null) sm.SpellsChanged -= Refresh;
 
-        // Æ¢´Â ¿¬Ãâ µµÁß¿¡ ´İÇôµµ Ä­ Å©±â°¡ ¿ø·¡´ë·Î µ¹¾Æ¿À°Ô
+        // íŠ€ëŠ” ì—°ì¶œ ë„ì¤‘ì— ë‹«í˜€ë„ ì¹¸ í¬ê¸°ê°€ ì›ë˜ëŒ€ë¡œ ëŒì•„ì˜¤ê²Œ
         StopAllCoroutines();
         foreach (KeyValuePair<Transform, Vector3> pair in baseScales)
         {
             if (pair.Key != null) pair.Key.localScale = pair.Value;
         }
 
-        // ÇÑ ¹ø º» ½ºÆçÀº ´ÙÀ½ºÎÅÍ NEW ¾Æ´Ô
+        // í•œ ë²ˆ ë³¸ ìŠ¤í ì€ ë‹¤ìŒë¶€í„° NEW ì•„ë‹˜
         foreach (SpellData s in newlyShown) seen.Add(s);
         if (UseCollection) SpellCollection.MarkSeen(newlyShown);
         newlyShown.Clear();
@@ -122,7 +122,7 @@ public class SpellBookUI : MonoBehaviour
             for (int t = 0; t < 3; t++) section.slots[t] = new List<Image>();
             if (section.root == null) continue;
 
-            // Hierarchy ¼ø¼­´ë·Î Ä­ ¼öÁı
+            // Hierarchy ìˆœì„œëŒ€ë¡œ ì¹¸ ìˆ˜ì§‘
             foreach (Transform child in section.root.GetComponentsInChildren<Transform>(true))
             {
                 for (int t = 0; t < 3; t++)
@@ -136,11 +136,11 @@ public class SpellBookUI : MonoBehaviour
             }
         }
 
-        // °ßº»ÀÌ ³õÀÎ Ä­À» Ã£¾Æ, ±× Ä­ ±âÁØ À§Ä¡¡¤Å©±â¸¦ ±â¾ï (²ô±â Àü¿¡ ÃøÁ¤)
+        // ê²¬ë³¸ì´ ë†“ì¸ ì¹¸ì„ ì°¾ì•„, ê·¸ ì¹¸ ê¸°ì¤€ ìœ„ì¹˜Â·í¬ê¸°ë¥¼ ê¸°ì–µ (ë„ê¸° ì „ì— ì¸¡ì •)
         MeasureTemplate();
         if (labelTemplate != null) labelTemplate.gameObject.SetActive(false);
 
-        // °ÔÀÓ ½ÃÀÛ ¶§ ±âº»À¸·Î ÁÖ´Â ½ºÆçÀº NEW·Î Ç¥½ÃÇÏÁö ¾ÊÀ½
+        // ê²Œì„ ì‹œì‘ ë•Œ ê¸°ë³¸ìœ¼ë¡œ ì£¼ëŠ” ìŠ¤í ì€ NEWë¡œ í‘œì‹œí•˜ì§€ ì•ŠìŒ
         foreach (SpellData s in AllSpells())
         {
             if (s != null && s.unlockedByDefault) seen.Add(s);
@@ -151,13 +151,13 @@ public class SpellBookUI : MonoBehaviour
         {
             if (section.slots != null) foreach (List<Image> l in section.slots) slotCount += l.Count;
         }
-        Debug.Log($"[SpellBookUI] Ä­ {slotCount}°³ ÀÎ½Ä, ÀüÃ¼ ½ºÆç {AllSpells().Count}°³, Ç¥½Ã ±â·Ï: {(UseCollection ? "´©Àû" : "ÀÌ¹ø ÆÇ")}");
+        Debug.Log($"[SpellBookUI] ì¹¸ {slotCount}ê°œ ì¸ì‹, ì „ì²´ ìŠ¤í  {AllSpells().Count}ê°œ, í‘œì‹œ ê¸°ë¡: {(UseCollection ? "ëˆ„ì " : "ì´ë²ˆ íŒ")}");
     }
 
     private bool UseCollection =>
         source == BookSource.Collection || (source == BookSource.Auto && SkillManager.Instance == null);
 
-    // ÀüÃ¼ ½ºÆç ¸ñ·Ï (Inspector ¸ñ·Ï ¡æ ¾øÀ¸¸é SkillManager ¸ñ·Ï)
+    // ì „ì²´ ìŠ¤í  ëª©ë¡ (Inspector ëª©ë¡ â†’ ì—†ìœ¼ë©´ SkillManager ëª©ë¡)
     private List<SpellData> AllSpells()
     {
         if (allSpells != null && allSpells.Count > 0) return allSpells;
@@ -165,13 +165,13 @@ public class SpellBookUI : MonoBehaviour
         return sm != null ? sm.spellDatabase : new List<SpellData>();
     }
 
-    // ¹è¿î ½ºÆç (¹è¿î ¼ø¼­´ë·Î)
+    // ë°°ìš´ ìŠ¤í  (ë°°ìš´ ìˆœì„œëŒ€ë¡œ)
     private List<SpellData> LearnedInOrder(List<SpellData> all)
     {
         List<SpellData> result = new List<SpellData>();
         if (UseCollection)
         {
-            // ´©Àû ±â·ÏÀº ÀÌ¸§À¸·Î ÀúÀåµÇ¾î ÀÖÀ¸¹Ç·Î ÀüÃ¼ ¸ñ·Ï¿¡¼­ Ã£¾Æ¼­ ¿¬°á
+            // ëˆ„ì  ê¸°ë¡ì€ ì´ë¦„ìœ¼ë¡œ ì €ì¥ë˜ì–´ ìˆìœ¼ë¯€ë¡œ ì „ì²´ ëª©ë¡ì—ì„œ ì°¾ì•„ì„œ ì—°ê²°
             foreach (string name in SpellCollection.CollectedNames)
             {
                 foreach (SpellData s in all)
@@ -181,7 +181,7 @@ public class SpellBookUI : MonoBehaviour
                     if (key == name) { result.Add(s); break; }
                 }
             }
-            // ±âº» ½ºÆçÀº ±â·ÏÀÌ ¾ø¾îµµ ¹è¿î °ÍÀ¸·Î
+            // ê¸°ë³¸ ìŠ¤í ì€ ê¸°ë¡ì´ ì—†ì–´ë„ ë°°ìš´ ê²ƒìœ¼ë¡œ
             foreach (SpellData s in all)
             {
                 if (s != null && s.unlockedByDefault && !result.Contains(s)) result.Insert(0, s);
@@ -194,7 +194,7 @@ public class SpellBookUI : MonoBehaviour
         return result;
     }
 
-    [ContextMenu("½ºÆç µµ°¨ ´©Àû ±â·Ï ÃÊ±âÈ­ (Å×½ºÆ®¿ë)")]
+    [ContextMenu("ìŠ¤í  ë„ê° ëˆ„ì  ê¸°ë¡ ì´ˆê¸°í™” (í…ŒìŠ¤íŠ¸ìš©)")]
     private void ClearCollection()
     {
         SpellCollection.Clear();
@@ -217,7 +217,7 @@ public class SpellBookUI : MonoBehaviour
             {
                 int tier = t + 1;
 
-                // ÀÌ ¼Ó¼º¡¤´Ü°èÀÇ ÀüÃ¼ ½ºÆç / ¹è¿î ½ºÆç(¹è¿î ¼ø¼­´ë·Î)
+                // ì´ ì†ì„±Â·ë‹¨ê³„ì˜ ì „ì²´ ìŠ¤í  / ë°°ìš´ ìŠ¤í (ë°°ìš´ ìˆœì„œëŒ€ë¡œ)
                 List<SpellData> all = new List<SpellData>();
                 List<SpellData> learned = new List<SpellData>();
                 foreach (SpellData s in allList)
@@ -277,7 +277,7 @@ public class SpellBookUI : MonoBehaviour
         }
     }
 
-    // ³ë¸» ±âº» ½ºÆçÃ³·³ ´Ü°è°¡ 0ÀÎ °ÍÀº 1´Ü°è Ä­¿¡ ³ÖÀ½
+    // ë…¸ë§ ê¸°ë³¸ ìŠ¤í ì²˜ëŸ¼ ë‹¨ê³„ê°€ 0ì¸ ê²ƒì€ 1ë‹¨ê³„ ì¹¸ì— ë„£ìŒ
     private static int TierOf(SpellData s) => Mathf.Clamp(s.tier, 1, 3);
 
     private static void SetSlotAlpha(Image slot, float alpha)
@@ -297,7 +297,7 @@ public class SpellBookUI : MonoBehaviour
         }
         if (labelTemplate == null)
         {
-            Debug.LogWarning("[SpellBookUI] Label TemplateÀÌ ºñ¾î ÀÖ¾î Ä­¿¡ ±ÛÀÚ¸¦ ¸¸µé ¼ö ¾ø½À´Ï´Ù.");
+            Debug.LogWarning("[SpellBookUI] Label Templateì´ ë¹„ì–´ ìˆì–´ ì¹¸ì— ê¸€ìë¥¼ ë§Œë“¤ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
             return null;
         }
 
@@ -310,7 +310,7 @@ public class SpellBookUI : MonoBehaviour
 
         if (hasTemplateLayout)
         {
-            // °ßº»À» ³õ¾Æ µĞ Ä­°ú ¶È°°Àº À§Ä¡¡¤Å©±â¡¤±ÛÀÚ Å©±â·Î
+            // ê²¬ë³¸ì„ ë†“ì•„ ë‘” ì¹¸ê³¼ ë˜‘ê°™ì€ ìœ„ì¹˜Â·í¬ê¸°Â·ê¸€ì í¬ê¸°ë¡œ
             rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.localScale = templateScale;
@@ -319,7 +319,7 @@ public class SpellBookUI : MonoBehaviour
         }
         else
         {
-            // °ßº»ÀÌ ¾î´À Ä­ À§¿¡µµ ¾øÀ¸¸é Ä­ Å©±â¿¡ ²Ë ¸ÂÃß±â
+            // ê²¬ë³¸ì´ ì–´ëŠ ì¹¸ ìœ„ì—ë„ ì—†ìœ¼ë©´ ì¹¸ í¬ê¸°ì— ê½‰ ë§ì¶”ê¸°
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;
             rt.offsetMin = Vector2.zero;
@@ -329,7 +329,7 @@ public class SpellBookUI : MonoBehaviour
         return label;
     }
 
-    // °ßº» ±ÛÀÚÀÇ Áß½ÉÀÌ ¿Ã¶ó°¡ ÀÖ´Â Ä­À» Ã£¾Æ¼­, ±× Ä­ ±âÁØ À§Ä¡¡¤Å©±â¡¤¹èÀ²À» °è»ê
+    // ê²¬ë³¸ ê¸€ìì˜ ì¤‘ì‹¬ì´ ì˜¬ë¼ê°€ ìˆëŠ” ì¹¸ì„ ì°¾ì•„ì„œ, ê·¸ ì¹¸ ê¸°ì¤€ ìœ„ì¹˜Â·í¬ê¸°Â·ë°°ìœ¨ì„ ê³„ì‚°
     private void MeasureTemplate()
     {
         hasTemplateLayout = false;
@@ -338,7 +338,7 @@ public class SpellBookUI : MonoBehaviour
         RectTransform tpl = labelTemplate.rectTransform;
         Vector3 worldCenter = tpl.TransformPoint(tpl.rect.center);
 
-        // °ßº» Áß½ÉÀÌ ½ÇÁ¦·Î '¿Ã¶ó°¡ ÀÖ´Â' Ä­¸¸ ±âÁØÀ¸·Î »ç¿ë (°¡±î¿î Ä­À¸·Î ÃßÃøÇÏÁö ¾ÊÀ½)
+        // ê²¬ë³¸ ì¤‘ì‹¬ì´ ì‹¤ì œë¡œ 'ì˜¬ë¼ê°€ ìˆëŠ”' ì¹¸ë§Œ ê¸°ì¤€ìœ¼ë¡œ ì‚¬ìš© (ê°€ê¹Œìš´ ì¹¸ìœ¼ë¡œ ì¶”ì¸¡í•˜ì§€ ì•ŠìŒ)
         RectTransform best = null;
         foreach (ElementSection section in sections)
         {
@@ -358,8 +358,8 @@ public class SpellBookUI : MonoBehaviour
 
         if (best == null)
         {
-            Debug.LogWarning("[SpellBookUI] °ßº» ±ÛÀÚ(Label Template)°¡ ¾î´À Ä­ À§¿¡µµ ¿Ã¶ó°¡ ÀÖÁö ¾Ê½À´Ï´Ù.\n" +
-                             "°ßº»À» ¾Æ¹« ½ºÆç Ä­ À§¿¡ °ãÃÄ µÎ¼¼¿ä. Áö±İÀº ±ÛÀÚ¸¦ Ä­ Å©±â¿¡ ²Ë ¸ÂÃç ¸¸µì´Ï´Ù.");
+            Debug.LogWarning("[SpellBookUI] ê²¬ë³¸ ê¸€ì(Label Template)ê°€ ì–´ëŠ ì¹¸ ìœ„ì—ë„ ì˜¬ë¼ê°€ ìˆì§€ ì•ŠìŠµë‹ˆë‹¤.\n" +
+                             "ê²¬ë³¸ì„ ì•„ë¬´ ìŠ¤í  ì¹¸ ìœ„ì— ê²¹ì³ ë‘ì„¸ìš”. ì§€ê¸ˆì€ ê¸€ìë¥¼ ì¹¸ í¬ê¸°ì— ê½‰ ë§ì¶° ë§Œë“­ë‹ˆë‹¤.");
             return;
         }
 
@@ -369,7 +369,7 @@ public class SpellBookUI : MonoBehaviour
         float slotScale = best.lossyScale.x != 0f ? best.lossyScale.x : 1f;
         templateScale = Vector3.one * (tpl.lossyScale.x / slotScale);
         hasTemplateLayout = true;
-        Debug.Log($"[SpellBookUI] °ßº» ±âÁØ Ä­: {best.name}");
+        Debug.Log($"[SpellBookUI] ê²¬ë³¸ ê¸°ì¤€ ì¹¸: {best.name}");
     }
 
     private IEnumerator Pop(Transform target)
@@ -378,7 +378,7 @@ public class SpellBookUI : MonoBehaviour
         float t = 0f;
         while (t < popDuration)
         {
-            t += Time.unscaledDeltaTime; // ÀÏ½ÃÁ¤Áö Áß¿¡µµ Àç»ı
+            t += Time.unscaledDeltaTime; // ì¼ì‹œì •ì§€ ì¤‘ì—ë„ ì¬ìƒ
             float k = Mathf.Sin(Mathf.Clamp01(t / popDuration) * Mathf.PI);
             target.localScale = baseScale * Mathf.Lerp(1f, popScale, k);
             yield return null;

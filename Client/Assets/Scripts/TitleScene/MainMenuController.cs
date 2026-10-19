@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
@@ -8,33 +8,33 @@ using TMPro;
 public class MainMenuController : MonoBehaviour
 {
     [Header("Managers")]
-    [Tooltip("ºñ¿ö µÎ¸é GameSettingManager.Instance »ç¿ë (¾À ÀÌµ¿ ÈÄ¿¡µµ ¾ÈÀü)")]
+    [Tooltip("ë¹„ì›Œ ë‘ë©´ GameSettingManager.Instance ì‚¬ìš© (ì”¬ ì´ë™ í›„ì—ë„ ì•ˆì „)")]
     public GameSettingManager settingManager;
 
     [Header("UI Panels")]
     public GameObject settingsPanel;
     [FormerlySerializedAs("spellPanel")]
-    [Tooltip("µµ°¨ ÆĞ³Î (½ºÆç / ¸ó½ºÅÍ ÅÇÀÌ µé¾î ÀÖ´Â BookPanel)")]
+    [Tooltip("ë„ê° íŒ¨ë„ (ìŠ¤í  / ëª¬ìŠ¤í„° íƒ­ì´ ë“¤ì–´ ìˆëŠ” BookPanel)")]
     public GameObject bookPanel;
-    public GameObject wandPanel;  // ÁöÆÎÀÌ µµ°¨ ÆĞ³Î
+    public GameObject wandPanel;  // ì§€íŒ¡ì´ ë„ê° íŒ¨ë„
 
-    [Header("À½¾Ç On/Off ¹öÆ°")]
-    [Tooltip("MusicToggle ¹öÆ°. ³Ö¾î µÎ¸é Å¬¸¯ÀÌ ÀÚµ¿ ¿¬°áµÊ (OnClick Ä­Àº ºñ¿ö µÎ±â)")]
+    [Header("ìŒì•… On/Off ë²„íŠ¼")]
+    [Tooltip("MusicToggle ë²„íŠ¼. ë„£ì–´ ë‘ë©´ í´ë¦­ì´ ìë™ ì—°ê²°ë¨ (OnClick ì¹¸ì€ ë¹„ì›Œ ë‘ê¸°)")]
     public Button musicToggleButton;
-    [Tooltip("²¨Á³À» ¶§ ¾îµÓ°Ô ÇÒ ÀÌ¹ÌÁö (ºñ¿ì¸é ¹öÆ°ÀÇ ÀÌ¹ÌÁö)")]
+    [Tooltip("êº¼ì¡Œì„ ë•Œ ì–´ë‘¡ê²Œ í•  ì´ë¯¸ì§€ (ë¹„ìš°ë©´ ë²„íŠ¼ì˜ ì´ë¯¸ì§€)")]
     public Graphic musicToggleGraphic;
     public Color musicOnColor = Color.white;
-    [Tooltip("BGMÀÌ ²¨Á³À» ¶§ µ¤À» Â£Àº È¸»ö")]
+    [Tooltip("BGMì´ êº¼ì¡Œì„ ë•Œ ë®ì„ ì§™ì€ íšŒìƒ‰")]
     public Color musicOffColor = new Color(0.35f, 0.35f, 0.35f, 1f);
-    [Tooltip("(¼±ÅÃ) ²¨Á³À» ¶§¸¸ º¸ÀÏ Ç¥½Ã (¿¹: ºø±İ ¾ÆÀÌÄÜ, 'OFF' ±ÛÀÚ)")]
+    [Tooltip("(ì„ íƒ) êº¼ì¡Œì„ ë•Œë§Œ ë³´ì¼ í‘œì‹œ (ì˜ˆ: ë¹—ê¸ˆ ì•„ì´ì½˜, 'OFF' ê¸€ì)")]
     public GameObject musicOffMark;
 
-    // ¾À ÀÌµ¿ µÚ¿¡µµ »ì¾Æ ÀÖ´Â ¸Å´ÏÀú¸¦ »ç¿ë (¾À¿¡ ³õÀÎ º¹Á¦º»Àº Awake¿¡¼­ Áö¿öÁú ¼ö ÀÖÀ½)
+    // ì”¬ ì´ë™ ë’¤ì—ë„ ì‚´ì•„ ìˆëŠ” ë§¤ë‹ˆì €ë¥¼ ì‚¬ìš© (ì”¬ì— ë†“ì¸ ë³µì œë³¸ì€ Awakeì—ì„œ ì§€ì›Œì§ˆ ìˆ˜ ìˆìŒ)
     private GameSettingManager Settings => GameSettingManager.Instance != null ? GameSettingManager.Instance : settingManager;
 
     private void Start()
     {
-        // ÃÊ±â UI »óÅÂ ¼³Á¤ (¸ğµç ÆĞ³Î ´İ±â)
+        // ì´ˆê¸° UI ìƒíƒœ ì„¤ì • (ëª¨ë“  íŒ¨ë„ ë‹«ê¸°)
         if (settingsPanel != null) settingsPanel.SetActive(false);
         if (bookPanel != null) bookPanel.SetActive(false);
         if (wandPanel != null) wandPanel.SetActive(false);
@@ -55,7 +55,7 @@ public class MainMenuController : MonoBehaviour
     }
 
     // =====================
-    // --- ÆĞ³Î ¿­±â ¹öÆ°¿ë ---
+    // --- íŒ¨ë„ ì—´ê¸° ë²„íŠ¼ìš© ---
     // =====================
     public void OnClickSettings()
     {
@@ -67,7 +67,7 @@ public class MainMenuController : MonoBehaviour
         if (bookPanel != null) bookPanel.SetActive(true);
     }
 
-    // ¿¹Àü ¹öÆ° ¿¬°á È£È¯¿ë (½ºÆç ¹öÆ° OnClick¿¡ ¿¬°áµÅ ÀÖ´ø ÇÔ¼ö)
+    // ì˜ˆì „ ë²„íŠ¼ ì—°ê²° í˜¸í™˜ìš© (ìŠ¤í  ë²„íŠ¼ OnClickì— ì—°ê²°ë¼ ìˆë˜ í•¨ìˆ˜)
     public void OnClickSpell() => OnClickBook();
 
     public void OnClickWand()
@@ -76,12 +76,12 @@ public class MainMenuController : MonoBehaviour
     }
 
     // =====================
-    // --- À½¾Ç On/Off ---
+    // --- ìŒì•… On/Off ---
     // =====================
     public void OnClickMusicToggle()
     {
-        if (Settings != null) Settings.ToggleBGM(); // È­¸é Ç¥½Ã´Â OnBgmToggled ÀÌº¥Æ®·Î °»½Å
-        else Debug.LogWarning("[MainMenuController] GameSettingManager°¡ ¾ø¾î BGMÀ» ¹Ù²Ü ¼ö ¾ø½À´Ï´Ù.");
+        if (Settings != null) Settings.ToggleBGM(); // í™”ë©´ í‘œì‹œëŠ” OnBgmToggled ì´ë²¤íŠ¸ë¡œ ê°±ì‹ 
+        else Debug.LogWarning("[MainMenuController] GameSettingManagerê°€ ì—†ì–´ BGMì„ ë°”ê¿€ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
     }
 
     private void UpdateMusicVisual(bool on)
@@ -91,7 +91,7 @@ public class MainMenuController : MonoBehaviour
     }
 
     // =====================
-    // --- °øÅë ÆĞ³Î ´İ±â ÇÔ¼ö ---
+    // --- ê³µí†µ íŒ¨ë„ ë‹«ê¸° í•¨ìˆ˜ ---
     // =====================
     public void OnClickClosePanel(GameObject targetPanel)
     {
@@ -111,7 +111,7 @@ public class MainMenuController : MonoBehaviour
     }
 
     // =====================
-    // --- UI ¿¬Ãâ¿ë ÇÔ¼ö ---
+    // --- UI ì—°ì¶œìš© í•¨ìˆ˜ ---
     // =====================
     private IEnumerator FadeImage(Image img, float startAlpha, float targetAlpha, float duration)
     {
@@ -128,7 +128,7 @@ public class MainMenuController : MonoBehaviour
         img.color = color;
     }
 
-    // ¼³Á¤Ã¢ ½½¶óÀÌ´õ ¿¬°á¿ë
+    // ì„¤ì •ì°½ ìŠ¬ë¼ì´ë” ì—°ê²°ìš©
     public void OnBGMVolumeChange(float v)
     {
         if (Settings != null) Settings.SetBGMVolume(v);

@@ -1,25 +1,25 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// ÇÑ ÆÇÀÇ °á°ú (GameScene ¡æ EndingSceneÀ¸·Î Àü´Ş)
-// ¾ÀÀÌ ¹Ù²î¾îµµ À¯ÁöµÇµµ·Ï staticÀ¸·Î º¸°üÇÕ´Ï´Ù.
+// í•œ íŒì˜ ê²°ê³¼ (GameScene â†’ EndingSceneìœ¼ë¡œ ì „ë‹¬)
+// ì”¬ì´ ë°”ë€Œì–´ë„ ìœ ì§€ë˜ë„ë¡ staticìœ¼ë¡œ ë³´ê´€í•©ë‹ˆë‹¤.
 public static class GameResult
 {
     public static bool HasResult { get; private set; }
-    public static bool Cleared { get; private set; }      // true = Å¬¸®¾î, false = °ÔÀÓ ¿À¹ö
+    public static bool Cleared { get; private set; }      // true = í´ë¦¬ì–´, false = ê²Œì„ ì˜¤ë²„
     public static int Kills { get; private set; }
     public static int Score { get; private set; }
     public static float PlaySeconds { get; private set; }
     public static int LearnedSpells { get; private set; }
-    // °á°ú°¡ ±â·ÏµÈ ¾À (¿£µùÀÇ '´Ù½ÃÇÏ±â'·Î ´Ù½Ã ºÒ·¯¿Ã ¾À. º¸½ºÀü¿¡¼­ Á³À¸¸é º¸½ºÀüºÎÅÍ)
+    // ê²°ê³¼ê°€ ê¸°ë¡ëœ ì”¬ (ì—”ë”©ì˜ 'ë‹¤ì‹œí•˜ê¸°'ë¡œ ë‹¤ì‹œ ë¶ˆëŸ¬ì˜¬ ì”¬. ë³´ìŠ¤ì „ì—ì„œ ì¡Œìœ¼ë©´ ë³´ìŠ¤ì „ë¶€í„°)
     public static string RetryScene { get; private set; }
 
-    // º¸½ºÀü °á°ú (BossBattleDirector°¡ Ã¤¿ò. EndingSceneÀÌ ÀĞÀº µÚ ÃÊ±âÈ­)
+    // ë³´ìŠ¤ì „ ê²°ê³¼ (BossBattleDirectorê°€ ì±„ì›€. EndingSceneì´ ì½ì€ ë’¤ ì´ˆê¸°í™”)
     public static bool IsBossFight { get; set; }
     public static int BossTurnsUsed { get; set; }
     public static int BossMaxTurns { get; set; }
     public static float BossWeaknessRate { get; set; }   // 0~1
-    public static float BossHpLeftRatio { get; set; }    // 0~1 (º¸½º ³²Àº Ã¼·Â)
+    public static float BossHpLeftRatio { get; set; }    // 0~1 (ë³´ìŠ¤ ë‚¨ì€ ì²´ë ¥)
     public static float PlayerHpLeft { get; set; }
     public static string BossGrade { get; set; }
 
@@ -40,7 +40,7 @@ public static class GameResult
         Score = GameManager.Instance != null ? GameManager.Instance.playScore + GameManager.Instance.voiceScore : 0;
         LearnedSpells = SkillManager.Instance != null ? SkillManager.Instance.UnlockedSpells.Count : 0;
         RetryScene = SceneManager.GetActiveScene().name;
-        Debug.Log($"[GameResult] {(cleared ? "Å¬¸®¾î" : "°ÔÀÓ ¿À¹ö")} / Ã³Ä¡ {Kills} / Á¡¼ö {Score} / {playSeconds:F0}ÃÊ");
+        Debug.Log($"[GameResult] {(cleared ? "í´ë¦¬ì–´" : "ê²Œì„ ì˜¤ë²„")} / ì²˜ì¹˜ {Kills} / ì ìˆ˜ {Score} / {playSeconds:F0}ì´ˆ");
     }
 
     public static string PlayTimeText

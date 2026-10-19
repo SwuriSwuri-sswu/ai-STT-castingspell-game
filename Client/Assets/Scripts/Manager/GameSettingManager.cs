@@ -1,44 +1,44 @@
-using System;
+ï»¿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
 
-// ¿Àµğ¿À ¹× È­¸é ¼³Á¤À» °ü¸®ÇÏ°í ¹é¿£µå ¼­¹ö¿Í ¼³Á¤ µ¥ÀÌÅÍ¸¦ µ¿±âÈ­ÇÏ´Â ¸Å´ÏÀú Å¬·¡½º
+// ì˜¤ë””ì˜¤ ë° í™”ë©´ ì„¤ì •ì„ ê´€ë¦¬í•˜ê³  ë°±ì—”ë“œ ì„œë²„ì™€ ì„¤ì • ë°ì´í„°ë¥¼ ë™ê¸°í™”í•˜ëŠ” ë§¤ë‹ˆì € í´ë˜ìŠ¤
 public class GameSettingManager : MonoBehaviour
 {
-    // Àü¿ª¿¡¼­ Á¢±Ù °¡´ÉÇÑ ½Ì±ÛÅæ ÀÎ½ºÅÏ½º
+    // ì „ì—­ì—ì„œ ì ‘ê·¼ ê°€ëŠ¥í•œ ì‹±ê¸€í†¤ ì¸ìŠ¤í„´ìŠ¤
     public static GameSettingManager Instance { get; private set; }
 
     [Header("Audio Settings")]
-    [Tooltip("º¼·ı Á¶Àı¿ë ¿Àµğ¿À ¹Í¼­")]
+    [Tooltip("ë³¼ë¥¨ ì¡°ì ˆìš© ì˜¤ë””ì˜¤ ë¯¹ì„œ")]
     public AudioMixer audioMixer;
 
     [Header("Current Settings Cache")]
-    [Tooltip("¸¶½ºÅÍ º¼·ı (0.0 ~ 1.0)")]
+    [Tooltip("ë§ˆìŠ¤í„° ë³¼ë¥¨ (0.0 ~ 1.0)")]
     public float masterVolume = 1.0f;
 
-    [Tooltip("¹è°æÀ½¾Ç(BGM) º¼·ı (0.0 ~ 1.0)")]
+    [Tooltip("ë°°ê²½ìŒì•…(BGM) ë³¼ë¥¨ (0.0 ~ 1.0)")]
     public float bgmVolume = 1.0f;
 
-    [Tooltip("È¿°úÀ½(SFX) º¼·ı (0.0 ~ 1.0)")]
+    [Tooltip("íš¨ê³¼ìŒ(SFX) ë³¼ë¥¨ (0.0 ~ 1.0)")]
     public float sfxVolume = 1.0f;
 
-    [Tooltip("À½¼Ò°Å ¿©ºÎ")]
+    [Tooltip("ìŒì†Œê±° ì—¬ë¶€")]
     public bool isMuted = false;
 
-    [Tooltip("Ã¢¸ğµå ¿©ºÎ (true: Ã¢¸ğµå / false: ÀüÃ¼È­¸é)")]
+    [Tooltip("ì°½ëª¨ë“œ ì—¬ë¶€ (true: ì°½ëª¨ë“œ / false: ì „ì²´í™”ë©´)")]
     public bool isWindowed = false;
 
-    [Tooltip("ÇØ»óµµ ¼³Á¤°ª (¿¹: '1920x1080')")]
+    [Tooltip("í•´ìƒë„ ì„¤ì •ê°’ (ì˜ˆ: '1920x1080')")]
     public string resolutionOp = "1920x1080";
 
     [Header("Microphone Settings")]
-    [Tooltip("ÇöÀç ¼±ÅÃµÈ ¸¶ÀÌÅ© ÀÌ¸§")]
+    [Tooltip("í˜„ì¬ ì„ íƒëœ ë§ˆì´í¬ ì´ë¦„")]
     public string selectedMicName = "";
 
-    // ¿¬°áµÈ ÀüÃ¼ ¸¶ÀÌÅ© ¸ñ·ÏÀ» ´ãÀ» ¹è¿­
+    // ì—°ê²°ëœ ì „ì²´ ë§ˆì´í¬ ëª©ë¡ì„ ë‹´ì„ ë°°ì—´
     private string[] availableMics;
 
     [Serializable]
@@ -48,17 +48,17 @@ public class GameSettingManager : MonoBehaviour
         public AudioClip clip;
     }
 
-    [Header("¹è°æ À½¾Ç (BGM)")]
-    [Tooltip("¾Àº° BGMÀÌ µû·Î ¾øÀ» ¶§ Æ² À½¾Ç")]
+    [Header("ë°°ê²½ ìŒì•… (BGM)")]
+    [Tooltip("ì”¬ë³„ BGMì´ ë”°ë¡œ ì—†ì„ ë•Œ í‹€ ìŒì•…")]
     public AudioClip defaultBgm;
-    [Tooltip("¾À¸¶´Ù ´Ù¸¥ À½¾Ç (¿¹: TitleScene / GameScene / EndingScene)")]
+    [Tooltip("ì”¬ë§ˆë‹¤ ë‹¤ë¥¸ ìŒì•… (ì˜ˆ: TitleScene / GameScene / EndingScene)")]
     public List<SceneBgm> sceneBgms = new List<SceneBgm>();
-    [Tooltip("BGM ±âº» Å©±â (¼³Á¤ÀÇ BGM º¼·ı¿¡ °öÇØÁü)")]
+    [Tooltip("BGM ê¸°ë³¸ í¬ê¸° (ì„¤ì •ì˜ BGM ë³¼ë¥¨ì— ê³±í•´ì§)")]
     [Range(0f, 1f)] public float bgmBaseVolume = 0.6f;
-    [Tooltip("BGMÀ» ÄÑ°í ²ø ¶§ ¼­¼­È÷ ¹Ù²î´Â ½Ã°£ (ÃÊ)")]
+    [Tooltip("BGMì„ ì¼œê³  ëŒ ë•Œ ì„œì„œíˆ ë°”ë€ŒëŠ” ì‹œê°„ (ì´ˆ)")]
     public float bgmFadeTime = 0.5f;
 
-    // BGM ÄÑÁü ¿©ºÎ (ÀÌ ÄÄÇ»ÅÍ¿¡ ÀúÀå, ¾ÀÀÌ ¹Ù²î¾îµµ À¯Áö)
+    // BGM ì¼œì§ ì—¬ë¶€ (ì´ ì»´í“¨í„°ì— ì €ì¥, ì”¬ì´ ë°”ë€Œì–´ë„ ìœ ì§€)
     public bool IsBgmOn { get; private set; } = true;
     public event Action<bool> OnBgmToggled;
 
@@ -67,7 +67,7 @@ public class GameSettingManager : MonoBehaviour
     private Coroutine bgmFade;
 
 
-    // ½Ì±ÛÅæ »ı¼º ¹× ¾À ÀüÈ¯ ½Ã ÆÄ±« ¹æÁö
+    // ì‹±ê¸€í†¤ ìƒì„± ë° ì”¬ ì „í™˜ ì‹œ íŒŒê´´ ë°©ì§€
     private void Awake()
     {
         if (Instance == null)
@@ -91,28 +91,28 @@ public class GameSettingManager : MonoBehaviour
         }
     }
 
-    // ½ÃÀÛ ½Ã ¼­¹ö¿¡¼­ ¼³Á¤°ª ·Îµå
+    // ì‹œì‘ ì‹œ ì„œë²„ì—ì„œ ì„¤ì •ê°’ ë¡œë“œ
     private void Start()
     {
         availableMics = Microphone.devices;
 
         if (availableMics.Length > 0)
         {
-            // ±â±â¿¡ ÀúÀåµÈ ¸¶ÀÌÅ© ÀÌ¸§ÀÌ ÀÖ´ÂÁö È®ÀÎ ÈÄ ºÒ·¯¿À±â
+            // ê¸°ê¸°ì— ì €ì¥ëœ ë§ˆì´í¬ ì´ë¦„ì´ ìˆëŠ”ì§€ í™•ì¸ í›„ ë¶ˆëŸ¬ì˜¤ê¸°
             string savedMic = PlayerPrefs.GetString("SelectedMic", availableMics[0]);
 
-            // ÀúÀåµÈ ¸¶ÀÌÅ©°¡ ÇöÀç ¿¬°áµÈ ±â±â ¸ñ·Ï¿¡ ÀÖ´ÂÁö È®ÀÎ
+            // ì €ì¥ëœ ë§ˆì´í¬ê°€ í˜„ì¬ ì—°ê²°ëœ ê¸°ê¸° ëª©ë¡ì— ìˆëŠ”ì§€ í™•ì¸
             if (System.Array.Exists(availableMics, mic => mic == savedMic))
             {
                 selectedMicName = savedMic;
             }
             else
             {
-                selectedMicName = availableMics[0]; // ¾øÀ¸¸é ±âº» ¸¶ÀÌÅ©
+                selectedMicName = availableMics[0]; // ì—†ìœ¼ë©´ ê¸°ë³¸ ë§ˆì´í¬
             }
         }
 
-        // ¼¼¼Ç(session-id)ÀÌ ¸¸µé¾îÁø µÚ¿¡ ¼­¹ö ¼³Á¤À» ºÒ·¯¿Â´Ù (¾øÀ¸¸é 400 Bad Request)
+        // ì„¸ì…˜(session-id)ì´ ë§Œë“¤ì–´ì§„ ë’¤ì— ì„œë²„ ì„¤ì •ì„ ë¶ˆëŸ¬ì˜¨ë‹¤ (ì—†ìœ¼ë©´ 400 Bad Request)
         LoadSettingsWhenSessionReady();
     }
 
@@ -129,7 +129,7 @@ public class GameSettingManager : MonoBehaviour
         {
             nm.OnSessionReady -= HandleSessionReady;
             nm.OnSessionReady += HandleSessionReady;
-            Debug.Log("[GameSettingManager] ¼¼¼Ç »ı¼ºÀ» ±â´Ù·È´Ù°¡ ¼³Á¤À» ºÒ·¯¿É´Ï´Ù.");
+            Debug.Log("[GameSettingManager] ì„¸ì…˜ ìƒì„±ì„ ê¸°ë‹¤ë ¸ë‹¤ê°€ ì„¤ì •ì„ ë¶ˆëŸ¬ì˜µë‹ˆë‹¤.");
         }
     }
 
@@ -139,14 +139,14 @@ public class GameSettingManager : MonoBehaviour
         LoadSettingsFromServer();
     }
 
-    // 1. ¼­¹ö Åë½Å (GET / PATCH /v1/settings)
-    // ¼­¹ö¿¡¼­ ¼³Á¤À» Á¶È¸(GET)ÇÏ¿© À¯´ÏÆ¼ È¯°æ¿¡ Àû¿ë
+    // 1. ì„œë²„ í†µì‹  (GET / PATCH /v1/settings)
+    // ì„œë²„ì—ì„œ ì„¤ì •ì„ ì¡°íšŒ(GET)í•˜ì—¬ ìœ ë‹ˆí‹° í™˜ê²½ì— ì ìš©
     public void LoadSettingsFromServer()
     {
         if (NetworkManager.Instance == null) return;
         if (!NetworkManager.Instance.HasSession)
         {
-            LoadSettingsWhenSessionReady(); // ¾ÆÁ÷ ¼¼¼ÇÀÌ ¾øÀ¸¸é »ı±â¸é ´Ù½Ã ½Ãµµ
+            LoadSettingsWhenSessionReady(); // ì•„ì§ ì„¸ì…˜ì´ ì—†ìœ¼ë©´ ìƒê¸°ë©´ ë‹¤ì‹œ ì‹œë„
             return;
         }
 
@@ -154,7 +154,7 @@ public class GameSettingManager : MonoBehaviour
         {
             if (settingsData != null)
             {
-                // ¼­¹ö ¼ö½Å µ¥ÀÌÅÍ¸¦ Ä³½Ã¿¡ ÇÒ´ç
+                // ì„œë²„ ìˆ˜ì‹  ë°ì´í„°ë¥¼ ìºì‹œì— í• ë‹¹
                 masterVolume = settingsData.master_volume;
                 bgmVolume = settingsData.bgm_volume;
                 sfxVolume = settingsData.sfx_volume;
@@ -162,23 +162,23 @@ public class GameSettingManager : MonoBehaviour
                 isWindowed = settingsData.is_windowed;
                 resolutionOp = settingsData.resolution_op;
 
-                // À¯´ÏÆ¼ ·ÎÄÃ È¯°æ¿¡ Àû¿ë
+                // ìœ ë‹ˆí‹° ë¡œì»¬ í™˜ê²½ì— ì ìš©
                 ApplyAllSettingsToUnity();
             }
         }));
     }
 
-    // º¯°æµÈ ¼³Á¤À» ¼­¹ö·Î Àü¼ÛÇÏ¿© ÀúÀå(PATCH)
+    // ë³€ê²½ëœ ì„¤ì •ì„ ì„œë²„ë¡œ ì „ì†¡í•˜ì—¬ ì €ì¥(PATCH)
     public void SaveSettingsToServer()
     {
         if (NetworkManager.Instance == null) return;
         if (!NetworkManager.Instance.HasSession)
         {
-            Debug.LogWarning("[GameSettingManager] ¼¼¼ÇÀÌ ¾ÆÁ÷ ¾ø¾î ¼³Á¤À» ¼­¹ö¿¡ ÀúÀåÇÏÁö ¸øÇß½À´Ï´Ù.");
+            Debug.LogWarning("[GameSettingManager] ì„¸ì…˜ì´ ì•„ì§ ì—†ì–´ ì„¤ì •ì„ ì„œë²„ì— ì €ì¥í•˜ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.");
             return;
         }
 
-        // Àü¼Û¿ë DTO »ı¼º
+        // ì „ì†¡ìš© DTO ìƒì„±
         SettingsUpdateRequest updateRequest = new SettingsUpdateRequest
         {
             master_volume = masterVolume,
@@ -193,32 +193,32 @@ public class GameSettingManager : MonoBehaviour
         {
             if (isSuccess)
             {
-                Debug.Log("¼­¹ö¿¡ ¼³Á¤ ÀúÀå ¿Ï·á!");
+                Debug.Log("ì„œë²„ì— ì„¤ì • ì €ì¥ ì™„ë£Œ!");
             }
         }));
     }
 
-    // 2. À¯´ÏÆ¼ ½ÇÁ¦ ·ÎÄÃ È¯°æ Àû¿ë
-    // ÇöÀç Ä³½ÃµÈ ¸ğµç ¼³Á¤°ªÀ» À¯´ÏÆ¼ ½ÇÁ¦ ½Ã½ºÅÛ(¿Àµğ¿À/È­¸é)¿¡ ¹İ¿µ
+    // 2. ìœ ë‹ˆí‹° ì‹¤ì œ ë¡œì»¬ í™˜ê²½ ì ìš©
+    // í˜„ì¬ ìºì‹œëœ ëª¨ë“  ì„¤ì •ê°’ì„ ìœ ë‹ˆí‹° ì‹¤ì œ ì‹œìŠ¤í…œ(ì˜¤ë””ì˜¤/í™”ë©´)ì— ë°˜ì˜
     private void ApplyAllSettingsToUnity()
     {
-        // (1) ¿Àµğ¿À ¼³Á¤ Àû¿ë
+        // (1) ì˜¤ë””ì˜¤ ì„¤ì • ì ìš©
         SetMasterVolume(masterVolume);
         SetBGMVolume(bgmVolume);
         SetSFXVolume(sfxVolume);
         SetMuteToggle(isMuted);
         ApplyBgmVolume(true);
 
-        // (2) Ã¢¸ğµå/ÀüÃ¼È­¸é Àû¿ë (isWindowed == true -> fullScreen = false)
+        // (2) ì°½ëª¨ë“œ/ì „ì²´í™”ë©´ ì ìš© (isWindowed == true -> fullScreen = false)
         Screen.fullScreen = !isWindowed;
 
-        // (3) ÇØ»óµµ Àû¿ë
+        // (3) í•´ìƒë„ ì ìš©
         ApplyResolutionString(resolutionOp);
     }
 
-    // 3. UI ÀÌº¥Æ®¿ë °ø°³ ÇÔ¼ö
-    // À½¼Ò°Å Åä±Û Ã³¸® (UI Åä±Û ¿¬µ¿)
-    // <param name="isMute">À½¼Ò°Å ¿©ºÎ</param>
+    // 3. UI ì´ë²¤íŠ¸ìš© ê³µê°œ í•¨ìˆ˜
+    // ìŒì†Œê±° í† ê¸€ ì²˜ë¦¬ (UI í† ê¸€ ì—°ë™)
+    // <param name="isMute">ìŒì†Œê±° ì—¬ë¶€</param>
     public void SetMuteToggle(bool isMute)
     {
         isMuted = isMute;
@@ -228,19 +228,19 @@ public class GameSettingManager : MonoBehaviour
             audioMixer.SetFloat("Master", db);
         }
         ApplyBgmVolume(true);
-        Debug.Log($"À½¼Ò°Å »óÅÂ º¯°æ: {isMuted}");
+        Debug.Log($"ìŒì†Œê±° ìƒíƒœ ë³€ê²½: {isMuted}");
     }
 
-    // Ã¢¸ğµå / ÀüÃ¼È­¸é ÀüÈ¯ (UI Åä±Û ¿¬µ¿)
-    // <param name="isWindowedMode">Ã¢¸ğµå ¿©ºÎ</param>
+    // ì°½ëª¨ë“œ / ì „ì²´í™”ë©´ ì „í™˜ (UI í† ê¸€ ì—°ë™)
+    // <param name="isWindowedMode">ì°½ëª¨ë“œ ì—¬ë¶€</param>
     public void SetWindowedMode(bool isWindowedMode)
     {
         isWindowed = isWindowedMode;
         Screen.fullScreen = !isWindowed;
-        Debug.Log($"Ã¢¸ğµå ¿©ºÎ º¯°æ: {isWindowed} (ÀüÃ¼È­¸é: {!isWindowed})");
+        Debug.Log($"ì°½ëª¨ë“œ ì—¬ë¶€ ë³€ê²½: {isWindowed} (ì „ì²´í™”ë©´: {!isWindowed})");
     }
 
-    // µå·Ó´Ù¿î ÀÎµ¦½º ±â¹İ ÇØ»óµµ º¯°æ (UI Dropdown ¿¬µ¿)
+    // ë“œë¡­ë‹¤ìš´ ì¸ë±ìŠ¤ ê¸°ë°˜ í•´ìƒë„ ë³€ê²½ (UI Dropdown ì—°ë™)
     // <param name="index">0: 1080p, 1: 900p, 2: 720p</param>
     public void SetResolutionByIndex(int index)
     {
@@ -253,11 +253,11 @@ public class GameSettingManager : MonoBehaviour
         }
 
         ApplyResolutionString(resolutionOp);
-        Debug.Log($"ÇØ»óµµ º¯°æ ¿Ï·á: {resolutionOp}");
+        Debug.Log($"í•´ìƒë„ ë³€ê²½ ì™„ë£Œ: {resolutionOp}");
     }
 
-    // º¼·ı Á¶Àı ÀüÃ¼: <param name="volume">0.0 ~ 1.0 °ª</param>
-    // ¸¶½ºÅÍ º¼·ı Á¶Àı (UI ½½¶óÀÌ´õ ¿¬µ¿)
+    // ë³¼ë¥¨ ì¡°ì ˆ ì „ì²´: <param name="volume">0.0 ~ 1.0 ê°’</param>
+    // ë§ˆìŠ¤í„° ë³¼ë¥¨ ì¡°ì ˆ (UI ìŠ¬ë¼ì´ë” ì—°ë™)
     public void SetMasterVolume(float volume)
     {
         masterVolume = volume;
@@ -268,7 +268,7 @@ public class GameSettingManager : MonoBehaviour
         ApplyBgmVolume(true);
     }
 
-    /// BGM º¼·ı Á¶Àı (UI ½½¶óÀÌ´õ ¿¬µ¿)
+    /// BGM ë³¼ë¥¨ ì¡°ì ˆ (UI ìŠ¬ë¼ì´ë” ì—°ë™)
     public void SetBGMVolume(float volume)
     {
         bgmVolume = volume;
@@ -279,7 +279,7 @@ public class GameSettingManager : MonoBehaviour
         ApplyBgmVolume(true);
     }
 
-    // SFX º¼·ı Á¶Àı (UI ½½¶óÀÌ´õ ¿¬µ¿)
+    // SFX ë³¼ë¥¨ ì¡°ì ˆ (UI ìŠ¬ë¼ì´ë” ì—°ë™)
     public void SetSFXVolume(float volume)
     {
         sfxVolume = volume;
@@ -289,7 +289,7 @@ public class GameSettingManager : MonoBehaviour
         }
     }
 
-    // ¸¶ÀÌÅ© ÀåÄ¡ º¯°æ (UI Dropdown ¿¬µ¿)
+    // ë§ˆì´í¬ ì¥ì¹˜ ë³€ê²½ (UI Dropdown ì—°ë™)
     public void SetMicrophoneByIndex(int index)
     {
         if (availableMics == null || availableMics.Length == 0) return;
@@ -298,17 +298,17 @@ public class GameSettingManager : MonoBehaviour
         {
             selectedMicName = availableMics[index];
 
-            // º¯°æµÈ ¸¶ÀÌÅ© ÀÌ¸§À» ±â±â ·ÎÄÃ¿¡ ÀúÀå (¼­¹ö Àü¼Û X)
+            // ë³€ê²½ëœ ë§ˆì´í¬ ì´ë¦„ì„ ê¸°ê¸° ë¡œì»¬ì— ì €ì¥ (ì„œë²„ ì „ì†¡ X)
             PlayerPrefs.SetString("SelectedMic", selectedMicName);
             PlayerPrefs.Save();
 
-            Debug.Log($"¸¶ÀÌÅ© º¯°æ ¹× ·ÎÄÃ ÀúÀå ¿Ï·á: {selectedMicName}");
+            Debug.Log($"ë§ˆì´í¬ ë³€ê²½ ë° ë¡œì»¬ ì €ì¥ ì™„ë£Œ: {selectedMicName}");
         }
     }
 
 
     // =========================================================
-    // BGM ÄÑ±â / ²ô±â (MusicToggle ¹öÆ° µî¿¡¼­ È£Ãâ)
+    // BGM ì¼œê¸° / ë„ê¸° (MusicToggle ë²„íŠ¼ ë“±ì—ì„œ í˜¸ì¶œ)
     // =========================================================
     public void ToggleBGM() => SetBGMOn(!IsBgmOn);
 
@@ -319,7 +319,7 @@ public class GameSettingManager : MonoBehaviour
         PlayerPrefs.Save();
         ApplyBgmVolume(false);
         OnBgmToggled?.Invoke(on);
-        Debug.Log($"BGM {(on ? "ÄÑÁü" : "²¨Áü")}");
+        Debug.Log($"BGM {(on ? "ì¼œì§" : "êº¼ì§")}");
     }
 
     private void SetupBgm()
@@ -329,7 +329,7 @@ public class GameSettingManager : MonoBehaviour
         bgmSource = gameObject.AddComponent<AudioSource>();
         bgmSource.loop = true;
         bgmSource.playOnAwake = false;
-        bgmSource.spatialBlend = 0f; // 2D »ç¿îµå
+        bgmSource.spatialBlend = 0f; // 2D ì‚¬ìš´ë“œ
         if (audioMixer != null)
         {
             AudioMixerGroup[] groups = audioMixer.FindMatchingGroups("BGM");
@@ -342,7 +342,7 @@ public class GameSettingManager : MonoBehaviour
 
     private void HandleSceneLoaded(Scene scene, LoadSceneMode mode) => PlayBgmForScene(scene.name);
 
-    // ¾À¿¡ ¸Â´Â BGM Àç»ı (°°Àº °îÀÌ¸é ²÷Áö ¾Ê°í ÀÌ¾î¼­)
+    // ì”¬ì— ë§ëŠ” BGM ì¬ìƒ (ê°™ì€ ê³¡ì´ë©´ ëŠì§€ ì•Šê³  ì´ì–´ì„œ)
     private void PlayBgmForScene(string sceneName)
     {
         if (bgmSource == null) return;
@@ -359,7 +359,7 @@ public class GameSettingManager : MonoBehaviour
         ApplyBgmVolume(true);
     }
 
-    // ½ÇÁ¦ BGM Å©±â = ±âº» Å©±â ¡¿ BGM º¼·ı ¡¿ (¹Í¼­°¡ ¾øÀ¸¸é ¸¶½ºÅÍ º¼·ı) / ²¨Áü¡¤À½¼Ò°Å¸é 0
+    // ì‹¤ì œ BGM í¬ê¸° = ê¸°ë³¸ í¬ê¸° Ã— BGM ë³¼ë¥¨ Ã— (ë¯¹ì„œê°€ ì—†ìœ¼ë©´ ë§ˆìŠ¤í„° ë³¼ë¥¨) / êº¼ì§Â·ìŒì†Œê±°ë©´ 0
     private void ApplyBgmVolume(bool instant)
     {
         if (bgmSource == null) return;
@@ -389,15 +389,15 @@ public class GameSettingManager : MonoBehaviour
         bgmFade = null;
     }
 
-    // 4. ³»ºÎ ÇïÆÛ ÇÔ¼ö
+    // 4. ë‚´ë¶€ í—¬í¼ í•¨ìˆ˜
 
-    // 0.0~1.0 ºñÀ² °ªÀ» AudioMixer¿ë µ¥½Ãº§(dB)·Î º¯È¯ (-80dB ~ 0dB)
+    // 0.0~1.0 ë¹„ìœ¨ ê°’ì„ AudioMixerìš© ë°ì‹œë²¨(dB)ë¡œ ë³€í™˜ (-80dB ~ 0dB)
     private float ConvertToDecibel(float linear)
     {
         return Mathf.Log10(Mathf.Clamp(linear, 0.0001f, 1f)) * 20;
     }
 
-    // '1920x1080' ÇüÅÂÀÇ ¹®ÀÚ¿­À» ÆÄ½ÌÇÏ¿© Screen.SetResolution ½ÇÇà
+    // '1920x1080' í˜•íƒœì˜ ë¬¸ìì—´ì„ íŒŒì‹±í•˜ì—¬ Screen.SetResolution ì‹¤í–‰
     private void ApplyResolutionString(string resString)
     {
         string[] dimensions = resString.Split('x');

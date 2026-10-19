@@ -1,12 +1,12 @@
-using UnityEngine;
-using UnityEngine.EventSystems; // UI ÀÌº¥Æ® Ã³¸®¸¦ À§ÇØ ÇÊ¼ö!
+ï»¿using UnityEngine;
+using UnityEngine.EventSystems; // UI ì´ë²¤íŠ¸ ì²˜ë¦¬ë¥¼ ìœ„í•´ í•„ìˆ˜!
 
 public class ButtonHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
-    [Header("Å¸°ÙÆÃ ÀÌ¹ÌÁö ¿ÀºêÁ§Æ®")]
+    [Header("íƒ€ê²ŸíŒ… ì´ë¯¸ì§€ ì˜¤ë¸Œì íŠ¸")]
     public GameObject targetingEffect;
 
-    // ¸¶¿ì½º°¡ ¹öÆ° ¾ÈÀ¸·Î µé¾î¿Ã ¶§ (Hover On)
+    // ë§ˆìš°ìŠ¤ê°€ ë²„íŠ¼ ì•ˆìœ¼ë¡œ ë“¤ì–´ì˜¬ ë•Œ (Hover On)
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (targetingEffect != null)
@@ -15,7 +15,7 @@ public class ButtonHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerEx
         }
     }
 
-    // ¸¶¿ì½º°¡ ¹öÆ° ¹ÛÀ¸·Î ³ª°¥ ¶§ (Hover Off)
+    // ë§ˆìš°ìŠ¤ê°€ ë²„íŠ¼ ë°–ìœ¼ë¡œ ë‚˜ê°ˆ ë•Œ (Hover Off)
     public void OnPointerExit(PointerEventData eventData)
     {
         if (targetingEffect != null)
@@ -24,7 +24,7 @@ public class ButtonHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerEx
         }
     }
 
-    // ¹öÆ°À» Å¬¸¯ÇßÀ» ¶§ (Å¬¸¯ ½Ã Å¸°ÙÆÃ »ç¶óÁö°Ô ÇÏ±â)
+    // ë²„íŠ¼ì„ í´ë¦­í–ˆì„ ë•Œ (í´ë¦­ ì‹œ íƒ€ê²ŸíŒ… ì‚¬ë¼ì§€ê²Œ í•˜ê¸°)
     public void OnPointerClick(PointerEventData eventData)
     {
         if (targetingEffect != null)

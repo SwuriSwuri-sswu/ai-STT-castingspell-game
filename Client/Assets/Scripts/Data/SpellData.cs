@@ -1,30 +1,30 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.Serialization;
 
 public enum MagicElement { Normal, Water, Fire, Grass }
 
-// ¸¶¹ý ¿¬Ãâ ¹æ½Ä
-// Projectile    : ÁöÆÎÀÌ ³¡¿¡¼­ Åõ»çÃ¼ ¹ß»ç ¡æ ¸÷¿¡ ´êÀ¸¸é Æø¹ß ÀÌÆåÆ®
-// TargetInstant : ¸÷ À§Ä¡¿¡ ÀåÆÇ/Áï¹ß ÀÌÆåÆ® ¹Ù·Î »ý¼º
-// WandCharge    : ÁöÆÎÀÌ ³¡¿¡ Â÷Áö ÀÌÆåÆ®°¡ ¸Ó¹°·¶´Ù°¡, ÇÑ ¹ø ³¡³ª¸é ¸÷¿¡°Ô µ¥¹ÌÁö
+// ë§ˆë²• ì—°ì¶œ ë°©ì‹
+// Projectile    : ì§€íŒ¡ì´ ëì—ì„œ íˆ¬ì‚¬ì²´ ë°œì‚¬ â†’ ëª¹ì— ë‹¿ìœ¼ë©´ í­ë°œ ì´íŽ™íŠ¸
+// TargetInstant : ëª¹ ìœ„ì¹˜ì— ìž¥íŒ/ì¦‰ë°œ ì´íŽ™íŠ¸ ë°”ë¡œ ìƒì„±
+// WandCharge    : ì§€íŒ¡ì´ ëì— ì°¨ì§€ ì´íŽ™íŠ¸ê°€ ë¨¸ë¬¼ë €ë‹¤ê°€, í•œ ë²ˆ ëë‚˜ë©´ ëª¹ì—ê²Œ ë°ë¯¸ì§€
 public enum CastType { Projectile, TargetInstant, WandCharge }
 
 [CreateAssetMenu(fileName = "NewSpell", menuName = "Magic/Spell Data")]
 public class SpellData : ScriptableObject
 {
     [Header("Basic Info")]
-    [Tooltip("STT °á°ú¿Í ºñ±³ÇÒ ÀÌ¸§. ¶ç¾î¾²±â¡¤´ë¼Ò¹®ÀÚ´Â ¹«½ÃÇÏ°í ºñ±³ÇÕ´Ï´Ù.")]
+    [Tooltip("STT ê²°ê³¼ì™€ ë¹„êµí•  ì´ë¦„. ë„ì–´ì“°ê¸°Â·ëŒ€ì†Œë¬¸ìžëŠ” ë¬´ì‹œí•˜ê³  ë¹„êµí•©ë‹ˆë‹¤.")]
     public string spellName;
     public MagicElement elementType;
 
-    [Tooltip("¸¶¹ý ´Ü°è (³ë¸» ±âº» ½ºÆçÀº 0 ¶Ç´Â 1, ¼Ó¼º ½ºÆçÀº 1~3)")]
+    [Tooltip("ë§ˆë²• ë‹¨ê³„ (ë…¸ë§ ê¸°ë³¸ ìŠ¤íŽ ì€ 0 ë˜ëŠ” 1, ì†ì„± ìŠ¤íŽ ì€ 1~3)")]
     [Range(0, 3)] public int tier;
 
-    // ±âÁ¸ ¿¡¼ÂÀÇ isUnlocked Ã¼Å© °ªÀ» ±×´ë·Î ÀÌ¾î¹Þ½À´Ï´Ù.
-    // ÀÌ °ªÀº '°ÔÀÓ ½ÃÀÛ ½Ã ±âº»À¸·Î ÇØ±ÝµÇ¾î ÀÖ´Â°¡'¸¸ ÀÇ¹ÌÇÏ°í,
-    // ÇÃ·¹ÀÌ Áß ÇØ±Ý »óÅÂ´Â SkillManager°¡ µû·Î °ü¸®ÇÕ´Ï´Ù. (¿¡¼Â ÆÄÀÏÀÌ ¹Ù²îÁö ¾Êµµ·Ï)
+    // ê¸°ì¡´ ì—ì…‹ì˜ isUnlocked ì²´í¬ ê°’ì„ ê·¸ëŒ€ë¡œ ì´ì–´ë°›ìŠµë‹ˆë‹¤.
+    // ì´ ê°’ì€ 'ê²Œìž„ ì‹œìž‘ ì‹œ ê¸°ë³¸ìœ¼ë¡œ í•´ê¸ˆë˜ì–´ ìžˆëŠ”ê°€'ë§Œ ì˜ë¯¸í•˜ê³ ,
+    // í”Œë ˆì´ ì¤‘ í•´ê¸ˆ ìƒíƒœëŠ” SkillManagerê°€ ë”°ë¡œ ê´€ë¦¬í•©ë‹ˆë‹¤. (ì—ì…‹ íŒŒì¼ì´ ë°”ë€Œì§€ ì•Šë„ë¡)
     [FormerlySerializedAs("isUnlocked")]
-    [Tooltip("°ÔÀÓ ½ÃÀÛ ½Ã ±âº» ÇØ±Ý ¿©ºÎ (³ë¸» ±âº» ½ºÆç¸¸ Ã¼Å©)")]
+    [Tooltip("ê²Œìž„ ì‹œìž‘ ì‹œ ê¸°ë³¸ í•´ê¸ˆ ì—¬ë¶€ (ë…¸ë§ ê¸°ë³¸ ìŠ¤íŽ ë§Œ ì²´í¬)")]
     public bool unlockedByDefault = false;
 
     [Header("Combat Stats")]
@@ -33,34 +33,34 @@ public class SpellData : ScriptableObject
     [Header("Cast")]
     public CastType castType = CastType.Projectile;
 
-    [Tooltip("Æø¹ß/ÀåÆÇ ÀÌÆåÆ® ¿¬Ãâ ½Ã°£(ÃÊ). 0ÀÌ¸é ÆÄÆ¼Å¬ ±æÀÌ·Î ÀÚµ¿ °è»êÇÕ´Ï´Ù.")]
+    [Tooltip("í­ë°œ/ìž¥íŒ ì´íŽ™íŠ¸ ì—°ì¶œ ì‹œê°„(ì´ˆ). 0ì´ë©´ íŒŒí‹°í´ ê¸¸ì´ë¡œ ìžë™ ê³„ì‚°í•©ë‹ˆë‹¤.")]
     [Min(0f)] public float effectDuration = 0f;
 
-    [Tooltip("ÀÌÆåÆ®°¡ ½ÃÀÛµÈ µÚ µ¥¹ÌÁö°¡ µé¾î°¡±â±îÁöÀÇ ½Ã°£(ÃÊ).\n" +
-             "-1 = ÀÚµ¿ (Åõ»çÃ¼Çü: ´ê´Â ¼ø°£ / Áï¹ßÇü¡¤Â÷ÁöÇü: ÀÌÆåÆ®°¡ ³¡³¯ ¶§)")]
+    [Tooltip("ì´íŽ™íŠ¸ê°€ ì‹œìž‘ëœ ë’¤ ë°ë¯¸ì§€ê°€ ë“¤ì–´ê°€ê¸°ê¹Œì§€ì˜ ì‹œê°„(ì´ˆ).\n" +
+             "-1 = ìžë™ (íˆ¬ì‚¬ì²´í˜•: ë‹¿ëŠ” ìˆœê°„ / ì¦‰ë°œí˜•Â·ì°¨ì§€í˜•: ì´íŽ™íŠ¸ê°€ ëë‚  ë•Œ)")]
     public float damageDelay = -1f;
 
     [Header("Drop")]
-    [Tooltip("µå¶ø °¡ÁßÄ¡. 0ÀÌ¸é ´Ü°è(tier)¿¡ µû¶ó ÀÚµ¿ (1´Ü°è 60 / 2´Ü°è 30 / 3´Ü°è 10)")]
+    [Tooltip("ë“œëž ê°€ì¤‘ì¹˜. 0ì´ë©´ ë‹¨ê³„(tier)ì— ë”°ë¼ ìžë™ (1ë‹¨ê³„ 60 / 2ë‹¨ê³„ 30 / 3ë‹¨ê³„ 10)")]
     [Min(0f)] public float dropWeight = 0f;
 
     [Header("Visual Effects")]
-    [Tooltip("Projectile Å¸ÀÔÀÏ ¶§ ³¯¾Æ°¥ Åõ»çÃ¼")]
+    [Tooltip("Projectile íƒ€ìž…ì¼ ë•Œ ë‚ ì•„ê°ˆ íˆ¬ì‚¬ì²´")]
     public GameObject projectilePrefab;
-    [Tooltip("WandCharge Å¸ÀÔÀÏ ¶§ ÁöÆÎÀÌ ³¡¿¡ ¸Ó¹«¸¦ Â÷Áö ÀÌÆåÆ®")]
+    [Tooltip("WandCharge íƒ€ìž…ì¼ ë•Œ ì§€íŒ¡ì´ ëì— ë¨¸ë¬´ë¥¼ ì°¨ì§€ ì´íŽ™íŠ¸")]
     public GameObject chargePrefab;
-    [Tooltip("Projectile: ÀûÁß ½Ã Æø¹ß / TargetInstant: ¸÷ À§Ä¡ÀÇ ÀåÆÇ ÀÌÆåÆ®\n" +
-             "WandCharge: (¼±ÅÃ) Â÷Áö°¡ ³¡³ª´Â ¼ø°£ ¸÷ À§Ä¡¿¡ ÅÍÁú ÀÌÆåÆ®. ¾øÀ¸¸é ºñ¿öµÎ±â")]
+    [Tooltip("Projectile: ì ì¤‘ ì‹œ í­ë°œ / TargetInstant: ëª¹ ìœ„ì¹˜ì˜ ìž¥íŒ ì´íŽ™íŠ¸\n" +
+             "WandCharge: (ì„ íƒ) ì°¨ì§€ê°€ ëë‚˜ëŠ” ìˆœê°„ ëª¹ ìœ„ì¹˜ì— í„°ì§ˆ ì´íŽ™íŠ¸. ì—†ìœ¼ë©´ ë¹„ì›Œë‘ê¸°")]
     public GameObject explosionPrefab;
 
-    // ½ÇÁ¦·Î Àû¿ëµÉ µ¥¹ÌÁö Áö¿¬ ½Ã°£ °è»ê
+    // ì‹¤ì œë¡œ ì ìš©ë  ë°ë¯¸ì§€ ì§€ì—° ì‹œê°„ ê³„ì‚°
     public float ResolveDamageDelay(float effectLength)
     {
         if (damageDelay >= 0f) return damageDelay;
         return castType == CastType.Projectile ? 0f : effectLength;
     }
 
-    // ½ÇÁ¦·Î Àû¿ëµÉ µå¶ø °¡ÁßÄ¡
+    // ì‹¤ì œë¡œ ì ìš©ë  ë“œëž ê°€ì¤‘ì¹˜
     public float ResolveDropWeight()
     {
         if (dropWeight > 0f) return dropWeight;

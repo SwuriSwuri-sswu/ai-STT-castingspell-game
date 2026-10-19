@@ -1,16 +1,16 @@
-using System.IO;
+ï»¿using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-// Mixamo FBX ¾ÈÀÇ ¾Ö´Ï¸ŞÀÌ¼Ç Å¬¸³ ÀÌ¸§(ÀüºÎ "mixamo.com")À» ÆÄÀÏ ÀÌ¸§À¸·Î ÇÑ ¹ø¿¡ ¹Ù²ã ÁÜ
-// »ç¿ë: Project Ã¢¿¡¼­ FBX ¿©·¯ °³ ¼±ÅÃ ¡æ »ó´Ü ¸Ş´º Tools ¡æ Mixamo ¡æ ¼±ÅÃÇÑ FBX Á¤¸®
-//   - Å¬¸³ ÀÌ¸§ = ÆÄÀÏ ÀÌ¸§ (¿¹: Attack_1H_1.fbx ¡æ Å¬¸³ "Attack_1H_1")
-//   - ¹İº¹ ¼³Á¤: ÀÌ¸§¿¡ Idle / SittingÀÌ ÀÖÀ¸¸é Loop Time ÄÔ, ³ª¸ÓÁö´Â ²û
-//   - Á¦ÀÚ¸® °íÁ¤: µ¿ÀÛ Áß ¸öÀÌ ¹Ì²ô·¯Áö°Å³ª µ¹¾Æ°¡Áö ¾Ê°Ô Root TransformÀ» Bake Into Pose
-// ¡Ø ÀÌ ÆÄÀÏÀº ¹İµå½Ã 'Editor' Æú´õ ¾È¿¡ µÎ±â (¿¹: Assets/Scripts/Editor/MixamoClipRenamer.cs)
+// Mixamo FBX ì•ˆì˜ ì• ë‹ˆë©”ì´ì…˜ í´ë¦½ ì´ë¦„(ì „ë¶€ "mixamo.com")ì„ íŒŒì¼ ì´ë¦„ìœ¼ë¡œ í•œ ë²ˆì— ë°”ê¿” ì¤Œ
+// ì‚¬ìš©: Project ì°½ì—ì„œ FBX ì—¬ëŸ¬ ê°œ ì„ íƒ â†’ ìƒë‹¨ ë©”ë‰´ Tools â†’ Mixamo â†’ ì„ íƒí•œ FBX ì •ë¦¬
+//   - í´ë¦½ ì´ë¦„ = íŒŒì¼ ì´ë¦„ (ì˜ˆ: Attack_1H_1.fbx â†’ í´ë¦½ "Attack_1H_1")
+//   - ë°˜ë³µ ì„¤ì •: ì´ë¦„ì— Idle / Sittingì´ ìˆìœ¼ë©´ Loop Time ì¼¬, ë‚˜ë¨¸ì§€ëŠ” ë”
+//   - ì œìë¦¬ ê³ ì •: ë™ì‘ ì¤‘ ëª¸ì´ ë¯¸ë„ëŸ¬ì§€ê±°ë‚˜ ëŒì•„ê°€ì§€ ì•Šê²Œ Root Transformì„ Bake Into Pose
+// â€» ì´ íŒŒì¼ì€ ë°˜ë“œì‹œ 'Editor' í´ë” ì•ˆì— ë‘ê¸° (ì˜ˆ: Assets/Scripts/Editor/MixamoClipRenamer.cs)
 public static class MixamoClipRenamer
 {
-    [MenuItem("Tools/Mixamo/¼±ÅÃÇÑ FBX Á¤¸® (Å¬¸³ ÀÌ¸§ = ÆÄÀÏ ÀÌ¸§)")]
+    [MenuItem("Tools/Mixamo/ì„ íƒí•œ FBX ì •ë¦¬ (í´ë¦½ ì´ë¦„ = íŒŒì¼ ì´ë¦„)")]
     private static void RenameSelected()
     {
         int done = 0;
@@ -24,7 +24,7 @@ public static class MixamoClipRenamer
 
             ModelImporterClipAnimation[] clips = importer.clipAnimations;
             if (clips == null || clips.Length == 0) clips = importer.defaultClipAnimations;
-            if (clips == null || clips.Length == 0) continue; // ¾Ö´Ï¸ŞÀÌ¼Ç ¾ø´Â FBX
+            if (clips == null || clips.Length == 0) continue; // ì• ë‹ˆë©”ì´ì…˜ ì—†ëŠ” FBX
 
             string fileName = Path.GetFileNameWithoutExtension(path);
             string lower = fileName.ToLowerInvariant();
@@ -34,7 +34,7 @@ public static class MixamoClipRenamer
             {
                 clips[i].name = clips.Length == 1 ? fileName : $"{fileName}_{i + 1}";
                 clips[i].loopTime = loop;
-                // Á¦ÀÚ¸® °íÁ¤ (Bake Into Pose)
+                // ì œìë¦¬ ê³ ì • (Bake Into Pose)
                 clips[i].lockRootRotation = true;
                 clips[i].lockRootHeightY = true;
                 clips[i].lockRootPositionXZ = true;
@@ -46,12 +46,12 @@ public static class MixamoClipRenamer
             importer.clipAnimations = clips;
             importer.SaveAndReimport();
             done++;
-            Debug.Log($"[Mixamo] {fileName}: Å¬¸³ ÀÌ¸§ Á¤¸® ¿Ï·á (¹İº¹ {(loop ? "ÄÔ" : "²û")})");
+            Debug.Log($"[Mixamo] {fileName}: í´ë¦½ ì´ë¦„ ì •ë¦¬ ì™„ë£Œ (ë°˜ë³µ {(loop ? "ì¼¬" : "ë”")})");
         }
-        Debug.Log($"[Mixamo] FBX {done}°³ Á¤¸® ¿Ï·á");
+        Debug.Log($"[Mixamo] FBX {done}ê°œ ì •ë¦¬ ì™„ë£Œ");
     }
 
-    [MenuItem("Tools/Mixamo/¼±ÅÃÇÑ FBX Á¤¸® (Å¬¸³ ÀÌ¸§ = ÆÄÀÏ ÀÌ¸§)", true)]
+    [MenuItem("Tools/Mixamo/ì„ íƒí•œ FBX ì •ë¦¬ (í´ë¦½ ì´ë¦„ = íŒŒì¼ ì´ë¦„)", true)]
     private static bool Validate()
     {
         foreach (Object obj in Selection.objects)

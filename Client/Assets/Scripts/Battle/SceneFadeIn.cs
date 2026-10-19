@@ -1,24 +1,24 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class SceneFadeIn : MonoBehaviour
 {
-    [Header("ÆäÀÌµå ÀÎ ¼³Á¤")]
+    [Header("í˜ì´ë“œ ì¸ ì„¤ì •")]
     public Image fadeScreen;
-    public float fadeDuration = 1.5f; // È­¸éÀÌ ¹à¾ÆÁö´Â ½Ã°£ (1.5ÃÊ)
+    public float fadeDuration = 1.5f; // í™”ë©´ì´ ë°ì•„ì§€ëŠ” ì‹œê°„ (1.5ì´ˆ)
 
     void Start()
     {
         if (fadeScreen != null)
         {
-            // ¾ÀÀÌ ¿­¸®ÀÚ¸¶ÀÚ È­¸éÀ» ¿Ïº®ÇÑ °ËÀº»ö(Alpha 1)À¸·Î °­Á¦ °íÁ¤
+            // ì”¬ì´ ì—´ë¦¬ìë§ˆì í™”ë©´ì„ ì™„ë²½í•œ ê²€ì€ìƒ‰(Alpha 1)ìœ¼ë¡œ ê°•ì œ ê³ ì •
             Color c = fadeScreen.color;
             c.a = 1f;
             fadeScreen.color = c;
             fadeScreen.gameObject.SetActive(true);
 
-            // Áï½Ã ÆäÀÌµåÀÎ ½ÃÀÛ
+            // ì¦‰ì‹œ í˜ì´ë“œì¸ ì‹œì‘
             StartCoroutine(FadeInRoutine());
         }
     }
@@ -28,7 +28,7 @@ public class SceneFadeIn : MonoBehaviour
         float elapsedTime = 0f;
         Color fadeColor = fadeScreen.color;
 
-        // 1.5ÃÊ µ¿¾È ¼­¼­È÷ Åõ¸íÇØÁü
+        // 1.5ì´ˆ ë™ì•ˆ ì„œì„œíˆ íˆ¬ëª…í•´ì§
         while (elapsedTime < fadeDuration)
         {
             fadeColor.a = Mathf.Lerp(1f, 0f, elapsedTime / fadeDuration);
@@ -37,7 +37,7 @@ public class SceneFadeIn : MonoBehaviour
             yield return null;
         }
 
-        // ¿¬Ãâ ¿Ï·á ÈÄ UI ºñÈ°¼ºÈ­ (Å¬¸¯ ¹æÇØ ¹æÁö)
+        // ì—°ì¶œ ì™„ë£Œ í›„ UI ë¹„í™œì„±í™” (í´ë¦­ ë°©í•´ ë°©ì§€)
         fadeColor.a = 0f;
         fadeScreen.color = fadeColor;
         fadeScreen.gameObject.SetActive(false);

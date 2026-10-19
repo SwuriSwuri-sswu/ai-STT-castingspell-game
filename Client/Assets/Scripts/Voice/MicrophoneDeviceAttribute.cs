@@ -1,8 +1,8 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 /// <summary>
-/// string ÇÊµå¿¡ ºÙÀÌ¸é Inspector ¿¡¼­ ÇöÀç ¿¬°áµÈ ¸¶ÀÌÅ© ¸ñ·ÏÀ» Åä±Û·Î ¼±ÅÃÇÒ ¼ö ÀÖ´Ù.
-/// ½ÇÁ¦ Ç¥½Ã´Â Editor/MicrophoneDeviceDrawer.cs °¡ ´ã´çÇÑ´Ù.
-/// ¼±ÅÃ°ª: ºó ¹®ÀÚ¿­ = ½Ã½ºÅÛ ±âº» ÀåÄ¡, ±× ¿Ü = Microphone.devices ÀÇ ÀåÄ¡ ÀÌ¸§
+/// string í•„ë“œì— ë¶™ì´ë©´ Inspector ì—ì„œ í˜„ìž¬ ì—°ê²°ëœ ë§ˆì´í¬ ëª©ë¡ì„ í† ê¸€ë¡œ ì„ íƒí•  ìˆ˜ ìžˆë‹¤.
+/// ì‹¤ì œ í‘œì‹œëŠ” Editor/MicrophoneDeviceDrawer.cs ê°€ ë‹´ë‹¹í•œë‹¤.
+/// ì„ íƒê°’: ë¹ˆ ë¬¸ìžì—´ = ì‹œìŠ¤í…œ ê¸°ë³¸ ìž¥ì¹˜, ê·¸ ì™¸ = Microphone.devices ì˜ ìž¥ì¹˜ ì´ë¦„
 /// </summary>
 public class MicrophoneDeviceAttribute : PropertyAttribute { }

@@ -1,18 +1,18 @@
-using System.Collections.Generic;
+ï»¿using System.Collections.Generic;
 using UnityEngine;
 
-// ½ºÆç µµ°¨ ¼öÁı ±â·Ï (°ÔÀÓÀ» ²°´Ù ÄÑµµ À¯Áö)
-// ÇÑ ÆÇÀÌ ³¡³ª¸é ¹è¿î ½ºÆçÀº ÃÊ±âÈ­µÇÁö¸¸, 'ÇÑ ¹øÀÌ¶óµµ ¹è¿î Àû ÀÖ´Â ½ºÆç'Àº ¿©±â °è¼Ó ³²½À´Ï´Ù.
-// Å¸ÀÌÆ² È­¸éÀÇ ½ºÆç µµ°¨ÀÌ ÀÌ ±â·ÏÀ» º¸¿© Áİ´Ï´Ù.
-// ÀúÀå À§Ä¡: PlayerPrefs (ÀÌ ÄÄÇ»ÅÍ¿¡¸¸ ÀúÀå)
+// ìŠ¤í  ë„ê° ìˆ˜ì§‘ ê¸°ë¡ (ê²Œì„ì„ ê»ë‹¤ ì¼œë„ ìœ ì§€)
+// í•œ íŒì´ ëë‚˜ë©´ ë°°ìš´ ìŠ¤í ì€ ì´ˆê¸°í™”ë˜ì§€ë§Œ, 'í•œ ë²ˆì´ë¼ë„ ë°°ìš´ ì  ìˆëŠ” ìŠ¤í 'ì€ ì—¬ê¸° ê³„ì† ë‚¨ìŠµë‹ˆë‹¤.
+// íƒ€ì´í‹€ í™”ë©´ì˜ ìŠ¤í  ë„ê°ì´ ì´ ê¸°ë¡ì„ ë³´ì—¬ ì¤ë‹ˆë‹¤.
+// ì €ì¥ ìœ„ì¹˜: PlayerPrefs (ì´ ì»´í“¨í„°ì—ë§Œ ì €ì¥)
 public static class SpellCollection
 {
     private const string CollectedKey = "SpellCollection.Collected";
     private const string SeenKey = "SpellCollection.Seen";
     private const char Separator = '|';
 
-    private static List<string> collected;   // Ã³À½ ¹è¿î ¼ø¼­´ë·Î
-    private static HashSet<string> seen;     // µµ°¨¿¡¼­ ÀÌ¹Ì È®ÀÎÇÑ ½ºÆç
+    private static List<string> collected;   // ì²˜ìŒ ë°°ìš´ ìˆœì„œëŒ€ë¡œ
+    private static HashSet<string> seen;     // ë„ê°ì—ì„œ ì´ë¯¸ í™•ì¸í•œ ìŠ¤í 
 
     public static IReadOnlyList<string> CollectedNames
     {
@@ -25,7 +25,7 @@ public static class SpellCollection
         return spell != null && collected.Contains(Key(spell));
     }
 
-    // ½ºÆçÀ» ¹è¿ï ¶§¸¶´Ù È£Ãâ (SkillManager). Ã³À½ ¹è¿î ½ºÆçÀÌ¸é true
+    // ìŠ¤í ì„ ë°°ìš¸ ë•Œë§ˆë‹¤ í˜¸ì¶œ (SkillManager). ì²˜ìŒ ë°°ìš´ ìŠ¤í ì´ë©´ true
     public static bool Add(SpellData spell)
     {
         if (spell == null) return false;
@@ -55,7 +55,7 @@ public static class SpellCollection
         if (changed) Save(SeenKey, seen);
     }
 
-    // Å×½ºÆ®¿ë: µµ°¨ ±â·Ï ÀüºÎ Áö¿ì±â
+    // í…ŒìŠ¤íŠ¸ìš©: ë„ê° ê¸°ë¡ ì „ë¶€ ì§€ìš°ê¸°
     public static void Clear()
     {
         Load();
@@ -64,10 +64,10 @@ public static class SpellCollection
         PlayerPrefs.DeleteKey(CollectedKey);
         PlayerPrefs.DeleteKey(SeenKey);
         PlayerPrefs.Save();
-        Debug.Log("[SpellCollection] ½ºÆç µµ°¨ ±â·ÏÀ» ÃÊ±âÈ­Çß½À´Ï´Ù.");
+        Debug.Log("[SpellCollection] ìŠ¤í  ë„ê° ê¸°ë¡ì„ ì´ˆê¸°í™”í–ˆìŠµë‹ˆë‹¤.");
     }
 
-    // ½ºÆç ÀÌ¸§ ±âÁØÀ¸·Î ÀúÀå (¿¡¼Â ÀÌ¸§ÀÌ ¹Ù²î¾îµµ spellNameÀÌ °°À¸¸é À¯Áö)
+    // ìŠ¤í  ì´ë¦„ ê¸°ì¤€ìœ¼ë¡œ ì €ì¥ (ì—ì…‹ ì´ë¦„ì´ ë°”ë€Œì–´ë„ spellNameì´ ê°™ìœ¼ë©´ ìœ ì§€)
     private static string Key(SpellData spell) =>
         string.IsNullOrEmpty(spell.spellName) ? spell.name : spell.spellName;
 

@@ -1,13 +1,13 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
-// ½ºÅ×ÀÌÁö »çÀÌ¿¡ ³Ñ°Ü ÁÙ Á¤º¸ + ¿µ±¸ ±â·Ï (¾ÀÀÌ ¹Ù²î¾îµµ À¯Áö)
-//   - BossCleared : º¸½º¸¦ ÇÑ ¹øÀÌ¶óµµ ÀÌ±ä ÀûÀÌ ÀÖ´ÂÁö (PlayerPrefs, 2È¸Â÷ '½ºÅ×ÀÌÁö 1 °Ç³Ê¶Ù±â'¿ë)
-//   - ÀÌ¹ø ÆÇ ½ºÅ×ÀÌÁö 1 °á°ú (Ã³Ä¡ ¼ö, ³Ñ¾î°¥ ¶§ Ã¼·Â ºñÀ²) ¡æ BossScene¿¡¼­ ÇÊ¿äÇÏ¸é »ç¿ë
+// ìŠ¤í…Œì´ì§€ ì‚¬ì´ì— ë„˜ê²¨ ì¤„ ì •ë³´ + ì˜êµ¬ ê¸°ë¡ (ì”¬ì´ ë°”ë€Œì–´ë„ ìœ ì§€)
+//   - BossCleared : ë³´ìŠ¤ë¥¼ í•œ ë²ˆì´ë¼ë„ ì´ê¸´ ì ì´ ìˆëŠ”ì§€ (PlayerPrefs, 2íšŒì°¨ 'ìŠ¤í…Œì´ì§€ 1 ê±´ë„ˆë›°ê¸°'ìš©)
+//   - ì´ë²ˆ íŒ ìŠ¤í…Œì´ì§€ 1 ê²°ê³¼ (ì²˜ì¹˜ ìˆ˜, ë„˜ì–´ê°ˆ ë•Œ ì²´ë ¥ ë¹„ìœ¨) â†’ BossSceneì—ì„œ í•„ìš”í•˜ë©´ ì‚¬ìš©
 public static class StageProgress
 {
     private const string BossClearedKey = "BossCleared";
 
-    // º¸½º Å¬¸®¾î ÀÌ·Â (BossScene¿¡¼­ ½Â¸® ½Ã MarkBossCleared() È£Ãâ)
+    // ë³´ìŠ¤ í´ë¦¬ì–´ ì´ë ¥ (BossSceneì—ì„œ ìŠ¹ë¦¬ ì‹œ MarkBossCleared() í˜¸ì¶œ)
     public static bool BossCleared => PlayerPrefs.GetInt(BossClearedKey, 0) == 1;
 
     public static void MarkBossCleared()
@@ -22,11 +22,11 @@ public static class StageProgress
         PlayerPrefs.Save();
     }
 
-    // ÀÌ¹ø ÆÇ ½ºÅ×ÀÌÁö 1 °á°ú
+    // ì´ë²ˆ íŒ ìŠ¤í…Œì´ì§€ 1 ê²°ê³¼
     public static int Stage1Kills { get; set; }
-    // ½ºÅ×ÀÌÁö 1À» ³¡³¾ ¶§ÀÇ Ã¼·Â ºñÀ² (0~1). º¸½ºÀüÀ» ÀÌ¾îÁø Ã¼·ÂÀ¸·Î ½ÃÀÛÇÏ°í ½ÍÀ» ¶§¸¸ »ç¿ë. -1 = ±â·Ï ¾øÀ½
+    // ìŠ¤í…Œì´ì§€ 1ì„ ëë‚¼ ë•Œì˜ ì²´ë ¥ ë¹„ìœ¨ (0~1). ë³´ìŠ¤ì „ì„ ì´ì–´ì§„ ì²´ë ¥ìœ¼ë¡œ ì‹œì‘í•˜ê³  ì‹¶ì„ ë•Œë§Œ ì‚¬ìš©. -1 = ê¸°ë¡ ì—†ìŒ
     public static float Stage1HpRatio { get; set; } = -1f;
-    // ½ºÅ×ÀÌÁö 1À» °Ç³Ê¶Ù°í ¹Ù·Î º¸½º·Î °¬´ÂÁö
+    // ìŠ¤í…Œì´ì§€ 1ì„ ê±´ë„ˆë›°ê³  ë°”ë¡œ ë³´ìŠ¤ë¡œ ê°”ëŠ”ì§€
     public static bool SkippedStage1 { get; set; }
 
     public static void ResetRun()

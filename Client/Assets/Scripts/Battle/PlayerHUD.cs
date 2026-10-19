@@ -1,67 +1,67 @@
-using System.Collections;
+ï»¿using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// ÇÃ·¹ÀÌ¾î Ã¼·Â¹Ù + ÇÇ°Ý ¿¬Ãâ (Canvas ¾Æ·¡ 'PlayerHUD' ¿ÀºêÁ§Æ®¿¡ ºÙÀÌ±â)
-//   - Ã¼·Â¹Ù: »¡°£ ¹Ù´Â Áï½Ã ÁÙ°í, µÚÀÇ Èò ¹Ù°¡ ÃµÃµÈ÷ µû¶ó ÁÙ¾îµê (¾ó¸¶³ª ¸Â¾Ò´ÂÁö º¸ÀÌ°Ô)
-//   - ÇÇ°Ý: È­¸é °¡ÀåÀÚ¸®°¡ ºÓ°Ô ¹øÂ½ + Ä«¸Þ¶ó Èçµé¸² + Ã¼·Â¹Ù Èçµé¸² + "-8" ¼ýÀÚ
-//   - Ã¼·ÂÀÌ ÀûÀ¸¸é: È­¸éÀÌ ÀºÀºÇÏ°Ô ºÓ°Ô ¸Æ¹Ú
-//   - (¼±ÅÃ) ¸÷ °ø°Ý °ÔÀÌÁö: ´ÙÀ½ °ø°Ý±îÁö ³²Àº ½Ã°£
+// í”Œë ˆì´ì–´ ì²´ë ¥ë°” + í”¼ê²© ì—°ì¶œ (Canvas ì•„ëž˜ 'PlayerHUD' ì˜¤ë¸Œì íŠ¸ì— ë¶™ì´ê¸°)
+//   - ì²´ë ¥ë°”: ë¹¨ê°„ ë°”ëŠ” ì¦‰ì‹œ ì¤„ê³ , ë’¤ì˜ í° ë°”ê°€ ì²œì²œížˆ ë”°ë¼ ì¤„ì–´ë“¦ (ì–¼ë§ˆë‚˜ ë§žì•˜ëŠ”ì§€ ë³´ì´ê²Œ)
+//   - í”¼ê²©: í™”ë©´ ê°€ìž¥ìžë¦¬ê°€ ë¶‰ê²Œ ë²ˆì© + ì¹´ë©”ë¼ í”ë“¤ë¦¼ + ì²´ë ¥ë°” í”ë“¤ë¦¼ + "-8" ìˆ«ìž
+//   - ì²´ë ¥ì´ ì ìœ¼ë©´: í™”ë©´ì´ ì€ì€í•˜ê²Œ ë¶‰ê²Œ ë§¥ë°•
+//   - (ì„ íƒ) ëª¹ ê³µê²© ê²Œì´ì§€: ë‹¤ìŒ ê³µê²©ê¹Œì§€ ë‚¨ì€ ì‹œê°„
 public class PlayerHUD : MonoBehaviour
 {
-    [Header("Ã¼·Â¹Ù")]
-    [Tooltip("Image Type = Filled, Fill Method = Horizontal ÀÎ ÀÌ¹ÌÁö")]
+    [Header("ì²´ë ¥ë°”")]
+    [Tooltip("Image Type = Filled, Fill Method = Horizontal ì¸ ì´ë¯¸ì§€")]
     public Image hpFill;
-    [Tooltip("(¼±ÅÃ) hpFill µÚ¿¡ ±ò¸° Èò»ö/³ë¶õ»ö Filled ÀÌ¹ÌÁö. ÃµÃµÈ÷ ÁÙ¾îµé¸ç ±ðÀÎ ¾çÀ» º¸¿© ÁÜ")]
+    [Tooltip("(ì„ íƒ) hpFill ë’¤ì— ê¹”ë¦° í°ìƒ‰/ë…¸ëž€ìƒ‰ Filled ì´ë¯¸ì§€. ì²œì²œížˆ ì¤„ì–´ë“¤ë©° ê¹Žì¸ ì–‘ì„ ë³´ì—¬ ì¤Œ")]
     public Image hpDelayFill;
-    [Tooltip("(¼±ÅÃ) 'HP 72 / 100' Ç¥½Ã")]
+    [Tooltip("(ì„ íƒ) 'HP 72 / 100' í‘œì‹œ")]
     public TMP_Text hpText;
-    [Tooltip("Ã¼·Â ¼ýÀÚ ¹®±¸. {hp} = ÇöÀç Ã¼·Â, {max} = ÃÖ´ë Ã¼·Â")]
+    [Tooltip("ì²´ë ¥ ìˆ«ìž ë¬¸êµ¬. {hp} = í˜„ìž¬ ì²´ë ¥, {max} = ìµœëŒ€ ì²´ë ¥")]
     public string hpTextFormat = "HP {hp} / {max}";
-    [Tooltip("Ã¼·Â ºñÀ²¿¡ µû¶ó ¹Ù »öÀÌ ÃÊ·Ï ¡æ ³ë¶û ¡æ »¡°­À¸·Î ¹Ù²ñ.\n" +
-             "¡Ø ¹Ù ÀÌ¹ÌÁö°¡ Èò»ö(¶Ç´Â È¸»öÁ¶)ÀÌ¾î¾ß »öÀÌ Á¦´ë·Î º¸ÀÔ´Ï´Ù. »¡°£ ÀÌ¹ÌÁö¸é ¼Â ´Ù Èò»öÀ¸·Î µÎ¼¼¿ä")]
+    [Tooltip("ì²´ë ¥ ë¹„ìœ¨ì— ë”°ë¼ ë°” ìƒ‰ì´ ì´ˆë¡ â†’ ë…¸ëž‘ â†’ ë¹¨ê°•ìœ¼ë¡œ ë°”ë€œ.\n" +
+             "â€» ë°” ì´ë¯¸ì§€ê°€ í°ìƒ‰(ë˜ëŠ” íšŒìƒ‰ì¡°)ì´ì–´ì•¼ ìƒ‰ì´ ì œëŒ€ë¡œ ë³´ìž…ë‹ˆë‹¤. ë¹¨ê°„ ì´ë¯¸ì§€ë©´ ì…‹ ë‹¤ í°ìƒ‰ìœ¼ë¡œ ë‘ì„¸ìš”")]
     public bool colorByHealth = true;
-    public Color hpHighColor = new Color(0.35f, 0.85f, 0.35f);   // ÃÊ·Ï
-    public Color hpMidColor = new Color(1f, 0.85f, 0.2f);        // ³ë¶û
-    public Color hpLowColor = new Color(0.9f, 0.2f, 0.15f);      // »¡°­
-    [Tooltip("ÀÌ ºñÀ²¿¡¼­ Á¤È®È÷ ³ë¶õ»ö")]
+    public Color hpHighColor = new Color(0.35f, 0.85f, 0.35f);   // ì´ˆë¡
+    public Color hpMidColor = new Color(1f, 0.85f, 0.2f);        // ë…¸ëž‘
+    public Color hpLowColor = new Color(0.9f, 0.2f, 0.15f);      // ë¹¨ê°•
+    [Tooltip("ì´ ë¹„ìœ¨ì—ì„œ ì •í™•ížˆ ë…¸ëž€ìƒ‰")]
     [Range(0.1f, 0.9f)] public float hpMidPoint = 0.5f;
     public float delayBarWait = 0.4f;
     public float delayBarSpeed = 0.6f;
 
-    [Header("ÇÇ°Ý È­¸é ¿¬Ãâ")]
-    [Tooltip("È­¸é ÀüÃ¼¸¦ µ¤´Â »¡°£ ÀÌ¹ÌÁö (°¡ÀåÀÚ¸®¸¸ ºÓÀº ºñ³×Æ® ÀÌ¹ÌÁö¸é ´õ ÁÁÀ½). Raycast TargetÀº ²ô±â")]
+    [Header("í”¼ê²© í™”ë©´ ì—°ì¶œ")]
+    [Tooltip("í™”ë©´ ì „ì²´ë¥¼ ë®ëŠ” ë¹¨ê°„ ì´ë¯¸ì§€ (ê°€ìž¥ìžë¦¬ë§Œ ë¶‰ì€ ë¹„ë„¤íŠ¸ ì´ë¯¸ì§€ë©´ ë” ì¢‹ìŒ). Raycast Targetì€ ë„ê¸°")]
     public Image hitFlash;
     [Range(0f, 1f)] public float flashAlpha = 0.35f;
     public float flashFadeTime = 0.45f;
-    [Tooltip("Ã¼·ÂÀÌ ÀÌ ºñÀ² ÀÌÇÏ¸é È­¸éÀÌ ÀºÀºÇÏ°Ô ºÓ°Ô ¸Æ¹Ú")]
+    [Tooltip("ì²´ë ¥ì´ ì´ ë¹„ìœ¨ ì´í•˜ë©´ í™”ë©´ì´ ì€ì€í•˜ê²Œ ë¶‰ê²Œ ë§¥ë°•")]
     [Range(0f, 1f)] public float lowHpThreshold = 0.3f;
     [Range(0f, 1f)] public float lowHpPulseAlpha = 0.15f;
     public float lowHpPulseSpeed = 3f;
 
-    [Header("Èçµé¸²")]
+    [Header("í”ë“¤ë¦¼")]
     public float cameraShake = 0.06f;
     public float cameraShakeTime = 0.25f;
-    [Tooltip("Ã¼·Â¹Ù°¡ Èçµé¸®´Â Å©±â (ÇÈ¼¿)")]
+    [Tooltip("ì²´ë ¥ë°”ê°€ í”ë“¤ë¦¬ëŠ” í¬ê¸° (í”½ì…€)")]
     public float barShake = 8f;
 
-    [Header("(¼±ÅÃ) ±ðÀÎ ¼ýÀÚ / È¸º¹ ¼ýÀÚ")]
-    [Tooltip("Ã¼·Â¹Ù ±ÙÃ³¿¡ '-8'(ÇÇÇØ) / '+5'(È¸º¹)À» ¶ç¿ï ±ÛÀÚ. ºñ¿ì¸é Ç¥½Ã ¾È ÇÔ")]
+    [Header("(ì„ íƒ) ê¹Žì¸ ìˆ«ìž / íšŒë³µ ìˆ«ìž")]
+    [Tooltip("ì²´ë ¥ë°” ê·¼ì²˜ì— '-8'(í”¼í•´) / '+5'(íšŒë³µ)ì„ ë„ìš¸ ê¸€ìž. ë¹„ìš°ë©´ í‘œì‹œ ì•ˆ í•¨")]
     public TMP_Text damagePopup;
     public float popupTime = 0.8f;
-    [Tooltip("È¸º¹ ¼ýÀÚ »ö")]
+    [Tooltip("íšŒë³µ ìˆ«ìž ìƒ‰")]
     public Color healPopupColor = new Color(0.45f, 1f, 0.45f);
 
-    [Header("È¸º¹ ¿¬Ãâ")]
-    [Tooltip("È¸º¹ÇÒ ¶§ Ã¼·Â¹Ù°¡ Àá±ñ Ä¿Áö´Â Á¤µµ (0 = ²ô±â)")]
+    [Header("íšŒë³µ ì—°ì¶œ")]
+    [Tooltip("íšŒë³µí•  ë•Œ ì²´ë ¥ë°”ê°€ ìž ê¹ ì»¤ì§€ëŠ” ì •ë„ (0 = ë„ê¸°)")]
     public float healPulseScale = 0.08f;
     public float healPulseTime = 0.35f;
 
-    [Header("(¼±ÅÃ) ¸÷ °ø°Ý °ÔÀÌÁö")]
-    [Tooltip("´ÙÀ½ °ø°Ý±îÁö Â÷¿À¸£´Â Filled ÀÌ¹ÌÁö. ºñ¿ì¸é Ç¥½Ã ¾È ÇÔ")]
+    [Header("(ì„ íƒ) ëª¹ ê³µê²© ê²Œì´ì§€")]
+    [Tooltip("ë‹¤ìŒ ê³µê²©ê¹Œì§€ ì°¨ì˜¤ë¥´ëŠ” Filled ì´ë¯¸ì§€. ë¹„ìš°ë©´ í‘œì‹œ ì•ˆ í•¨")]
     public Image enemyAttackFill;
-    [Tooltip("°ÔÀÌÁö°¡ ÀÌ ºñÀ²À» ³ÑÀ¸¸é °æ°í»ö")]
+    [Tooltip("ê²Œì´ì§€ê°€ ì´ ë¹„ìœ¨ì„ ë„˜ìœ¼ë©´ ê²½ê³ ìƒ‰")]
     [Range(0f, 1f)] public float attackWarnRatio = 0.75f;
     public Color attackNormalColor = new Color(1f, 0.75f, 0.2f);
     public Color attackWarnColor = new Color(1f, 0.2f, 0.15f);
@@ -99,7 +99,7 @@ public class PlayerHUD : MonoBehaviour
         PlayerHealth hp = PlayerHealth.Instance;
         if (hp == null)
         {
-            Debug.LogWarning("[PlayerHUD] ¾À¿¡ PlayerHealth°¡ ¾ø½À´Ï´Ù.");
+            Debug.LogWarning("[PlayerHUD] ì”¬ì— PlayerHealthê°€ ì—†ìŠµë‹ˆë‹¤.");
             return;
         }
         hp.OnHealthChanged += HandleHealthChanged;
@@ -126,16 +126,16 @@ public class PlayerHUD : MonoBehaviour
         float ratio = hp != null ? hp.Ratio : 1f;
         float dt = Time.unscaledDeltaTime;
 
-        // Èò ¹Ù°¡ Àá½Ã µÚ ÃµÃµÈ÷ µû¶ó ÁÙ¾îµê
+        // í° ë°”ê°€ ìž ì‹œ ë’¤ ì²œì²œížˆ ë”°ë¼ ì¤„ì–´ë“¦
         if (hpDelayFill != null)
         {
             if (delayWaitTimer > 0f) delayWaitTimer -= dt;
             else shownDelay = Mathf.MoveTowards(shownDelay, ratio, delayBarSpeed * dt);
-            if (shownDelay < ratio) shownDelay = ratio; // È¸º¹ ½Ã ¹Ù·Î ¸ÂÃã
+            if (shownDelay < ratio) shownDelay = ratio; // íšŒë³µ ì‹œ ë°”ë¡œ ë§žì¶¤
             hpDelayFill.fillAmount = shownDelay;
         }
 
-        // ÇÇ°Ý ¹øÂ½ÀÓ + ÀúÃ¼·Â ¸Æ¹Ú
+        // í”¼ê²© ë²ˆì©ìž„ + ì €ì²´ë ¥ ë§¥ë°•
         if (hitFlash != null)
         {
             flashTimer += dt;
@@ -145,11 +145,11 @@ public class PlayerHUD : MonoBehaviour
             {
                 pulse = lowHpPulseAlpha * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * lowHpPulseSpeed));
             }
-            if (hp != null && hp.IsDead) pulse = flashAlpha; // ¾²·¯Áö¸é ºÓÀº È­¸é À¯Áö
+            if (hp != null && hp.IsDead) pulse = flashAlpha; // ì“°ëŸ¬ì§€ë©´ ë¶‰ì€ í™”ë©´ ìœ ì§€
             SetAlpha(hitFlash, Mathf.Max(flash, pulse));
         }
 
-        // ¸÷ °ø°Ý °ÔÀÌÁö
+        // ëª¹ ê³µê²© ê²Œì´ì§€
         if (enemyAttackFill != null)
         {
             EnemyController enemy = EnemyManager.Instance != null ? EnemyManager.Instance.CurrentEnemy : null;
@@ -245,7 +245,7 @@ public class PlayerHUD : MonoBehaviour
         }
     }
 
-    // È¸º¹ ½Ã Ã¼·Â¹Ù°¡ »ìÂ¦ Ä¿Á³´Ù µ¹¾Æ¿È
+    // íšŒë³µ ì‹œ ì²´ë ¥ë°”ê°€ ì‚´ì§ ì»¤ì¡Œë‹¤ ëŒì•„ì˜´
     private IEnumerator HealPulse()
     {
         float t = 0f;
@@ -281,7 +281,7 @@ public class PlayerHUD : MonoBehaviour
         popupRoutine = null;
     }
 
-    // »¡°­(0) ¡æ ³ë¶û(Áß°£) ¡æ ÃÊ·Ï(1)
+    // ë¹¨ê°•(0) â†’ ë…¸ëž‘(ì¤‘ê°„) â†’ ì´ˆë¡(1)
     private Color HealthColor(float ratio)
     {
         if (ratio >= hpMidPoint)

@@ -1,64 +1,64 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
-// ÁöÆÎÀÌ ½ÃÀü ¿¬Ãâ (¾Ö´Ï¸ÞÀÌ¼Ç ¾øÀÌ ÄÚµå·Î ¿òÁ÷ÀÓ)
-// ºÙÀÌ´Â °÷: ÁöÆÎÀÌ¸¦ ÀâÀº '¼Õ À§Ä¡'¿¡ ¸¸µç ºó ¿ÀºêÁ§Æ® (¿¹: WandRig)
+// ì§€íŒ¡ì´ ì‹œì „ ì—°ì¶œ (ì• ë‹ˆë©”ì´ì…˜ ì—†ì´ ì½”ë“œë¡œ ì›€ì§ìž„)
+// ë¶™ì´ëŠ” ê³³: ì§€íŒ¡ì´ë¥¼ ìž¡ì€ 'ì† ìœ„ì¹˜'ì— ë§Œë“  ë¹ˆ ì˜¤ë¸Œì íŠ¸ (ì˜ˆ: WandRig)
 //   [CHARACTER]
-//     ¦¦ WandRig   ¡ç ÀÌ ½ºÅ©¸³Æ®. À§Ä¡ = ÁöÆÎÀÌ ¼ÕÀâÀÌ(¼Õ¸ñ) ºÎºÐ. ÀÌ Á¡À» Áß½ÉÀ¸·Î ÈÖµÑ·¯Áü
-//         ¦§ fox_arm   (ÆÈ + ÁöÆÎÀÌ ¸ðµ¨)
-//         ¦¦ WandTip   (¸¶¹ýÀÌ ³ª°¡´Â ÁöÁ¡. ÀÚ½ÄÀ¸·Î ³Ö¾î¾ß ÁöÆÎÀÌ ³¡À» µû¶ó ¿òÁ÷ÀÓ)
+//     â”” WandRig   â† ì´ ìŠ¤í¬ë¦½íŠ¸. ìœ„ì¹˜ = ì§€íŒ¡ì´ ì†ìž¡ì´(ì†ëª©) ë¶€ë¶„. ì´ ì ì„ ì¤‘ì‹¬ìœ¼ë¡œ íœ˜ë‘˜ëŸ¬ì§
+//         â”œ fox_arm   (íŒ” + ì§€íŒ¡ì´ ëª¨ë¸)
+//         â”” WandTip   (ë§ˆë²•ì´ ë‚˜ê°€ëŠ” ì§€ì . ìžì‹ìœ¼ë¡œ ë„£ì–´ì•¼ ì§€íŒ¡ì´ ëì„ ë”°ë¼ ì›€ì§ìž„)
 //
-// ¿òÁ÷ÀÓ (¸ðµÎ Ä«¸Þ¶ó ±âÁØ ¹æÇâÀÌ¶ó ¿ÀºêÁ§Æ® È¸Àü°ª°ú »ó°ü¾øÀÌ µ¿ÀÛ)
-//   - Æò¼Ò: ¼û½¬µí ¾ÆÁÖ »ìÂ¦ Èçµé¸²
-//   - ¿µÃ¢ Áß(¸»ÇÏ´Â µ¿¾È ~ ÆÇÁ¤ ´ë±â): ÁöÆÎÀÌ¸¦ »ìÂ¦ µé¾î ¿Ã¸®°í ¹Ì¼¼ÇÏ°Ô ¶³¸² (¸¶·ÂÀ» ¸ðÀ¸´Â ´À³¦)
-//   - ½ÃÀü: »ìÂ¦ µÚ·Î Á¥Çû´Ù°¡ ¡æ ¾ÕÀ¸·Î ÈÖµÎ¸§ ¡æ ¹Ýµ¿À¸·Î ÃµÃµÈ÷ ¿øÀ§Ä¡
-//           °­ÇÑ ¿µÃ¢(power > 1)ÀÏ¼ö·Ï ´õ Å©°Ô ÈÖµÎ¸§
+// ì›€ì§ìž„ (ëª¨ë‘ ì¹´ë©”ë¼ ê¸°ì¤€ ë°©í–¥ì´ë¼ ì˜¤ë¸Œì íŠ¸ íšŒì „ê°’ê³¼ ìƒê´€ì—†ì´ ë™ìž‘)
+//   - í‰ì†Œ: ìˆ¨ì‰¬ë“¯ ì•„ì£¼ ì‚´ì§ í”ë“¤ë¦¼
+//   - ì˜ì°½ ì¤‘(ë§í•˜ëŠ” ë™ì•ˆ ~ íŒì • ëŒ€ê¸°): ì§€íŒ¡ì´ë¥¼ ì‚´ì§ ë“¤ì–´ ì˜¬ë¦¬ê³  ë¯¸ì„¸í•˜ê²Œ ë–¨ë¦¼ (ë§ˆë ¥ì„ ëª¨ìœ¼ëŠ” ëŠë‚Œ)
+//   - ì‹œì „: ì‚´ì§ ë’¤ë¡œ ì –í˜”ë‹¤ê°€ â†’ ì•žìœ¼ë¡œ íœ˜ë‘ë¦„ â†’ ë°˜ë™ìœ¼ë¡œ ì²œì²œížˆ ì›ìœ„ì¹˜
+//           ê°•í•œ ì˜ì°½(power > 1)ì¼ìˆ˜ë¡ ë” í¬ê²Œ íœ˜ë‘ë¦„
 public class WandCaster : MonoBehaviour
 {
-    [Header("¿¬°á (ºñ¿ì¸é ÀÚµ¿À¸·Î Ã£À½)")]
+    [Header("ì—°ê²° (ë¹„ìš°ë©´ ìžë™ìœ¼ë¡œ ì°¾ìŒ)")]
     public VoiceSender voiceSender;
-    [Tooltip("¹æÇâ ±âÁØ Ä«¸Þ¶ó (ºñ¿ì¸é Main Camera)")]
+    [Tooltip("ë°©í–¥ ê¸°ì¤€ ì¹´ë©”ë¼ (ë¹„ìš°ë©´ Main Camera)")]
     public Camera viewCamera;
-    [Tooltip("(¼±ÅÃ) ¿µÃ¢ Áß ÁöÆÎÀÌ ³¡¿¡ ÄÓ ÀÌÆåÆ® À§Ä¡. º¸Åë WandTip")]
+    [Tooltip("(ì„ íƒ) ì˜ì°½ ì¤‘ ì§€íŒ¡ì´ ëì— ì¼¤ ì´íŽ™íŠ¸ ìœ„ì¹˜. ë³´í†µ WandTip")]
     public Transform wandTip;
 
-    [Header("Æò¼Ò Èçµé¸²")]
+    [Header("í‰ì†Œ í”ë“¤ë¦¼")]
     public bool idleSway = true;
-    [Tooltip("Èçµé¸®´Â °¢µµ (µµ)")]
+    [Tooltip("í”ë“¤ë¦¬ëŠ” ê°ë„ (ë„)")]
     public float idleAngle = 0.8f;
-    [Tooltip("À§¾Æ·¡·Î ¿òÁ÷ÀÌ´Â °Å¸®")]
+    [Tooltip("ìœ„ì•„ëž˜ë¡œ ì›€ì§ì´ëŠ” ê±°ë¦¬")]
     public float idleBob = 0.008f;
     public float idleSpeed = 1.2f;
 
-    [Header("¿µÃ¢ Áß (¸»ÇÏ´Â µ¿¾È)")]
-    [Tooltip("ÁöÆÎÀÌ¸¦ µé¾î ¿Ã¸®´Â ³ôÀÌ")]
+    [Header("ì˜ì°½ ì¤‘ (ë§í•˜ëŠ” ë™ì•ˆ)")]
+    [Tooltip("ì§€íŒ¡ì´ë¥¼ ë“¤ì–´ ì˜¬ë¦¬ëŠ” ë†’ì´")]
     public float channelRaise = 0.04f;
-    [Tooltip("ÁöÆÎÀÌ ³¡À» À§·Î ¼¼¿ì´Â °¢µµ (µµ)")]
+    [Tooltip("ì§€íŒ¡ì´ ëì„ ìœ„ë¡œ ì„¸ìš°ëŠ” ê°ë„ (ë„)")]
     public float channelTilt = 8f;
-    [Tooltip("¹Ì¼¼ÇÏ°Ô ¶³¸®´Â Á¤µµ (µµ)")]
+    [Tooltip("ë¯¸ì„¸í•˜ê²Œ ë–¨ë¦¬ëŠ” ì •ë„ (ë„)")]
     public float channelTremble = 0.8f;
     public float channelTrembleSpeed = 14f;
-    [Tooltip("ÀÚ¼¼°¡ ¹Ù²î´Â ¼Óµµ (Å¬¼ö·Ï »¡¸® µé¾î ¿Ã¸²)")]
+    [Tooltip("ìžì„¸ê°€ ë°”ë€ŒëŠ” ì†ë„ (í´ìˆ˜ë¡ ë¹¨ë¦¬ ë“¤ì–´ ì˜¬ë¦¼)")]
     public float channelBlendSpeed = 8f;
-    [Tooltip("(¼±ÅÃ) ¿µÃ¢ Áß ÁöÆÎÀÌ ³¡¿¡ ÄÓ ÀÌÆåÆ® (ÀÛÀº ºû, ¹ÝÂ¦ÀÌ µî)")]
+    [Tooltip("(ì„ íƒ) ì˜ì°½ ì¤‘ ì§€íŒ¡ì´ ëì— ì¼¤ ì´íŽ™íŠ¸ (ìž‘ì€ ë¹›, ë°˜ì§ì´ ë“±)")]
     public GameObject channelEffectPrefab;
 
-    [Header("½ÃÀü (ÈÖµÎ¸£±â)")]
-    [Tooltip("µÚ·Î Á¥È÷´Â °¢µµ (µµ)")]
+    [Header("ì‹œì „ (íœ˜ë‘ë¥´ê¸°)")]
+    [Tooltip("ë’¤ë¡œ ì –ížˆëŠ” ê°ë„ (ë„)")]
     public float windupAngle = 10f;
     public float windupTime = 0.06f;
-    [Tooltip("¾ÕÀ¸·Î ÈÖµÎ¸£´Â °¢µµ (µµ)")]
+    [Tooltip("ì•žìœ¼ë¡œ íœ˜ë‘ë¥´ëŠ” ê°ë„ (ë„)")]
     public float swingAngle = 22f;
-    [Tooltip("¾ÕÀ¸·Î ³»Áö¸£´Â °Å¸®")]
+    [Tooltip("ì•žìœ¼ë¡œ ë‚´ì§€ë¥´ëŠ” ê±°ë¦¬")]
     public float swingPush = 0.06f;
     public float swingTime = 0.08f;
-    [Tooltip("¿ø·¡ ÀÚ¼¼·Î µ¹¾Æ¿À´Â ½Ã°£")]
+    [Tooltip("ì›ëž˜ ìžì„¸ë¡œ ëŒì•„ì˜¤ëŠ” ì‹œê°„")]
     public float recoverTime = 0.4f;
-    [Tooltip("¸÷ ÂÊÀ¸·Î »ìÂ¦ °Ü´©´Â Á¤µµ (0 = ¾È °Ü´®, 1 = ¸÷ ¹æÇâÀ¸·Î ÃÖ´ëÇÑ)")]
+    [Tooltip("ëª¹ ìª½ìœ¼ë¡œ ì‚´ì§ ê²¨ëˆ„ëŠ” ì •ë„ (0 = ì•ˆ ê²¨ëˆ”, 1 = ëª¹ ë°©í–¥ìœ¼ë¡œ ìµœëŒ€í•œ)")]
     [Range(0f, 1f)] public float aimAtTarget = 0.3f;
-    [Tooltip("°­ÇÑ ¿µÃ¢(power 1.5)ÀÏ ¶§ ÈÖµÎ¸£´Â Å©±â ¹èÀ²")]
+    [Tooltip("ê°•í•œ ì˜ì°½(power 1.5)ì¼ ë•Œ íœ˜ë‘ë¥´ëŠ” í¬ê¸° ë°°ìœ¨")]
     public float strongCastScale = 1.4f;
 
-    // ½¬´Â ÀÚ¼¼ (ºÎ¸ð = Ä«¸Þ¶ó ±âÁØ). Ä«¸Þ¶ó°¡ °É¾î°¡°Å³ª µ¹¾Æµµ ÁöÆÎÀÌ°¡ µû¶ó¿È
+    // ì‰¬ëŠ” ìžì„¸ (ë¶€ëª¨ = ì¹´ë©”ë¼ ê¸°ì¤€). ì¹´ë©”ë¼ê°€ ê±¸ì–´ê°€ê±°ë‚˜ ëŒì•„ë„ ì§€íŒ¡ì´ê°€ ë”°ë¼ì˜´
     private Vector3 restLocalPos;
     private Quaternion restLocalRot;
     private Vector3 RestPos => transform.parent != null ? transform.parent.TransformPoint(restLocalPos) : restLocalPos;
@@ -81,7 +81,7 @@ public class WandCaster : MonoBehaviour
 
     private void OnEnable()
     {
-        // SkillManager°¡ ¸ÕÀú »ý¼ºµÇÁö ¾Ê¾ÒÀ» ¼öµµ ÀÖ¾î¼­ Start ÀÌÈÄ¿¡µµ ÇÑ ¹ø ´õ ½Ãµµ
+        // SkillManagerê°€ ë¨¼ì € ìƒì„±ë˜ì§€ ì•Šì•˜ì„ ìˆ˜ë„ ìžˆì–´ì„œ Start ì´í›„ì—ë„ í•œ ë²ˆ ë” ì‹œë„
         TrySubscribe();
     }
 
@@ -103,7 +103,7 @@ public class WandCaster : MonoBehaviour
     private void HandleSpellCast(SpellData spell, EnemyController target, float power)
     {
         castTimer = 0f;
-        // power 1.0 ¡æ 1¹è, 1.5 ¡æ strongCastScale¹è
+        // power 1.0 â†’ 1ë°°, 1.5 â†’ strongCastScaleë°°
         castScale = Mathf.Lerp(1f, strongCastScale, Mathf.Clamp01((power - 1f) / 0.5f));
         castAimDir = target != null ? (target.AimPoint - RestPos).normalized : Vector3.zero;
     }
@@ -117,16 +117,16 @@ public class WandCaster : MonoBehaviour
         Vector3 right = cam.right, up = cam.up, forward = cam.forward;
         float t = Time.time;
 
-        // 1. ¿µÃ¢ ÁßÀÌ¸é µé¾î ¿Ã¸° ÀÚ¼¼·Î (ºÎµå·´°Ô)
+        // 1. ì˜ì°½ ì¤‘ì´ë©´ ë“¤ì–´ ì˜¬ë¦° ìžì„¸ë¡œ (ë¶€ë“œëŸ½ê²Œ)
         bool channeling = voiceSender != null && (voiceSender.IsRecording || voiceSender.IsWaitingForResult);
-        if (castTimer >= 0f) channeling = false; // ÈÖµÎ¸£´Â µ¿¾ÈÀº ½ÃÀü µ¿ÀÛ ¿ì¼±
+        if (castTimer >= 0f) channeling = false; // íœ˜ë‘ë¥´ëŠ” ë™ì•ˆì€ ì‹œì „ ë™ìž‘ ìš°ì„ 
         channelWeight = Mathf.MoveTowards(channelWeight, channeling ? 1f : 0f, channelBlendSpeed * Time.deltaTime);
         SetChannelEffect(channeling);
 
         Vector3 posOffset = Vector3.zero;
         Quaternion rotOffset = Quaternion.identity;
 
-        // 2. Æò¼Ò Èçµé¸²
+        // 2. í‰ì†Œ í”ë“¤ë¦¼
         if (idleSway)
         {
             float k = 1f - channelWeight * 0.7f;
@@ -134,7 +134,7 @@ public class WandCaster : MonoBehaviour
             rotOffset = Quaternion.AngleAxis(Mathf.Sin(t * idleSpeed * 0.8f) * idleAngle * k, forward) * rotOffset;
         }
 
-        // 3. ¿µÃ¢ ÀÚ¼¼ + ¶³¸²
+        // 3. ì˜ì°½ ìžì„¸ + ë–¨ë¦¼
         if (channelWeight > 0f)
         {
             float w = Smooth(channelWeight);
@@ -145,7 +145,7 @@ public class WandCaster : MonoBehaviour
                       * Quaternion.AngleAxis(tremZ * w, forward) * rotOffset;
         }
 
-        // 4. ½ÃÀü: Á¥È÷±â ¡æ ÈÖµÎ¸£±â ¡æ ¹Ýµ¿ º¹±Í
+        // 4. ì‹œì „: ì –ížˆê¸° â†’ íœ˜ë‘ë¥´ê¸° â†’ ë°˜ë™ ë³µê·€
         if (castTimer >= 0f)
         {
             castTimer += Time.deltaTime;
@@ -165,7 +165,7 @@ public class WandCaster : MonoBehaviour
             else
             {
                 float k = Mathf.Clamp01((castTimer - windupTime - swingTime) / recoverTime);
-                float ease = 1f - (1f - k) * (1f - k) * (1f - k); // Ã³À½¿£ ºü¸£°Ô, ³¡¿¡ ÃµÃµÈ÷
+                float ease = 1f - (1f - k) * (1f - k) * (1f - k); // ì²˜ìŒì—” ë¹ ë¥´ê²Œ, ëì— ì²œì²œížˆ
                 angle = Mathf.Lerp(swingAngle, 0f, ease);
                 push = Mathf.Lerp(swingPush, 0f, ease);
             }
@@ -174,7 +174,7 @@ public class WandCaster : MonoBehaviour
             push *= castScale;
             posOffset += forward * push;
 
-            // ¸÷ ÂÊÀ¸·Î »ìÂ¦ °Ü´©±â (ÁÂ¿ì)
+            // ëª¹ ìª½ìœ¼ë¡œ ì‚´ì§ ê²¨ëˆ„ê¸° (ì¢Œìš°)
             Quaternion aim = Quaternion.identity;
             if (aimAtTarget > 0f && castAimDir != Vector3.zero)
             {
@@ -184,7 +184,7 @@ public class WandCaster : MonoBehaviour
                 aim = Quaternion.AngleAxis(yaw * aimAtTarget * strength, Vector3.up);
             }
 
-            // Ä«¸Þ¶ó ¿À¸¥ÂÊ ÃàÀ¸·Î µ¹¸®¸é ÁöÆÎÀÌ ³¡ÀÌ ¾Õ(¸÷ ÂÊ)À¸·Î ¼÷¿©Áü
+            // ì¹´ë©”ë¼ ì˜¤ë¥¸ìª½ ì¶•ìœ¼ë¡œ ëŒë¦¬ë©´ ì§€íŒ¡ì´ ëì´ ì•ž(ëª¹ ìª½)ìœ¼ë¡œ ìˆ™ì—¬ì§
             rotOffset = aim * Quaternion.AngleAxis(angle, right) * rotOffset;
 
             if (castTimer >= CastDuration) castTimer = -1f;

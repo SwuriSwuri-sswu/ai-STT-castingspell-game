@@ -1,28 +1,28 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 
 public class CursorManager : MonoBehaviour
 {
-    [Header("Ä¿¼­ ÀÌ¹ÌÁö ¼³Á¤")]
-    public Texture2D defaultCursor;      // ±âº» ¸¶¿ì½º ¸ğ¾ç ÅØ½ºÃ³
-    public Texture2D[] clickAnimFrames;  // Å¬¸¯ ½Ã Àç»ıµÉ ÅØ½ºÃ³ ¹è¿­ (¼ø¼­´ë·Î)
+    [Header("ì»¤ì„œ ì´ë¯¸ì§€ ì„¤ì •")]
+    public Texture2D defaultCursor;      // ê¸°ë³¸ ë§ˆìš°ìŠ¤ ëª¨ì–‘ í…ìŠ¤ì²˜
+    public Texture2D[] clickAnimFrames;  // í´ë¦­ ì‹œ ì¬ìƒë  í…ìŠ¤ì²˜ ë°°ì—´ (ìˆœì„œëŒ€ë¡œ)
 
-    [Header("Ä¿¼­ ¼³Á¤")]
-    // Å¬¸¯ÇÏ´Â Á¤È®ÇÑ ÁöÁ¡ (º¸Åë ÅØ½ºÃ³ÀÇ ÁÂ»ó´Ü(0,0)ÀÌÁö¸¸ °ú³á ¸ğ¾çÀÌ¸é Áß¾ÓÀ¸·Î ¼³Á¤ÇØ¾ß ÇÔ)
+    [Header("ì»¤ì„œ ì„¤ì •")]
+    // í´ë¦­í•˜ëŠ” ì •í™•í•œ ì§€ì  (ë³´í†µ í…ìŠ¤ì²˜ì˜ ì¢Œìƒë‹¨(0,0)ì´ì§€ë§Œ ê³¼ë… ëª¨ì–‘ì´ë©´ ì¤‘ì•™ìœ¼ë¡œ ì„¤ì •í•´ì•¼ í•¨)
     public Vector2 hotSpot = Vector2.zero;
-    public float frameDelay = 0.05f; // ¾Ö´Ï¸ŞÀÌ¼Ç ÇÁ·¹ÀÓ °£°İ (ºü¸£±â Á¶Àı)
+    public float frameDelay = 0.05f; // ì• ë‹ˆë©”ì´ì…˜ í”„ë ˆì„ ê°„ê²© (ë¹ ë¥´ê¸° ì¡°ì ˆ)
 
     private bool isClickAnimating = false;
 
     private void Start()
     {
-        // ½ÃÀÛÇÒ ¶§ ±âº» Ä¿¼­·Î ¼³Á¤
+        // ì‹œì‘í•  ë•Œ ê¸°ë³¸ ì»¤ì„œë¡œ ì„¤ì •
         SetDefaultCursor();
     }
 
     private void Update()
     {
-        // ¸¶¿ì½º ¿ŞÂÊ ¹öÆ°À» Å¬¸¯ÇßÀ» ¶§ ¾Ö´Ï¸ŞÀÌ¼Ç ½ÃÀÛ
+        // ë§ˆìš°ìŠ¤ ì™¼ìª½ ë²„íŠ¼ì„ í´ë¦­í–ˆì„ ë•Œ ì• ë‹ˆë©”ì´ì…˜ ì‹œì‘
         if (Input.GetMouseButtonDown(0) && !isClickAnimating)
         {
             StartCoroutine(PlayClickAnimation());
@@ -31,7 +31,7 @@ public class CursorManager : MonoBehaviour
 
     private void SetDefaultCursor()
     {
-        // CursorMode.Auto : ÇÏµå¿ş¾î Ä¿¼­(ºü¸§), ForceSoftware : ¼ÒÇÁÆ®¿ş¾î Ä¿¼­
+        // CursorMode.Auto : í•˜ë“œì›¨ì–´ ì»¤ì„œ(ë¹ ë¦„), ForceSoftware : ì†Œí”„íŠ¸ì›¨ì–´ ì»¤ì„œ
         Cursor.SetCursor(defaultCursor, hotSpot, CursorMode.Auto);
     }
 
@@ -39,14 +39,14 @@ public class CursorManager : MonoBehaviour
     {
         isClickAnimating = true;
 
-        // ¹è¿­¿¡ µî·ÏµÈ ÅØ½ºÃ³¸¦ ¼ø¼­´ë·Î ºü¸£°Ô º¯°æÇÏ¿© ¾Ö´Ï¸ŞÀÌ¼Ç È¿°ú »ı¼º
+        // ë°°ì—´ì— ë“±ë¡ëœ í…ìŠ¤ì²˜ë¥¼ ìˆœì„œëŒ€ë¡œ ë¹ ë¥´ê²Œ ë³€ê²½í•˜ì—¬ ì• ë‹ˆë©”ì´ì…˜ íš¨ê³¼ ìƒì„±
         for (int i = 0; i < clickAnimFrames.Length; i++)
         {
             Cursor.SetCursor(clickAnimFrames[i], hotSpot, CursorMode.Auto);
             yield return new WaitForSeconds(frameDelay);
         }
 
-        // ¾Ö´Ï¸ŞÀÌ¼ÇÀÌ ³¡³ª¸é ´Ù½Ã ±âº» Ä¿¼­·Î º¹±¸
+        // ì• ë‹ˆë©”ì´ì…˜ì´ ëë‚˜ë©´ ë‹¤ì‹œ ê¸°ë³¸ ì»¤ì„œë¡œ ë³µêµ¬
         SetDefaultCursor();
         isClickAnimating = false;
     }

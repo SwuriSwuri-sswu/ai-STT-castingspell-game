@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using UnityEngine;
 
 public enum GameState
@@ -45,7 +45,7 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        // ÀÎ°ÔÀÓ ¹× ÀÏ½ÃÁ¤Áö »óÅÂ¿¡¼­ ESC Å°·Î ÀÏ½ÃÁ¤Áö Åä±Û
+        // ì¸ê²Œì„ ë° ì¼ì‹œì •ì§€ ìƒíƒœì—ì„œ ESC í‚¤ë¡œ ì¼ì‹œì •ì§€ í† ê¸€
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (CurrentState == GameState.InGame || CurrentState == GameState.Paused)
@@ -55,7 +55,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // 1. °ÔÀÓ ½ÃÀÛ ¼¼¼Ç ¿¬°á
+    // 1. ê²Œì„ ì‹œì‘ ì„¸ì…˜ ì—°ê²°
     public void StartGameSession()
     {
         SetState(GameState.Title);
@@ -63,12 +63,12 @@ public class GameManager : MonoBehaviour
         {
             if (isSuccess)
             {
-                Debug.Log("°ÔÀÓ ¼¼¼Ç ÁØºñ ¿Ï·á");
+                Debug.Log("ê²Œì„ ì„¸ì…˜ ì¤€ë¹„ ì™„ë£Œ");
             }
         }));
     }
 
-    // 2. °ÔÀÓ »óÅÂ ÀüÈ¯
+    // 2. ê²Œì„ ìƒíƒœ ì „í™˜
     public void SetState(GameState newState)
     {
         CurrentState = newState;
@@ -82,7 +82,7 @@ public class GameManager : MonoBehaviour
                 Time.timeScale = 1f;
                 break;
             case GameState.Paused:
-                Time.timeScale = 0f; // ½Ã°£ Á¤Áö
+                Time.timeScale = 0f; // ì‹œê°„ ì •ì§€
                 break;
             case GameState.StageClear:
                 Time.timeScale = 1f;
@@ -95,7 +95,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // 3. ÀÏ½ÃÁ¤Áö Åä±Û
+    // 3. ì¼ì‹œì •ì§€ í† ê¸€
     public void TogglePause()
     {
         if (CurrentState == GameState.InGame)
@@ -108,12 +108,12 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // 4. ¸ó½ºÅÍ Ã³Ä¡ ½Ã È£Ãâ
+    // 4. ëª¬ìŠ¤í„° ì²˜ì¹˜ ì‹œ í˜¸ì¶œ
     public void AddMonsterKill(int scoreAmount)
     {
         monsterKills++;
         playScore += scoreAmount;
-        Debug.Log($"¸ó½ºÅÍ Ã³Ä¡! ÇöÀç Å³ ¼ö: {monsterKills}, Á¡¼ö: {playScore}");
+        Debug.Log($"ëª¬ìŠ¤í„° ì²˜ì¹˜! í˜„ì¬ í‚¬ ìˆ˜: {monsterKills}, ì ìˆ˜: {playScore}");
 
         if (monsterKills % 5 == 0)
         {
@@ -121,16 +121,16 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // 5. AI À½¼º ÀÎ½Ä °á°ú ¼ö½Å ½Ã È£Ãâ
+    // 5. AI ìŒì„± ì¸ì‹ ê²°ê³¼ ìˆ˜ì‹  ì‹œ í˜¸ì¶œ
     public void OnSpellRecognized(string spellName, int score = 50)
     {
         voiceScore += score;
-        Debug.Log($"½ÃÀüµÈ ½ºÆç: {spellName} (Á¡¼ö +{score})");
+        Debug.Log($"ì‹œì „ëœ ìŠ¤í : {spellName} (ì ìˆ˜ +{score})");
 
-        // ¸¶¹ı ½ÃÀü ¿¬Ãâ/·ÎÁ÷ Ã³¸®
+        // ë§ˆë²• ì‹œì „ ì—°ì¶œ/ë¡œì§ ì²˜ë¦¬
     }
 
-    // 6. µ¥ÀÌÅÍ ÃÊ±âÈ­ (Àç½ÃÀÛ ½Ã)
+    // 6. ë°ì´í„° ì´ˆê¸°í™” (ì¬ì‹œì‘ ì‹œ)
     public void ResetPlayerData()
     {
         curStage = 1;
@@ -139,7 +139,7 @@ public class GameManager : MonoBehaviour
         monsterKills = 0;
     }
 
-    // 7. ½ºÅ×ÀÌÁö Å¬¸®¾î Ã³¸® ¹× ¼­¹ö ÀúÀå
+    // 7. ìŠ¤í…Œì´ì§€ í´ë¦¬ì–´ ì²˜ë¦¬ ë° ì„œë²„ ì €ì¥
     private void OnStageClear()
     {
         Debug.Log($"Stage {curStage} Clear!");
@@ -163,7 +163,7 @@ public class GameManager : MonoBehaviour
         }));
     }
 
-    // 8. °ÔÀÓ Á¾·á ½Ã È£Ãâ
+    // 8. ê²Œì„ ì¢…ë£Œ ì‹œ í˜¸ì¶œ
     private void OnGameOver()
     {
         Debug.Log("Game Over");

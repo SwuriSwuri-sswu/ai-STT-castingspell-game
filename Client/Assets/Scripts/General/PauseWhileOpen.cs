@@ -1,12 +1,12 @@
-using System.Collections.Generic;
+ï»¿using System.Collections.Generic;
 using UnityEngine;
 
-// ÀÌ ¿ÀºêÁ§Æ®(ÆÐ³Î)°¡ ÄÑÁ® ÀÖ´Â µ¿¾È °ÔÀÓ ÀÏ½ÃÁ¤Áö
-// BookPanel(µµ°¨), SettingPanel(¼³Á¤) µî¿¡ ºÙÀÌ±â
-//   - ¸÷ ÀÌµ¿¡¤°ø°Ý, ¸¶¹ý Åõ»çÃ¼, µå¶ø ¿¬Ãâ µî °ÔÀÓ ½Ã°£ÀÌ ¸ØÃã (Time.timeScale = 0)
-//   - À½¼º ¿µÃ¢µµ ¹ÞÁö ¾ÊÀ½ (SkillManager.CanCast°¡ false)
-//   - UI ¿¬Ãâ¡¤BGMÀº ±×´ë·Î
-// ÆÐ³ÎÀÌ ¿©·¯ °³ µ¿½Ã¿¡ ¿­·Áµµ, ÀüºÎ ´ÝÇô¾ß ´Ù½Ã ÁøÇàµË´Ï´Ù.
+// ì´ ì˜¤ë¸Œì íŠ¸(íŒ¨ë„)ê°€ ì¼œì ¸ ìžˆëŠ” ë™ì•ˆ ê²Œìž„ ì¼ì‹œì •ì§€
+// BookPanel(ë„ê°), SettingPanel(ì„¤ì •) ë“±ì— ë¶™ì´ê¸°
+//   - ëª¹ ì´ë™Â·ê³µê²©, ë§ˆë²• íˆ¬ì‚¬ì²´, ë“œëž ì—°ì¶œ ë“± ê²Œìž„ ì‹œê°„ì´ ë©ˆì¶¤ (Time.timeScale = 0)
+//   - ìŒì„± ì˜ì°½ë„ ë°›ì§€ ì•ŠìŒ (SkillManager.CanCastê°€ false)
+//   - UI ì—°ì¶œÂ·BGMì€ ê·¸ëŒ€ë¡œ
+// íŒ¨ë„ì´ ì—¬ëŸ¬ ê°œ ë™ì‹œì— ì—´ë ¤ë„, ì „ë¶€ ë‹«í˜€ì•¼ ë‹¤ì‹œ ì§„í–‰ë©ë‹ˆë‹¤.
 public class PauseWhileOpen : MonoBehaviour
 {
     private void OnEnable() => GamePause.Request(this);

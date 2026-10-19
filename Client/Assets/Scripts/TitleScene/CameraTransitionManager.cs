@@ -1,35 +1,35 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class CameraTransitionManager : MonoBehaviour
 {
-    [Header("Ä«¸Ş¶ó ¼³Á¤")]
+    [Header("ì¹´ë©”ë¼ ì„¤ì •")]
     public Camera mainCamera;
 
-    [Header("µµÂøÁö ÁÂÇ¥ ¿ÀºêÁ§Æ®")]
+    [Header("ë„ì°©ì§€ ì¢Œí‘œ ì˜¤ë¸Œì íŠ¸")]
     public Transform throneZoomTarget;
     public Transform firstPersonTarget;
 
-    [Header("UI Á¦¾î")]
+    [Header("UI ì œì–´")]
     public CanvasGroup titleUIGroup;
     public Image blackFadeScreen;
 
-    [Header("Ä«¸Ş¶ó ¿¬Ãâ ½Ã°£ ¼³Á¤")]
+    [Header("ì¹´ë©”ë¼ ì—°ì¶œ ì‹œê°„ ì„¤ì •")]
     public float uiFadeDuration = 0.5f;
     public float zoomDuration = 2.0f;
     public float holdDuration = 1.0f;
     public float firstPersonDuration = 1.5f;
 
-    [Header("È­¸é ÆäÀÌµå ¿¬Ãâ ½Ã°£ (¿äÃ»ÇÏ½Å Å¸ÀÌ¹Ö)")]
-    public float delayBeforeFadeOut = 0.5f;      // 1. 1ÀÎÄª ÀüÈ¯ ÈÄ ´ë±â ½Ã°£ (0.5ÃÊ)
-    public float screenFadeOutDuration = 1.5f;   // 2. È­¸é ÆäÀÌµå ¾Æ¿ô ½Ã°£ (1.5ÃÊ)
-    public float blackScreenHoldDuration = 1.0f; // 3. °ËÀº È­¸é À¯Áö ½Ã°£ (1.0ÃÊ)
+    [Header("í™”ë©´ í˜ì´ë“œ ì—°ì¶œ ì‹œê°„ (ìš”ì²­í•˜ì‹  íƒ€ì´ë°)")]
+    public float delayBeforeFadeOut = 0.5f;      // 1. 1ì¸ì¹­ ì „í™˜ í›„ ëŒ€ê¸° ì‹œê°„ (0.5ì´ˆ)
+    public float screenFadeOutDuration = 1.5f;   // 2. í™”ë©´ í˜ì´ë“œ ì•„ì›ƒ ì‹œê°„ (1.5ì´ˆ)
+    public float blackScreenHoldDuration = 1.0f; // 3. ê²€ì€ í™”ë©´ ìœ ì§€ ì‹œê°„ (1.0ì´ˆ)
 
     private void Start()
     {
-        // Å¸ÀÌÆ² ¾À ½ÃÀÛ ½Ã °ËÀº È­¸éÀ» ¿Ïº®ÇÏ°Ô ¼û±è (½ÃÀÛ ½Ã ÆäÀÌµåÀÎ ¹æÁö)
+        // íƒ€ì´í‹€ ì”¬ ì‹œì‘ ì‹œ ê²€ì€ í™”ë©´ì„ ì™„ë²½í•˜ê²Œ ìˆ¨ê¹€ (ì‹œì‘ ì‹œ í˜ì´ë“œì¸ ë°©ì§€)
         if (blackFadeScreen != null)
         {
             Color c = blackFadeScreen.color;
@@ -52,7 +52,7 @@ public class CameraTransitionManager : MonoBehaviour
         Quaternion startRot = mainCamera.transform.rotation;
         float elapsedTime = 0f;
 
-        // ÁÜÀÎ ¿¬Ãâ
+        // ì¤Œì¸ ì—°ì¶œ
         while (elapsedTime < zoomDuration)
         {
             float t = Mathf.SmoothStep(0f, 1f, elapsedTime / zoomDuration);
@@ -64,14 +64,14 @@ public class CameraTransitionManager : MonoBehaviour
         mainCamera.transform.position = throneZoomTarget.position;
         mainCamera.transform.rotation = throneZoomTarget.rotation;
 
-        // ¿ÕÁÂ ¾Õ ´ë±â
+        // ì™•ì¢Œ ì• ëŒ€ê¸°
         yield return new WaitForSeconds(holdDuration);
 
         elapsedTime = 0f;
         Vector3 zoomPos = mainCamera.transform.position;
         Quaternion zoomRot = mainCamera.transform.rotation;
 
-        // 1ÀÎÄª È¸Àü ¿¬Ãâ
+        // 1ì¸ì¹­ íšŒì „ ì—°ì¶œ
         while (elapsedTime < firstPersonDuration)
         {
             float t = Mathf.SmoothStep(0f, 1f, elapsedTime / firstPersonDuration);
@@ -83,10 +83,10 @@ public class CameraTransitionManager : MonoBehaviour
         mainCamera.transform.position = firstPersonTarget.position;
         mainCamera.transform.rotation = firstPersonTarget.rotation;
 
-        // 1. 1ÀÎÄª ¿Ï·á ÈÄ Àá±ñ ´ë±â (0.5ÃÊ)
+        // 1. 1ì¸ì¹­ ì™„ë£Œ í›„ ì ê¹ ëŒ€ê¸° (0.5ì´ˆ)
         yield return new WaitForSeconds(delayBeforeFadeOut);
 
-        // 2. °ËÀº È­¸éÀ¸·Î ÆäÀÌµå ¾Æ¿ô (1.5ÃÊ)
+        // 2. ê²€ì€ í™”ë©´ìœ¼ë¡œ í˜ì´ë“œ ì•„ì›ƒ (1.5ì´ˆ)
         if (blackFadeScreen != null)
         {
             blackFadeScreen.gameObject.SetActive(true);
@@ -104,10 +104,10 @@ public class CameraTransitionManager : MonoBehaviour
             blackFadeScreen.color = fadeColor;
         }
 
-        // 3. ¿ÏÀüÈ÷ ±î¸ÅÁø »óÅÂ·Î ´ë±â (1.0ÃÊ)
+        // 3. ì™„ì „íˆ ê¹Œë§¤ì§„ ìƒíƒœë¡œ ëŒ€ê¸° (1.0ì´ˆ)
         yield return new WaitForSeconds(blackScreenHoldDuration);
 
-        // 4. °ÔÀÓ ¾À ·Îµå
+        // 4. ê²Œì„ ì”¬ ë¡œë“œ
         SceneManager.LoadScene("GameScene");
     }
 

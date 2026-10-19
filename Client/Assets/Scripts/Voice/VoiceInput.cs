@@ -1,34 +1,34 @@
-using System;
+ï»¿using System;
 using UnityEngine;
 
 /// <summary>
-/// ¸¶ÀÌÅ© ¼Ò¸®¸¦ °è¼Ó ÀÐ¾î¼­ 10ms ´ÜÀ§ÀÇ ¸ð³ë float »ùÇÃ Á¶°¢À¸·Î ³»º¸³»´Â ÄÄÆ÷³ÍÆ®.
+/// ë§ˆì´í¬ ì†Œë¦¬ë¥¼ ê³„ì† ì½ì–´ì„œ 10ms ë‹¨ìœ„ì˜ ëª¨ë…¸ float ìƒ˜í”Œ ì¡°ê°ìœ¼ë¡œ ë‚´ë³´ë‚´ëŠ” ì»´í¬ë„ŒíŠ¸.
 ///
-/// ÀÔ·Â
-///   Microphone.Start ¸¦ ¹Ýº¹ ³ìÀ½(loop) ¸ðµå·Î ÄÑ µÎ°í,
-///   ¸Å ÇÁ·¹ÀÓ ¸¶Áö¸·À¸·Î ÀÐÀº À§Ä¡ºÎÅÍ ÇöÀç ³ìÀ½ À§Ä¡±îÁöÀÇ »õ »ùÇÃÀ» ÀÐ´Â´Ù.
+/// ìž…ë ¥
+///   Microphone.Start ë¥¼ ë°˜ë³µ ë…¹ìŒ(loop) ëª¨ë“œë¡œ ì¼œ ë‘ê³ ,
+///   ë§¤ í”„ë ˆìž„ ë§ˆì§€ë§‰ìœ¼ë¡œ ì½ì€ ìœ„ì¹˜ë¶€í„° í˜„ìž¬ ë…¹ìŒ ìœ„ì¹˜ê¹Œì§€ì˜ ìƒˆ ìƒ˜í”Œì„ ì½ëŠ”ë‹¤.
 ///
-/// Ãâ·Â
-///   - SamplesAvailable(float[] samples, int count) ÀÌº¥Æ®
-///   - samples: ¸ð³ë, -1.0 ~ 1.0, ±æÀÌ = SampleRate / 100 (16kHz ¸é 160°³ = 10ms)
-///   - Update ¾È¿¡¼­ µ¿±âÀûÀ¸·Î È£ÃâµÇ¸ç, ÇÑ ÇÁ·¹ÀÓ¿¡ 0¹ø ÀÌ»ó È£ÃâµÉ ¼ö ÀÖ´Ù.
+/// ì¶œë ¥
+///   - SamplesAvailable(float[] samples, int count) ì´ë²¤íŠ¸
+///   - samples: ëª¨ë…¸, -1.0 ~ 1.0, ê¸¸ì´ = SampleRate / 100 (16kHz ë©´ 160ê°œ = 10ms)
+///   - Update ì•ˆì—ì„œ ë™ê¸°ì ìœ¼ë¡œ í˜¸ì¶œë˜ë©°, í•œ í”„ë ˆìž„ì— 0ë²ˆ ì´ìƒ í˜¸ì¶œë  ìˆ˜ ìžˆë‹¤.
 ///
-/// ¸»¼Ò¸® ¿©ºÎ ÆÇ´ÜÀº ÇÏÁö ¾Ê´Â´Ù. ±× Ã³¸®´Â VoiceActivityDetector °¡ ´ã´çÇÑ´Ù.
+/// ë§ì†Œë¦¬ ì—¬ë¶€ íŒë‹¨ì€ í•˜ì§€ ì•ŠëŠ”ë‹¤. ê·¸ ì²˜ë¦¬ëŠ” VoiceActivityDetector ê°€ ë‹´ë‹¹í•œë‹¤.
 /// </summary>
 public class VoiceInput : MonoBehaviour
 {
-    [Header("ÀÔ·Â")]
-    [Tooltip("»ç¿ëÇÒ ¸¶ÀÌÅ©. (½Ã½ºÅÛ ±âº» ÀåÄ¡)¸¦ °í¸£¸é Windows ±âº» ¸¶ÀÌÅ©¸¦ »ç¿ëÇÑ´Ù. ÇÃ·¹ÀÌ Áß¿¡ ¹Ù²Ù¸é ¹Ù·Î ´Ù½Ã ½ÃÀÛÇÑ´Ù")]
+    [Header("ìž…ë ¥")]
+    [Tooltip("ì‚¬ìš©í•  ë§ˆì´í¬. (ì‹œìŠ¤í…œ ê¸°ë³¸ ìž¥ì¹˜)ë¥¼ ê³ ë¥´ë©´ Windows ê¸°ë³¸ ë§ˆì´í¬ë¥¼ ì‚¬ìš©í•œë‹¤. í”Œë ˆì´ ì¤‘ì— ë°”ê¾¸ë©´ ë°”ë¡œ ë‹¤ì‹œ ì‹œìž‘í•œë‹¤")]
     [MicrophoneDevice]
     [SerializeField] string deviceName = "";
 
-    /// <summary>¸¶ÀÌÅ©°¡ ¹Ù²î¾î ³ìÀ½À» ´Ù½Ã ½ÃÀÛÇßÀ» ¶§ È£ÃâµÈ´Ù. »ùÇÃ·¹ÀÌÆ®°¡ ¹Ù²ð ¼ö ÀÖÀ¸¹Ç·Î ±¸µ¶ÀÚ´Â »óÅÂ¸¦ ÃÊ±âÈ­ÇØ¾ß ÇÑ´Ù.</summary>
+    /// <summary>ë§ˆì´í¬ê°€ ë°”ë€Œì–´ ë…¹ìŒì„ ë‹¤ì‹œ ì‹œìž‘í–ˆì„ ë•Œ í˜¸ì¶œëœë‹¤. ìƒ˜í”Œë ˆì´íŠ¸ê°€ ë°”ë€” ìˆ˜ ìžˆìœ¼ë¯€ë¡œ êµ¬ë…ìžëŠ” ìƒíƒœë¥¼ ì´ˆê¸°í™”í•´ì•¼ í•œë‹¤.</summary>
     public event Action DeviceChanged;
 
     /// <summary>
-    /// »ç¿ëÇÒ ¸¶ÀÌÅ© ÀÌ¸§ (°ÔÀÓ ¼³Á¤ ¿¬µ¿¿ë). ºñ¿ì¸é ½Ã½ºÅÛ ±âº» ÀåÄ¡.
-    /// ÇÃ·¹ÀÌ Áß¿¡ ¹Ù²Ù¸é ´ÙÀ½ ÇÁ·¹ÀÓ¿¡ »õ ÀåÄ¡·Î ´Ù½Ã ½ÃÀÛÇÑ´Ù (Inspector ¿¡¼­ ¹Ù²Ü ¶§¿Í °°Àº µ¿ÀÛ).
-    /// ¿¬µ¿: VoiceRecorder °¡ GameSettingManager.Instance.selectedMicName À» ³Ö¾î ÁØ´Ù.
+    /// ì‚¬ìš©í•  ë§ˆì´í¬ ì´ë¦„ (ê²Œìž„ ì„¤ì • ì—°ë™ìš©). ë¹„ìš°ë©´ ì‹œìŠ¤í…œ ê¸°ë³¸ ìž¥ì¹˜.
+    /// í”Œë ˆì´ ì¤‘ì— ë°”ê¾¸ë©´ ë‹¤ìŒ í”„ë ˆìž„ì— ìƒˆ ìž¥ì¹˜ë¡œ ë‹¤ì‹œ ì‹œìž‘í•œë‹¤ (Inspector ì—ì„œ ë°”ê¿€ ë•Œì™€ ê°™ì€ ë™ìž‘).
+    /// ì—°ë™: VoiceRecorder ê°€ GameSettingManager.Instance.selectedMicName ì„ ë„£ì–´ ì¤€ë‹¤.
     /// </summary>
     public string DeviceName
     {
@@ -36,58 +36,58 @@ public class VoiceInput : MonoBehaviour
         set => deviceName = value ?? "";
     }
 
-    bool micStarted;             // device °¡ null(±âº» ÀåÄ¡)ÀÏ ¼ö ÀÖÀ¸¹Ç·Î ½ÃÀÛ ¿©ºÎ¸¦ µû·Î ±â·ÏÇÑ´Ù
-    string appliedDeviceName;    // ¸¶Áö¸·À¸·Î Àû¿ëÇÑ deviceName. Inspector °ª°ú ´Ù¸£¸é ´Ù½Ã ½ÃÀÛÇÑ´Ù
+    bool micStarted;             // device ê°€ null(ê¸°ë³¸ ìž¥ì¹˜)ì¼ ìˆ˜ ìžˆìœ¼ë¯€ë¡œ ì‹œìž‘ ì—¬ë¶€ë¥¼ ë”°ë¡œ ê¸°ë¡í•œë‹¤
+    string appliedDeviceName;    // ë§ˆì§€ë§‰ìœ¼ë¡œ ì ìš©í•œ deviceName. Inspector ê°’ê³¼ ë‹¤ë¥´ë©´ ë‹¤ì‹œ ì‹œìž‘í•œë‹¤
     /// <summary>
-    /// deviceName ¿¡ ÇØ´çÇÏ´Â ÀåÄ¡ ÀÌ¸§À» ¹ÝÈ¯ÇÑ´Ù. ºñ¾î ÀÖ°Å³ª ¿¬°áµÇ¾î ÀÖÁö ¾ÊÀ¸¸é null(½Ã½ºÅÛ ±âº» ÀåÄ¡).
+    /// deviceName ì— í•´ë‹¹í•˜ëŠ” ìž¥ì¹˜ ì´ë¦„ì„ ë°˜í™˜í•œë‹¤. ë¹„ì–´ ìžˆê±°ë‚˜ ì—°ê²°ë˜ì–´ ìžˆì§€ ì•Šìœ¼ë©´ null(ì‹œìŠ¤í…œ ê¸°ë³¸ ìž¥ì¹˜).
     /// </summary>
     string ResolveDevice()
     {
         string[] list = Microphone.devices;
         for (int i = 0; i < list.Length; i++)
-            Debug.Log($"[VoiceInput] ÀåÄ¡ {i}: {list[i]}");
+            Debug.Log($"[VoiceInput] ìž¥ì¹˜ {i}: {list[i]}");
 
         if (string.IsNullOrEmpty(deviceName)) return null;
         if (Array.IndexOf(list, deviceName) >= 0) return deviceName;
 
-        Debug.LogWarning($"[VoiceInput] '{deviceName}' ÀÌ(°¡) ¿¬°áµÇ¾î ÀÖÁö ¾Ê¾Æ ½Ã½ºÅÛ ±âº» ÀåÄ¡¸¦ »ç¿ëÇÕ´Ï´Ù.");
+        Debug.LogWarning($"[VoiceInput] '{deviceName}' ì´(ê°€) ì—°ê²°ë˜ì–´ ìžˆì§€ ì•Šì•„ ì‹œìŠ¤í…œ ê¸°ë³¸ ìž¥ì¹˜ë¥¼ ì‚¬ìš©í•©ë‹ˆë‹¤.");
         return null;
     }
 
     void StopMicrophone()
     {
-        if (micStarted && Microphone.IsRecording(device)) Microphone.End(device);   // device °¡ null ÀÌ¸é ±âº» ÀåÄ¡¸¦ Á¾·á
+        if (micStarted && Microphone.IsRecording(device)) Microphone.End(device);   // device ê°€ null ì´ë©´ ê¸°ë³¸ ìž¥ì¹˜ë¥¼ ì¢…ë£Œ
         micStarted = false;
         clip = null;
         IsRunning = false;
     }
 
-    [SerializeField] int requestedSampleRate = 16000;   // Microphone.Start ¿¡ ¿äÃ»ÇÏ´Â °ª. ½ÇÁ¦ °ªÀº SampleRate ¿¡ ÀúÀåµÈ´Ù
-    [SerializeField] int loopBufferSec = 10;            // ¹Ýº¹ ³ìÀ½ ¹öÆÛ ±æÀÌ(ÃÊ). ÃÖ´ë ¹ßÈ­ ±æÀÌ(5ÃÊ)º¸´Ù ±æ¾î¾ß ÇÑ´Ù
+    [SerializeField] int requestedSampleRate = 16000;   // Microphone.Start ì— ìš”ì²­í•˜ëŠ” ê°’. ì‹¤ì œ ê°’ì€ SampleRate ì— ì €ìž¥ëœë‹¤
+    [SerializeField] int loopBufferSec = 10;            // ë°˜ë³µ ë…¹ìŒ ë²„í¼ ê¸¸ì´(ì´ˆ). ìµœëŒ€ ë°œí™” ê¸¸ì´(5ì´ˆ)ë³´ë‹¤ ê¸¸ì–´ì•¼ í•œë‹¤
 
     /// <summary>
-    /// 10ms ºÐ·®ÀÇ ¸ð³ë »ùÇÃÀÌ ÁØºñµÉ ¶§¸¶´Ù È£ÃâµÈ´Ù. (»ùÇÃ ¹è¿­, À¯È¿ °³¼ö)
-    /// ¹è¿­Àº ´ÙÀ½ È£Ãâ¿¡¼­ ´Ù½Ã »ç¿ëµÇ¹Ç·Î, ±¸µ¶ÀÚ´Â È£Ãâ ¾È¿¡¼­ Ã³¸®ÇÏ°Å³ª °ªÀ» º¹»çÇØ¾ß ÇÑ´Ù.
+    /// 10ms ë¶„ëŸ‰ì˜ ëª¨ë…¸ ìƒ˜í”Œì´ ì¤€ë¹„ë  ë•Œë§ˆë‹¤ í˜¸ì¶œëœë‹¤. (ìƒ˜í”Œ ë°°ì—´, ìœ íš¨ ê°œìˆ˜)
+    /// ë°°ì—´ì€ ë‹¤ìŒ í˜¸ì¶œì—ì„œ ë‹¤ì‹œ ì‚¬ìš©ë˜ë¯€ë¡œ, êµ¬ë…ìžëŠ” í˜¸ì¶œ ì•ˆì—ì„œ ì²˜ë¦¬í•˜ê±°ë‚˜ ê°’ì„ ë³µì‚¬í•´ì•¼ í•œë‹¤.
     /// </summary>
     public event Action<float[], int> SamplesAvailable;
 
-    public int SampleRate { get; private set; }    // ½ÇÁ¦·Î Ãâ·ÂÇÏ´Â »ùÇÃ·¹ÀÌÆ® (clip.frequency)
-    public bool IsRunning { get; private set; }    // Ãâ·Â ÁßÀÎÁö ¿©ºÎ
+    public int SampleRate { get; private set; }    // ì‹¤ì œë¡œ ì¶œë ¥í•˜ëŠ” ìƒ˜í”Œë ˆì´íŠ¸ (clip.frequency)
+    public bool IsRunning { get; private set; }    // ì¶œë ¥ ì¤‘ì¸ì§€ ì—¬ë¶€
 
-    int blockSize;       // ÇÑ ¹ø¿¡ ³»º¸³»´Â »ùÇÃ ¼ö = SampleRate / 100 (10ms)
-    float[] monoBlock;   // ÀÌº¥Æ®·Î ³Ñ±â´Â ¸ð³ë ¹è¿­. ¸Å¹ø Àç»ç¿ëÇØ ¸Þ¸ð¸® ÇÒ´çÀ» ÁÙÀÎ´Ù
+    int blockSize;       // í•œ ë²ˆì— ë‚´ë³´ë‚´ëŠ” ìƒ˜í”Œ ìˆ˜ = SampleRate / 100 (10ms)
+    float[] monoBlock;   // ì´ë²¤íŠ¸ë¡œ ë„˜ê¸°ëŠ” ëª¨ë…¸ ë°°ì—´. ë§¤ë²ˆ ìž¬ì‚¬ìš©í•´ ë©”ëª¨ë¦¬ í• ë‹¹ì„ ì¤„ì¸ë‹¤
 
-    // ¦¡¦¡ ¸¶ÀÌÅ© ¦¡¦¡
-    string device;       // »ç¿ë ÁßÀÎ ¸¶ÀÌÅ© ÀåÄ¡ ÀÌ¸§
-    AudioClip clip;      // ¹Ýº¹ ³ìÀ½ ¹öÆÛ. ³¡¿¡ µµ´ÞÇÏ¸é Ã³À½ À§Ä¡ºÎÅÍ µ¤¾î¾´´Ù
-    int clipSamples;     // ¹öÆÛÀÇ Ã¤³Î´ç »ùÇÃ ¼ö (16kHz ¡¿ 10ÃÊ = 160,000)
-    int channels;        // ¹öÆÛÀÇ Ã¤³Î ¼ö
-    int readPos = -1;    // ´ÙÀ½¿¡ ÀÐÀ» ¹öÆÛ À§Ä¡(Ã¤³Î´ç »ùÇÃ ¹øÈ£). -1 = ¾ÆÁ÷ ÀÐ±â ½ÃÀÛ Àü
-    float[] readBlock;   // GetData ·Î ÀÐ¾î ¿À´Â ¹è¿­. Ã¤³ÎÀÌ ¹ø°¥¾Æ ÀúÀåµÈ »óÅÂ [L0, R0, L1, R1, ...]
+    // â”€â”€ ë§ˆì´í¬ â”€â”€
+    string device;       // ì‚¬ìš© ì¤‘ì¸ ë§ˆì´í¬ ìž¥ì¹˜ ì´ë¦„
+    AudioClip clip;      // ë°˜ë³µ ë…¹ìŒ ë²„í¼. ëì— ë„ë‹¬í•˜ë©´ ì²˜ìŒ ìœ„ì¹˜ë¶€í„° ë®ì–´ì“´ë‹¤
+    int clipSamples;     // ë²„í¼ì˜ ì±„ë„ë‹¹ ìƒ˜í”Œ ìˆ˜ (16kHz Ã— 10ì´ˆ = 160,000)
+    int channels;        // ë²„í¼ì˜ ì±„ë„ ìˆ˜
+    int readPos = -1;    // ë‹¤ìŒì— ì½ì„ ë²„í¼ ìœ„ì¹˜(ì±„ë„ë‹¹ ìƒ˜í”Œ ë²ˆí˜¸). -1 = ì•„ì§ ì½ê¸° ì‹œìž‘ ì „
+    float[] readBlock;   // GetData ë¡œ ì½ì–´ ì˜¤ëŠ” ë°°ì—´. ì±„ë„ì´ ë²ˆê°ˆì•„ ì €ìž¥ëœ ìƒíƒœ [L0, R0, L1, R1, ...]
 
     void OnEnable()
     {
-        // ÄÄÆ÷³ÍÆ®°¡ ÄÑÁú ¶§¸¶´Ù ÀÔ·ÂÀ» ½ÃÀÛÇÑ´Ù (²°´Ù ÄÑ¸é ´Ù½Ã ½ÃÀÛ)
+        // ì»´í¬ë„ŒíŠ¸ê°€ ì¼œì§ˆ ë•Œë§ˆë‹¤ ìž…ë ¥ì„ ì‹œìž‘í•œë‹¤ (ê»ë‹¤ ì¼œë©´ ë‹¤ì‹œ ì‹œìž‘)
         StartMicrophone();
     }
 
@@ -99,7 +99,7 @@ public class VoiceInput : MonoBehaviour
 
     void Update()
     {
-        // ÇÃ·¹ÀÌ Áß Inspector ¿¡¼­ ÀåÄ¡¸¦ ¹Ù²Ù¸é »õ ÀåÄ¡·Î ´Ù½Ã ½ÃÀÛÇÑ´Ù
+        // í”Œë ˆì´ ì¤‘ Inspector ì—ì„œ ìž¥ì¹˜ë¥¼ ë°”ê¾¸ë©´ ìƒˆ ìž¥ì¹˜ë¡œ ë‹¤ì‹œ ì‹œìž‘í•œë‹¤
         if (micStarted && deviceName != appliedDeviceName)
         {
             StopMicrophone();
@@ -111,34 +111,34 @@ public class VoiceInput : MonoBehaviour
         PumpMicrophone();
     }
 
-    /// <summary>»ùÇÃ·¹ÀÌÆ®°¡ Á¤ÇØÁø µÚ Ãâ·Â¡¤ÀÐ±â¿ë ¹è¿­À» ÇÑ ¹ø¸¸ ¸¸µç´Ù.</summary>
+    /// <summary>ìƒ˜í”Œë ˆì´íŠ¸ê°€ ì •í•´ì§„ ë’¤ ì¶œë ¥Â·ì½ê¸°ìš© ë°°ì—´ì„ í•œ ë²ˆë§Œ ë§Œë“ ë‹¤.</summary>
     void Allocate()
     {
-        blockSize = Mathf.Max(1, SampleRate / 100);                  // 10ms ºÐ·® (16kHz ¡æ 160, 48kHz ¡æ 480)
+        blockSize = Mathf.Max(1, SampleRate / 100);                  // 10ms ë¶„ëŸ‰ (16kHz â†’ 160, 48kHz â†’ 480)
         monoBlock = new float[blockSize];
-        readBlock = new float[blockSize * Mathf.Max(1, channels)];   // GetData ´Â ¹è¿­ ±æÀÌ / Ã¤³Î ¼ö ¸¸Å­ ÀÐ´Â´Ù
+        readBlock = new float[blockSize * Mathf.Max(1, channels)];   // GetData ëŠ” ë°°ì—´ ê¸¸ì´ / ì±„ë„ ìˆ˜ ë§Œí¼ ì½ëŠ”ë‹¤
     }
 
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
-    // ¸¶ÀÌÅ©
-    // ¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡¦¡
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ë§ˆì´í¬
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-    /// <summary>Ã¹ ¹øÂ° ¸¶ÀÌÅ©¸¦ ¹Ýº¹ ³ìÀ½ ¸ðµå·Î ½ÃÀÛÇÏ°í ½ÇÁ¦ ³ìÀ½ Çü½ÄÀ» ÀúÀåÇÑ´Ù.</summary>
+    /// <summary>ì²« ë²ˆì§¸ ë§ˆì´í¬ë¥¼ ë°˜ë³µ ë…¹ìŒ ëª¨ë“œë¡œ ì‹œìž‘í•˜ê³  ì‹¤ì œ ë…¹ìŒ í˜•ì‹ì„ ì €ìž¥í•œë‹¤.</summary>
     void StartMicrophone()
     {
-        appliedDeviceName = deviceName;   // ÀÌ¹ø¿¡ Àû¿ëÇÑ °ªÀ» ±â·Ï (Update ÀÇ º¯°æ °¨Áö¿ë)
+        appliedDeviceName = deviceName;   // ì´ë²ˆì— ì ìš©í•œ ê°’ì„ ê¸°ë¡ (Update ì˜ ë³€ê²½ ê°ì§€ìš©)
 
         if (Microphone.devices.Length == 0)
         {
-            Debug.LogError("[VoiceInput] »ç¿ëÇÒ ¼ö ÀÖ´Â ¸¶ÀÌÅ©°¡ ¾ø½À´Ï´Ù.");
+            Debug.LogError("[VoiceInput] ì‚¬ìš©í•  ìˆ˜ ìžˆëŠ” ë§ˆì´í¬ê°€ ì—†ìŠµë‹ˆë‹¤.");
             return;
         }
 
-        device = ResolveDevice();   // null ÀÌ¸é ½Ã½ºÅÛ ±âº» ÀåÄ¡. Unity ÀÇ Microphone ÇÔ¼ö´Â null À» ±âº» ÀåÄ¡·Î Ã³¸®ÇÑ´Ù
+        device = ResolveDevice();   // null ì´ë©´ ì‹œìŠ¤í…œ ê¸°ë³¸ ìž¥ì¹˜. Unity ì˜ Microphone í•¨ìˆ˜ëŠ” null ì„ ê¸°ë³¸ ìž¥ì¹˜ë¡œ ì²˜ë¦¬í•œë‹¤
         clip = Microphone.Start(device, true, loopBufferSec, requestedSampleRate);
         if (clip == null)
         {
-            Debug.LogError("[VoiceInput] ¸¶ÀÌÅ© ³ìÀ½À» ½ÃÀÛÇÏÁö ¸øÇß½À´Ï´Ù.");
+            Debug.LogError("[VoiceInput] ë§ˆì´í¬ ë…¹ìŒì„ ì‹œìž‘í•˜ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.");
             return;
         }
         micStarted = true;
@@ -149,52 +149,52 @@ public class VoiceInput : MonoBehaviour
         Allocate();
         readPos = -1;
 
-        Debug.Log($"[VoiceInput] ¸¶ÀÌÅ©: {device ?? "½Ã½ºÅÛ ±âº» ÀåÄ¡"}, ¿äÃ» {requestedSampleRate}Hz ¡æ ½ÇÁ¦ {SampleRate}Hz, " +
-                  $"{channels}ch, ¹öÆÛ {loopBufferSec}ÃÊ");
+        Debug.Log($"[VoiceInput] ë§ˆì´í¬: {device ?? "ì‹œìŠ¤í…œ ê¸°ë³¸ ìž¥ì¹˜"}, ìš”ì²­ {requestedSampleRate}Hz â†’ ì‹¤ì œ {SampleRate}Hz, " +
+                  $"{channels}ch, ë²„í¼ {loopBufferSec}ì´ˆ");
     }
 
     /// <summary>
-    /// ¸¶Áö¸·À¸·Î ÀÐÀº À§Ä¡(readPos)ºÎÅÍ ÇöÀç ³ìÀ½ À§Ä¡(writePos)±îÁö »õ·Î ½×ÀÎ »ùÇÃÀ»
-    /// blockSize ´ÜÀ§·Î ÀÐ¾î ¸ð³ë·Î ¹Ù²Û µÚ ³»º¸³½´Ù. blockSize ¹Ì¸¸À¸·Î ³²Àº »ùÇÃÀº ´ÙÀ½ ÇÁ·¹ÀÓ¿¡ ÀÐ´Â´Ù.
+    /// ë§ˆì§€ë§‰ìœ¼ë¡œ ì½ì€ ìœ„ì¹˜(readPos)ë¶€í„° í˜„ìž¬ ë…¹ìŒ ìœ„ì¹˜(writePos)ê¹Œì§€ ìƒˆë¡œ ìŒ“ì¸ ìƒ˜í”Œì„
+    /// blockSize ë‹¨ìœ„ë¡œ ì½ì–´ ëª¨ë…¸ë¡œ ë°”ê¾¼ ë’¤ ë‚´ë³´ë‚¸ë‹¤. blockSize ë¯¸ë§Œìœ¼ë¡œ ë‚¨ì€ ìƒ˜í”Œì€ ë‹¤ìŒ í”„ë ˆìž„ì— ì½ëŠ”ë‹¤.
     /// </summary>
     void PumpMicrophone()
     {
         if (clip == null) return;
 
-        // ÀåÄ¡ ºÐ¸® µîÀ¸·Î ³ìÀ½ÀÌ ¸ØÃá °æ¿ì ´Ù½Ã ½ÃÀÛÇÑ´Ù
+        // ìž¥ì¹˜ ë¶„ë¦¬ ë“±ìœ¼ë¡œ ë…¹ìŒì´ ë©ˆì¶˜ ê²½ìš° ë‹¤ì‹œ ì‹œìž‘í•œë‹¤
         if (!Microphone.IsRecording(device))
         {
-            Debug.LogWarning("[VoiceInput] ¸¶ÀÌÅ© ³ìÀ½ÀÌ ¸ØÃç ´Ù½Ã ½ÃÀÛÇÕ´Ï´Ù.");
+            Debug.LogWarning("[VoiceInput] ë§ˆì´í¬ ë…¹ìŒì´ ë©ˆì¶° ë‹¤ì‹œ ì‹œìž‘í•©ë‹ˆë‹¤.");
             StartMicrophone();
             return;
         }
 
-        // ¸¶ÀÌÅ©°¡ ´ÙÀ½À¸·Î ±â·ÏÇÒ ¹öÆÛ À§Ä¡ (Ã¤³Î´ç »ùÇÃ ¹øÈ£, 0 ~ clipSamples-1).
-        // µå¶óÀÌ¹ö°¡ µ¥ÀÌÅÍ¸¦ ¹­À½À¸·Î ³Ñ±â¹Ç·Î °ªÀº ¸î ms ´ÜÀ§·Î °Ç³Ê¶Ù¸ç Áõ°¡ÇÑ´Ù.
+        // ë§ˆì´í¬ê°€ ë‹¤ìŒìœ¼ë¡œ ê¸°ë¡í•  ë²„í¼ ìœ„ì¹˜ (ì±„ë„ë‹¹ ìƒ˜í”Œ ë²ˆí˜¸, 0 ~ clipSamples-1).
+        // ë“œë¼ì´ë²„ê°€ ë°ì´í„°ë¥¼ ë¬¶ìŒìœ¼ë¡œ ë„˜ê¸°ë¯€ë¡œ ê°’ì€ ëª‡ ms ë‹¨ìœ„ë¡œ ê±´ë„ˆë›°ë©° ì¦ê°€í•œë‹¤.
         int writePos = Microphone.GetPosition(device);
 
         if (readPos < 0)
         {
-            if (writePos <= 0) return;   // ³ìÀ½ÀÌ ¾ÆÁ÷ ½ÇÁ¦·Î ½ÃÀÛµÇÁö ¾ÊÀ½
-            readPos = writePos;          // ÇöÀç À§Ä¡ºÎÅÍ ÀÐ±â ½ÃÀÛÇÑ´Ù. ±× ¾ÕÀÇ ½ÃÀÛ Á÷ÈÄ ±¸°£Àº »ç¿ëÇÏÁö ¾Ê´Â´Ù
+            if (writePos <= 0) return;   // ë…¹ìŒì´ ì•„ì§ ì‹¤ì œë¡œ ì‹œìž‘ë˜ì§€ ì•ŠìŒ
+            readPos = writePos;          // í˜„ìž¬ ìœ„ì¹˜ë¶€í„° ì½ê¸° ì‹œìž‘í•œë‹¤. ê·¸ ì•žì˜ ì‹œìž‘ ì§í›„ êµ¬ê°„ì€ ì‚¬ìš©í•˜ì§€ ì•ŠëŠ”ë‹¤
             IsRunning = true;
             return;
         }
 
-        // ¾ÆÁ÷ ÀÐÁö ¾ÊÀº »ùÇÃ ¼ö.
-        // ³ìÀ½ À§Ä¡°¡ ¹öÆÛ ³¡À» Áö³ª Ã³À½À¸·Î µ¹¾Æ°¡ readPos º¸´Ù ÀÛ¾ÆÁø °æ¿ì¿¡µµ
-        // clipSamples ¸¦ ´õÇÑ µÚ ³ª¸ÓÁö¸¦ ±¸ÇÏ¹Ç·Î ¿Ã¹Ù¸¥ °Å¸®°¡ ³ª¿Â´Ù.
-        // ¿¹) readPos 159,900, writePos 200, clipSamples 160,000 ¡æ 300
-        // ÁÖÀÇ: ÀÐ±â°¡ ÇÑ ¹ÙÄû(10ÃÊ) ÀÌ»ó ¹Ð¸®¸é ÀÌ °è»êÀ¸·Î´Â ±¸ºÐÇÒ ¼ö ¾ø°í, µ¤¾î¾²ÀÎ ±¸°£Àº À¯½ÇµÈ´Ù.
+        // ì•„ì§ ì½ì§€ ì•Šì€ ìƒ˜í”Œ ìˆ˜.
+        // ë…¹ìŒ ìœ„ì¹˜ê°€ ë²„í¼ ëì„ ì§€ë‚˜ ì²˜ìŒìœ¼ë¡œ ëŒì•„ê°€ readPos ë³´ë‹¤ ìž‘ì•„ì§„ ê²½ìš°ì—ë„
+        // clipSamples ë¥¼ ë”í•œ ë’¤ ë‚˜ë¨¸ì§€ë¥¼ êµ¬í•˜ë¯€ë¡œ ì˜¬ë°”ë¥¸ ê±°ë¦¬ê°€ ë‚˜ì˜¨ë‹¤.
+        // ì˜ˆ) readPos 159,900, writePos 200, clipSamples 160,000 â†’ 300
+        // ì£¼ì˜: ì½ê¸°ê°€ í•œ ë°”í€´(10ì´ˆ) ì´ìƒ ë°€ë¦¬ë©´ ì´ ê³„ì‚°ìœ¼ë¡œëŠ” êµ¬ë¶„í•  ìˆ˜ ì—†ê³ , ë®ì–´ì“°ì¸ êµ¬ê°„ì€ ìœ ì‹¤ëœë‹¤.
         int available = (writePos - readPos + clipSamples) % clipSamples;
 
         while (available >= blockSize)
         {
-            // readPos ºÎÅÍ blockSize °³¸¦ ÀÐ´Â´Ù.
-            // ÀÐ´Â ¹üÀ§°¡ ¹öÆÛ ³¡À» ³ÑÀ¸¸é Unity °¡ ¹öÆÛ Ã³À½ºÎÅÍ ÀÌ¾î¼­ Ã¤¿ö ÁÖ´Â µ¿ÀÛÀ» ÀüÁ¦·Î ÇÑ´Ù.
+            // readPos ë¶€í„° blockSize ê°œë¥¼ ì½ëŠ”ë‹¤.
+            // ì½ëŠ” ë²”ìœ„ê°€ ë²„í¼ ëì„ ë„˜ìœ¼ë©´ Unity ê°€ ë²„í¼ ì²˜ìŒë¶€í„° ì´ì–´ì„œ ì±„ì›Œ ì£¼ëŠ” ë™ìž‘ì„ ì „ì œë¡œ í•œë‹¤.
             clip.GetData(readBlock, readPos);
 
-            // Ã¤³ÎÀÌ ¹ø°¥¾Æ ÀúÀåµÈ µ¥ÀÌÅÍ¸¦ Ã¤³Î Æò±ÕÀ¸·Î ¸ð³ë º¯È¯ÇÑ´Ù (1Ã¤³ÎÀÌ¸é ±×´ë·Î º¹»ç)
+            // ì±„ë„ì´ ë²ˆê°ˆì•„ ì €ìž¥ëœ ë°ì´í„°ë¥¼ ì±„ë„ í‰ê· ìœ¼ë¡œ ëª¨ë…¸ ë³€í™˜í•œë‹¤ (1ì±„ë„ì´ë©´ ê·¸ëŒ€ë¡œ ë³µì‚¬)
             for (int i = 0; i < blockSize; i++)
             {
                 float sum = 0f;
@@ -202,7 +202,7 @@ public class VoiceInput : MonoBehaviour
                 monoBlock[i] = sum / channels;
             }
 
-            readPos = (readPos + blockSize) % clipSamples;   // ÀÐÀº ¸¸Å­ ÀÐ±â À§Ä¡¸¦ ¿Å±ä´Ù (¹öÆÛ ³¡¿¡¼­ 0À¸·Î µ¹¾Æ°¨)
+            readPos = (readPos + blockSize) % clipSamples;   // ì½ì€ ë§Œí¼ ì½ê¸° ìœ„ì¹˜ë¥¼ ì˜®ê¸´ë‹¤ (ë²„í¼ ëì—ì„œ 0ìœ¼ë¡œ ëŒì•„ê°)
             available -= blockSize;
             SamplesAvailable?.Invoke(monoBlock, blockSize);
         }

@@ -1,94 +1,94 @@
-using System.Collections;
+ï»¿using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// ½ºÅ×ÀÌÁö 1 ÁøÇà ´ã´ç (GameSceneÀÇ [SYSTEM_MANAGERS] ¾Æ·¡ ºó ¿ÀºêÁ§Æ®¿¡ ºÙÀÌ±â)
+// ìŠ¤í…Œì´ì§€ 1 ì§„í–‰ ë‹´ë‹¹ (GameSceneì˜ [SYSTEM_MANAGERS] ì•„ë˜ ë¹ˆ ì˜¤ë¸Œì íŠ¸ì— ë¶™ì´ê¸°)
 //
-// 1. ÈŞ½Ä ÁöÁ¡: N¸¶¸®(±âº» 10) Ã³Ä¡¸¶´Ù ¸÷ µîÀåÀÌ ¸ØÃß°í Ã¼·Â È¸º¹(ÃÖ´ë Ã¼·ÂÀÇ 50%)
-//               ¡æ µµÀü ÆĞ³Î "¸¶¿Õ¿¡°Ô µµÀüÇÒ±î¿ä? / ´õ ¸ğÀ¸±â"
-// 2. »ó¼º Ã³Ä¡ È¸º¹: »ó¼º ¿ìÀ§ ¸¶¹ıÀ¸·Î ¸¶Áö¸· ÀÏ°İÀ» ³ÖÀ¸¸é Ã¼·Â +5
-// 3. µµÀü ¹öÆ°: N¸¶¸®(±âº» 10)ºÎÅÍ È­¸é¿¡ ¡¸¸¶¿Õ¿¡°Ô µµÀü¡¹ ¹öÆ° ¡æ ´©¸£¸é È®ÀÎ ÆĞ³Î (±×µ¿¾È °ÔÀÓ ÀÏ½ÃÁ¤Áö)
-//               º¸½º Å¬¸®¾î ÀÌ·ÂÀÌ ÀÖÀ¸¸é(2È¸Â÷) Ã³À½ºÎÅÍ ¡¸½ºÅ×ÀÌÁö 1 °Ç³Ê¶Ù±â¡¹·Î Ç¥½Ã
-// 4. ÃÖ´ë Ã³Ä¡ ¼ö(GameSessionManagerÀÇ Max Stage1 Kills, ±âº» 50) µµ´Ş ¡æ ÀÚµ¿À¸·Î BossScene
+// 1. íœ´ì‹ ì§€ì : Në§ˆë¦¬(ê¸°ë³¸ 10) ì²˜ì¹˜ë§ˆë‹¤ ëª¹ ë“±ì¥ì´ ë©ˆì¶”ê³  ì²´ë ¥ íšŒë³µ(ìµœëŒ€ ì²´ë ¥ì˜ 50%)
+//               â†’ ë„ì „ íŒ¨ë„ "ë§ˆì™•ì—ê²Œ ë„ì „í• ê¹Œìš”? / ë” ëª¨ìœ¼ê¸°"
+// 2. ìƒì„± ì²˜ì¹˜ íšŒë³µ: ìƒì„± ìš°ìœ„ ë§ˆë²•ìœ¼ë¡œ ë§ˆì§€ë§‰ ì¼ê²©ì„ ë„£ìœ¼ë©´ ì²´ë ¥ +5
+// 3. ë„ì „ ë²„íŠ¼: Në§ˆë¦¬(ê¸°ë³¸ 10)ë¶€í„° í™”ë©´ì— ã€Œë§ˆì™•ì—ê²Œ ë„ì „ã€ ë²„íŠ¼ â†’ ëˆ„ë¥´ë©´ í™•ì¸ íŒ¨ë„ (ê·¸ë™ì•ˆ ê²Œì„ ì¼ì‹œì •ì§€)
+//               ë³´ìŠ¤ í´ë¦¬ì–´ ì´ë ¥ì´ ìˆìœ¼ë©´(2íšŒì°¨) ì²˜ìŒë¶€í„° ã€ŒìŠ¤í…Œì´ì§€ 1 ê±´ë„ˆë›°ê¸°ã€ë¡œ í‘œì‹œ
+// 4. ìµœëŒ€ ì²˜ì¹˜ ìˆ˜(GameSessionManagerì˜ Max Stage1 Kills, ê¸°ë³¸ 50) ë„ë‹¬ â†’ ìë™ìœ¼ë¡œ BossScene
 public class Stage1Director : MonoBehaviour
 {
-    [Header("¿¬°á (ºñ¿ì¸é ÀÚµ¿)")]
+    [Header("ì—°ê²° (ë¹„ìš°ë©´ ìë™)")]
     public EnemyManager enemyManager;
     public GameSessionManager session;
 
-    [Header("1. ÈŞ½Ä ÁöÁ¡")]
-    [Tooltip("¸î ¸¶¸® Ã³Ä¡¸¶´Ù ÈŞ½ÄÇÒÁö (0 = ÈŞ½Ä ¾øÀ½)")]
+    [Header("1. íœ´ì‹ ì§€ì ")]
+    [Tooltip("ëª‡ ë§ˆë¦¬ ì²˜ì¹˜ë§ˆë‹¤ íœ´ì‹í• ì§€ (0 = íœ´ì‹ ì—†ìŒ)")]
     [Min(0)] public int restEvery = 10;
-    [Tooltip("ÈŞ½Ä ¶§ È¸º¹·® (ÃÖ´ë Ã¼·Â ´ëºñ ºñÀ², 0.5 = 50%)")]
+    [Tooltip("íœ´ì‹ ë•Œ íšŒë³µëŸ‰ (ìµœëŒ€ ì²´ë ¥ ëŒ€ë¹„ ë¹„ìœ¨, 0.5 = 50%)")]
     [Range(0f, 1f)] public float restHealRatio = 0.5f;
-    [Tooltip("ÈŞ½Ä ¾Ë¸² ÈÄ È¸º¹±îÁö ´ë±â (ÃÊ)")]
+    [Tooltip("íœ´ì‹ ì•Œë¦¼ í›„ íšŒë³µê¹Œì§€ ëŒ€ê¸° (ì´ˆ)")]
     public float healDelay = 1f;
-    [Tooltip("È¸º¹ ÈÄ ´ÙÀ½ ÁøÇà±îÁö ÃÖ¼Ò ´ë±â (ÃÊ)")]
+    [Tooltip("íšŒë³µ í›„ ë‹¤ìŒ ì§„í–‰ê¹Œì§€ ìµœì†Œ ëŒ€ê¸° (ì´ˆ)")]
     public float restHoldTime = 2f;
-    public string restNotice = "¸ó½ºÅÍÀÇ ¹ß±æÀÌ Àá½Ã ²÷°å´Ù¡¦ ¼ûÀ» °í¸¨´Ï´Ù.";
-    [Tooltip("{heal} = È¸º¹·®")]
-    public string healNotice = "Ã¼·ÂÀÌ {heal} È¸º¹µÇ¾ú½À´Ï´Ù!";
-    [Tooltip("ÈŞ½Ä ¶§ µµÀü ÆĞ³Î ¶ç¿ì±â (²ô¸é Rest Hold Time µÚ ¹Ù·Î ´ÙÀ½ ¸÷)")]
+    public string restNotice = "ëª¬ìŠ¤í„°ì˜ ë°œê¸¸ì´ ì ì‹œ ëŠê²¼ë‹¤â€¦ ìˆ¨ì„ ê³ ë¦…ë‹ˆë‹¤.";
+    [Tooltip("{heal} = íšŒë³µëŸ‰")]
+    public string healNotice = "ì²´ë ¥ì´ {heal} íšŒë³µë˜ì—ˆìŠµë‹ˆë‹¤!";
+    [Tooltip("íœ´ì‹ ë•Œ ë„ì „ íŒ¨ë„ ë„ìš°ê¸° (ë„ë©´ Rest Hold Time ë’¤ ë°”ë¡œ ë‹¤ìŒ ëª¹)")]
     public bool askAtRest = true;
 
-    [Header("2. »ó¼º Ã³Ä¡ È¸º¹")]
+    [Header("2. ìƒì„± ì²˜ì¹˜ íšŒë³µ")]
     public bool healOnWeaknessKill = true;
     public float weaknessKillHeal = 5f;
 
-    [Header("3. µµÀü ¹öÆ°")]
-    [Tooltip("È­¸é ±¸¼®ÀÇ ¡¸¸¶¿Õ¿¡°Ô µµÀü¡¹ ¹öÆ° (Ã³À½¿£ ¼û°Ü µÎ°í Á¶°ÇÀÌ µÇ¸é ³ªÅ¸³²)")]
+    [Header("3. ë„ì „ ë²„íŠ¼")]
+    [Tooltip("í™”ë©´ êµ¬ì„ì˜ ã€Œë§ˆì™•ì—ê²Œ ë„ì „ã€ ë²„íŠ¼ (ì²˜ìŒì—” ìˆ¨ê²¨ ë‘ê³  ì¡°ê±´ì´ ë˜ë©´ ë‚˜íƒ€ë‚¨)")]
     public Button challengeButton;
-    [Tooltip("(¼±ÅÃ) ¹öÆ° ±ÛÀÚ")]
+    [Tooltip("(ì„ íƒ) ë²„íŠ¼ ê¸€ì")]
     public TMP_Text challengeButtonLabel;
-    [Tooltip("ÀÌ Ã³Ä¡ ¼öºÎÅÍ ¹öÆ° Ç¥½Ã")]
+    [Tooltip("ì´ ì²˜ì¹˜ ìˆ˜ë¶€í„° ë²„íŠ¼ í‘œì‹œ")]
     [Min(0)] public int challengeUnlockKills = 10;
-    public string challengeLabel = "¸¶¿Õ¿¡°Ô µµÀü";
-    [Tooltip("º¸½º Å¬¸®¾î ÀÌ·ÂÀÌ ÀÖÀ» ¶§(2È¸Â÷), ¹öÆ°ÀÌ Ã³À½ºÎÅÍ ÀÌ ±ÛÀÚ·Î ³ªÅ¸³²")]
-    public string skipLabel = "½ºÅ×ÀÌÁö 1 °Ç³Ê¶Ù±â";
+    public string challengeLabel = "ë§ˆì™•ì—ê²Œ ë„ì „";
+    [Tooltip("ë³´ìŠ¤ í´ë¦¬ì–´ ì´ë ¥ì´ ìˆì„ ë•Œ(2íšŒì°¨), ë²„íŠ¼ì´ ì²˜ìŒë¶€í„° ì´ ê¸€ìë¡œ ë‚˜íƒ€ë‚¨")]
+    public string skipLabel = "ìŠ¤í…Œì´ì§€ 1 ê±´ë„ˆë›°ê¸°";
 
-    [Header("µµÀü È®ÀÎ ÆĞ³Î")]
-    [Tooltip("È®ÀÎ ÆĞ³Î (Ã³À½¿£ ²¨ µÎ±â)")]
+    [Header("ë„ì „ í™•ì¸ íŒ¨ë„")]
+    [Tooltip("í™•ì¸ íŒ¨ë„ (ì²˜ìŒì—” êº¼ ë‘ê¸°)")]
     public GameObject promptPanel;
     public TMP_Text promptTitle;
     public TMP_Text promptBody;
-    [Tooltip("¡¸µµÀü¡¹ ¹öÆ°")]
+    [Tooltip("ã€Œë„ì „ã€ ë²„íŠ¼")]
     public Button confirmButton;
-    [Tooltip("¡¸´õ ¸ğÀ¸±â¡¹ ¹öÆ°")]
+    [Tooltip("ã€Œë” ëª¨ìœ¼ê¸°ã€ ë²„íŠ¼")]
     public Button cancelButton;
-    public string promptTitleText = "¸¶¿Õ¿¡°Ô µµÀüÇÒ±î¿ä?";
-    public string restTitleText = "Àá½Ã ¼ûÀ» °í¸£´Â Áß¡¦";
+    public string promptTitleText = "ë§ˆì™•ì—ê²Œ ë„ì „í• ê¹Œìš”?";
+    public string restTitleText = "ì ì‹œ ìˆ¨ì„ ê³ ë¥´ëŠ” ì¤‘â€¦";
     [Tooltip("{kills} {max} {spells} {elements} {hp} {hpmax} {missing}")]
     [TextArea(3, 8)]
     public string promptBodyFormat =
-        "Ã³Ä¡ÇÑ ¸ó½ºÅÍ  {kills} / {max}\n" +
-        "¸ğÀº ÁÖ¹®  {spells}°³\n" +
+        "ì²˜ì¹˜í•œ ëª¬ìŠ¤í„°  {kills} / {max}\n" +
+        "ëª¨ì€ ì£¼ë¬¸  {spells}ê°œ\n" +
         "{elements}\n" +
-        "Ã¼·Â  {hp} / {hpmax}\n" +
+        "ì²´ë ¥  {hp} / {hpmax}\n" +
         "{missing}";
-    [Tooltip("{element} = ¾ÆÁ÷ ÇÏ³ªµµ ¾ø´Â ¼Ó¼ºµé")]
-    public string missingFormat = "<size=85%>¾ÆÁ÷ {element} ¼Ó¼º ÁÖ¹®ÀÌ ¾ø½À´Ï´Ù.</size>";
-    public string allElementsText = "<size=85%>¸ğµç ¼Ó¼ºÀÇ ÁÖ¹®À» ¸ğ¾Ò½À´Ï´Ù!</size>";
-    [Tooltip("¼Ó¼º »çÀÌ ±¸ºĞ ±âÈ£. ÆùÆ®¿¡ ¾ø´Â ±ÛÀÚ(¡¤)´Â ³×¸ğ·Î º¸ÀÌ´Ï / | , Ã³·³ ±âº» ±ÛÀÚ »ç¿ë")]
+    [Tooltip("{element} = ì•„ì§ í•˜ë‚˜ë„ ì—†ëŠ” ì†ì„±ë“¤")]
+    public string missingFormat = "<size=85%>ì•„ì§ {element} ì†ì„± ì£¼ë¬¸ì´ ì—†ìŠµë‹ˆë‹¤.</size>";
+    public string allElementsText = "<size=85%>ëª¨ë“  ì†ì„±ì˜ ì£¼ë¬¸ì„ ëª¨ì•˜ìŠµë‹ˆë‹¤!</size>";
+    [Tooltip("ì†ì„± ì‚¬ì´ êµ¬ë¶„ ê¸°í˜¸. í°íŠ¸ì— ì—†ëŠ” ê¸€ì(Â·)ëŠ” ë„¤ëª¨ë¡œ ë³´ì´ë‹ˆ / | , ì²˜ëŸ¼ ê¸°ë³¸ ê¸€ì ì‚¬ìš©")]
     public string elementSeparator = "   /   ";
 
-    [Header("4. ÃÖ´ë Ã³Ä¡ ¼ö µµ´Ş")]
-    public string limitNotice = "¸ó½ºÅÍÀÇ Çà·ÄÀÌ ³¡³µ´Ù¡¦ ¸¶¿ÕÀÇ ±â¿îÀÌ ´À²¸Áø´Ù!";
-    [Tooltip("¾Ë¸² ÈÄ º¸½º ¾ÀÀ¸·Î ³Ñ¾î°¡±â±îÁö (ÃÊ)")]
+    [Header("4. ìµœëŒ€ ì²˜ì¹˜ ìˆ˜ ë„ë‹¬")]
+    public string limitNotice = "ëª¬ìŠ¤í„°ì˜ í–‰ë ¬ì´ ëë‚¬ë‹¤â€¦ ë§ˆì™•ì˜ ê¸°ìš´ì´ ëŠê»´ì§„ë‹¤!";
+    [Tooltip("ì•Œë¦¼ í›„ ë³´ìŠ¤ ì”¬ìœ¼ë¡œ ë„˜ì–´ê°€ê¸°ê¹Œì§€ (ì´ˆ)")]
     public float limitMoveDelay = 2.5f;
 
-    [Header("¾À ÀÌµ¿")]
+    [Header("ì”¬ ì´ë™")]
     public string bossSceneName = "BossScene";
-    [Tooltip("(¼±ÅÃ) °ËÀº È­¸é CanvasGroup. ºñ¿ì¸é ÀÚµ¿ »ı¼º")]
+    [Tooltip("(ì„ íƒ) ê²€ì€ í™”ë©´ CanvasGroup. ë¹„ìš°ë©´ ìë™ ìƒì„±")]
     public CanvasGroup fadeOverlay;
     public float fadeOutTime = 1.2f;
-    public string leaveNotice = "¸¶¿ÕÀÇ ¼ºÀ¸·Î ÇâÇÕ´Ï´Ù¡¦";
+    public string leaveNotice = "ë§ˆì™•ì˜ ì„±ìœ¼ë¡œ í–¥í•©ë‹ˆë‹¤â€¦";
 
-    private bool busy;          // ÈŞ½Ä Áß / ÀÌµ¿ ÁØºñ Áß
-    private bool leaving;       // ¾À ÀÌµ¿ ½ÃÀÛ
+    private bool busy;          // íœ´ì‹ ì¤‘ / ì´ë™ ì¤€ë¹„ ì¤‘
+    private bool leaving;       // ì”¬ ì´ë™ ì‹œì‘
     private bool promptOpen;
-    private int promptChoice;   // 0 = ´ë±â, 1 = µµÀü, -1 = ´õ ¸ğÀ¸±â
+    private int promptChoice;   // 0 = ëŒ€ê¸°, 1 = ë„ì „, -1 = ë” ëª¨ìœ¼ê¸°
     private bool buttonShown;
     private Vector3 buttonBaseScale = Vector3.one;
 
@@ -135,7 +135,7 @@ public class Stage1Director : MonoBehaviour
     private bool PlayerDead => PlayerHealth.Instance != null && PlayerHealth.Instance.IsDead;
 
     // =========================================================
-    // µµÀü ¹öÆ° Ç¥½Ã
+    // ë„ì „ ë²„íŠ¼ í‘œì‹œ
     // =========================================================
     private void Update()
     {
@@ -158,18 +158,18 @@ public class Stage1Director : MonoBehaviour
     {
         if (challengeButtonLabel != null && kills >= challengeUnlockKills) challengeButtonLabel.text = challengeLabel;
 
-        if (kills <= 0 || kills >= max || restEvery <= 0) return; // ÃÖ´ëÄ¡´Â HandleKillLimit¿¡¼­
+        if (kills <= 0 || kills >= max || restEvery <= 0) return; // ìµœëŒ€ì¹˜ëŠ” HandleKillLimitì—ì„œ
         if (kills % restEvery != 0 || busy || leaving) return;
         StartCoroutine(RestRoutine());
     }
 
     // =========================================================
-    // 1. ÈŞ½Ä ÁöÁ¡
+    // 1. íœ´ì‹ ì§€ì 
     // =========================================================
     private IEnumerator RestRoutine()
     {
         busy = true;
-        if (enemyManager != null) enemyManager.StopSpawning(); // ´ÙÀ½ ¸÷ ¿¹¾à ¸·±â (Áö±İ ¸÷Àº ¾²·¯Áö´Â Áß)
+        if (enemyManager != null) enemyManager.StopSpawning(); // ë‹¤ìŒ ëª¹ ì˜ˆì•½ ë§‰ê¸° (ì§€ê¸ˆ ëª¹ì€ ì“°ëŸ¬ì§€ëŠ” ì¤‘)
 
         yield return WaitForFieldClear();
         if (PlayerDead || leaving) { busy = false; yield break; }
@@ -180,7 +180,7 @@ public class Stage1Director : MonoBehaviour
         PlayerHealth hp = PlayerHealth.Instance;
         if (hp != null && restHealRatio > 0f)
         {
-            float healed = hp.Heal(hp.maxHP * restHealRatio, "ÈŞ½Ä");
+            float healed = hp.Heal(hp.maxHP * restHealRatio, "íœ´ì‹");
             if (healed > 0f) Notice(healNotice.Replace("{heal}", Mathf.CeilToInt(healed).ToString()));
         }
         yield return new WaitForSecondsRealtime(restHoldTime);
@@ -196,7 +196,7 @@ public class Stage1Director : MonoBehaviour
     }
 
     // =========================================================
-    // 2. »ó¼º Ã³Ä¡ È¸º¹
+    // 2. ìƒì„± ì²˜ì¹˜ íšŒë³µ
     // =========================================================
     private void HandleEnemySpawned(EnemyController enemy)
     {
@@ -207,11 +207,11 @@ public class Stage1Director : MonoBehaviour
     {
         enemy.OnDied -= HandleEnemyDied;
         if (!healOnWeaknessKill || weaknessKillHeal <= 0f || PlayerHealth.Instance == null) return;
-        if (enemy.LastHitMultiplier > 1f) PlayerHealth.Instance.Heal(weaknessKillHeal, "»ó¼º Ã³Ä¡");
+        if (enemy.LastHitMultiplier > 1f) PlayerHealth.Instance.Heal(weaknessKillHeal, "ìƒì„± ì²˜ì¹˜");
     }
 
     // =========================================================
-    // 3. µµÀü ¹öÆ° / È®ÀÎ ÆĞ³Î
+    // 3. ë„ì „ ë²„íŠ¼ / í™•ì¸ íŒ¨ë„
     // =========================================================
     public void OnClickChallenge()
     {
@@ -223,7 +223,7 @@ public class Stage1Director : MonoBehaviour
     {
         if (promptPanel == null)
         {
-            // ÆĞ³ÎÀÌ ¾øÀ¸¸é ¹Ù·Î ÀÌµ¿
+            // íŒ¨ë„ì´ ì—†ìœ¼ë©´ ë°”ë¡œ ì´ë™
             yield return GoToBoss();
             yield break;
         }
@@ -231,7 +231,7 @@ public class Stage1Director : MonoBehaviour
         if (promptChoice == 1) yield return GoToBoss();
     }
 
-    // ÆĞ³ÎÀ» ¶ç¿ì°í ¼±ÅÃÀ» ±â´Ù¸² (±×µ¿¾È °ÔÀÓ ÀÏ½ÃÁ¤Áö)
+    // íŒ¨ë„ì„ ë„ìš°ê³  ì„ íƒì„ ê¸°ë‹¤ë¦¼ (ê·¸ë™ì•ˆ ê²Œì„ ì¼ì‹œì •ì§€)
     private IEnumerator AskChallenge(string title)
     {
         promptChoice = 0;
@@ -289,7 +289,7 @@ public class Stage1Director : MonoBehaviour
     }
 
     // =========================================================
-    // 4. ÃÖ´ë Ã³Ä¡ ¼ö ¡æ ÀÚµ¿ ÀÌµ¿
+    // 4. ìµœëŒ€ ì²˜ì¹˜ ìˆ˜ â†’ ìë™ ì´ë™
     // =========================================================
     private void HandleKillLimit()
     {
@@ -309,7 +309,7 @@ public class Stage1Director : MonoBehaviour
     }
 
     // =========================================================
-    // ¾À ÀÌµ¿
+    // ì”¬ ì´ë™
     // =========================================================
     private IEnumerator GoToBoss()
     {
@@ -317,8 +317,8 @@ public class Stage1Director : MonoBehaviour
 
         if (!Application.CanStreamedLevelBeLoaded(bossSceneName))
         {
-            Debug.LogError($"[Stage1Director] '{bossSceneName}' ¾ÀÀÌ Build Settings¿¡ ¾ø½À´Ï´Ù. File ¡æ Build Profiles(Build Settings)¿¡ Ãß°¡ÇØ ÁÖ¼¼¿ä.");
-            Notice($"{bossSceneName}ÀÌ Build Settings¿¡ ¾ø½À´Ï´Ù");
+            Debug.LogError($"[Stage1Director] '{bossSceneName}' ì”¬ì´ Build Settingsì— ì—†ìŠµë‹ˆë‹¤. File â†’ Build Profiles(Build Settings)ì— ì¶”ê°€í•´ ì£¼ì„¸ìš”.");
+            Notice($"{bossSceneName}ì´ Build Settingsì— ì—†ìŠµë‹ˆë‹¤");
             busy = false;
             if (!PlayerDead && enemyManager != null) enemyManager.StartSpawning();
             yield break;
@@ -346,7 +346,7 @@ public class Stage1Director : MonoBehaviour
         }
         fadeOverlay.alpha = 1f;
 
-        // ¼­¹ö¿¡ ½ºÅ×ÀÌÁö 1 Å¬¸®¾î ÀúÀå (¼¼¼ÇÀÌ ÀÖÀ» ¶§¸¸)
+        // ì„œë²„ì— ìŠ¤í…Œì´ì§€ 1 í´ë¦¬ì–´ ì €ì¥ (ì„¸ì…˜ì´ ìˆì„ ë•Œë§Œ)
         if (GameManager.Instance != null && NetworkManager.Instance != null && NetworkManager.Instance.HasSession)
         {
             GameManager.Instance.SetState(GameState.StageClear);
@@ -357,9 +357,9 @@ public class Stage1Director : MonoBehaviour
     }
 
     // =========================================================
-    // µµ¿ì¹Ì
+    // ë„ìš°ë¯¸
     // =========================================================
-    // ¾²·¯Áö´Â ¸÷ÀÌ »ç¶óÁö°í, ¶³¾îÁø ÁÖ¹®(µå¶ø)±îÁö ´Ù ÁÖ¿ï ¶§±îÁö ´ë±â
+    // ì“°ëŸ¬ì§€ëŠ” ëª¹ì´ ì‚¬ë¼ì§€ê³ , ë–¨ì–´ì§„ ì£¼ë¬¸(ë“œë)ê¹Œì§€ ë‹¤ ì£¼ìš¸ ë•Œê¹Œì§€ ëŒ€ê¸°
     private IEnumerator WaitForFieldClear()
     {
         float limit = 12f;
@@ -407,9 +407,9 @@ public class Stage1Director : MonoBehaviour
         return g;
     }
 
-    [ContextMenu("º¸½º Å¬¸®¾î ±â·Ï Áö¿ì±â (Å×½ºÆ®¿ë)")]
+    [ContextMenu("ë³´ìŠ¤ í´ë¦¬ì–´ ê¸°ë¡ ì§€ìš°ê¸° (í…ŒìŠ¤íŠ¸ìš©)")]
     private void ClearBossRecord() => StageProgress.ClearBossRecord();
 
-    [ContextMenu("º¸½º Å¬¸®¾î ±â·Ï ¸¸µé±â (2È¸Â÷ Å×½ºÆ®¿ë)")]
+    [ContextMenu("ë³´ìŠ¤ í´ë¦¬ì–´ ê¸°ë¡ ë§Œë“¤ê¸° (2íšŒì°¨ í…ŒìŠ¤íŠ¸ìš©)")]
     private void FakeBossCleared() => StageProgress.MarkBossCleared();
 }

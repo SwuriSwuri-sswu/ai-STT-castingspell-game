@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -14,7 +14,7 @@ public class NetworkManager : MonoBehaviour
     public string CurrentSessionId { get; private set; }
     public bool HasSession => !string.IsNullOrEmpty(CurrentSessionId);
 
-    // ¼¼¼Ç »ı¼º(/game/new)ÀÌ ³¡³ª session-id°¡ ÁØºñµÈ ¼ø°£. ¼³Á¤ ºÒ·¯¿À±â µî ¼¼¼ÇÀÌ ÇÊ¿äÇÑ ¿äÃ»Àº ÀÌÈÄ¿¡ º¸³½´Ù
+    // ì„¸ì…˜ ìƒì„±(/game/new)ì´ ëë‚˜ session-idê°€ ì¤€ë¹„ëœ ìˆœê°„. ì„¤ì • ë¶ˆëŸ¬ì˜¤ê¸° ë“± ì„¸ì…˜ì´ í•„ìš”í•œ ìš”ì²­ì€ ì´í›„ì— ë³´ë‚¸ë‹¤
     public event Action OnSessionReady;
 
     private void Awake()
@@ -30,7 +30,7 @@ public class NetworkManager : MonoBehaviour
         }
     }
 
-    // [°øÅë ÇïÆÛ] Request¿¡ ÀÎÁõ/¼¼¼Ç Çì´õ¸¦ ºÙ¿©ÁÖ´Â ¸Ş¼­µå
+    // [ê³µí†µ í—¬í¼] Requestì— ì¸ì¦/ì„¸ì…˜ í—¤ë”ë¥¼ ë¶™ì—¬ì£¼ëŠ” ë©”ì„œë“œ
     private UnityWebRequest CreateRequest(string endpoint, string method, string jsonBody = null)
     {
         var request = new UnityWebRequest(baseUrl + endpoint, method);
@@ -53,7 +53,7 @@ public class NetworkManager : MonoBehaviour
         return request;
     }
 
-    // 1. ½Å±Ô °ÔÀÓ ½ÃÀÛ (/v1/game/new)
+    // 1. ì‹ ê·œ ê²Œì„ ì‹œì‘ (/v1/game/new)
     public IEnumerator CreateNewGame(Action<bool> onComplete = null)
     {
         using (UnityWebRequest request = CreateRequest("/game/new", "POST", "{}"))
@@ -62,30 +62,30 @@ public class NetworkManager : MonoBehaviour
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                // ¼­¹ö ÀÀ´ä JSONÀ» ÆÄ½ÌÇÏ¿© session_id ¹ÙÀÎµù
+                // ì„œë²„ ì‘ë‹µ JSONì„ íŒŒì‹±í•˜ì—¬ session_id ë°”ì¸ë”©
                 var response = JsonUtility.FromJson<ApiResponse<GameSessionData>>(request.downloadHandler.text);
                 if (response != null && response.data != null)
                 {
                     CurrentSessionId = response.data.id;
-                    Debug.Log($"¼¼¼Ç »ı¼º ¹× ID ÀúÀå ¿Ï·á: {CurrentSessionId}");
+                    Debug.Log($"ì„¸ì…˜ ìƒì„± ë° ID ì €ì¥ ì™„ë£Œ: {CurrentSessionId}");
                     onComplete?.Invoke(true);
                     OnSessionReady?.Invoke();
                 }
                 else
                 {
-                    Debug.LogError("¼¼¼Ç ÀÀ´ä ÆÄ½Ì ½ÇÆĞ");
+                    Debug.LogError("ì„¸ì…˜ ì‘ë‹µ íŒŒì‹± ì‹¤íŒ¨");
                     onComplete?.Invoke(false);
                 }
             }
             else
             {
-                Debug.LogError("¼¼¼Ç »ı¼º ½ÇÆĞ: " + request.error);
+                Debug.LogError("ì„¸ì…˜ ìƒì„± ì‹¤íŒ¨: " + request.error);
                 onComplete?.Invoke(false);
             }
         }
     }
 
-    // 2. °ÔÀÓ Áß°£ ÀúÀå (/v1/game/save)
+    // 2. ê²Œì„ ì¤‘ê°„ ì €ì¥ (/v1/game/save)
     public IEnumerator SaveGame(SaveDataRequest saveData, Action<bool> onComplete = null)
     {
         string jsonBody = JsonUtility.ToJson(saveData);
@@ -95,18 +95,18 @@ public class NetworkManager : MonoBehaviour
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                Debug.Log("°ÔÀÓ ÁøÇà »óÈ² ÀúÀå ¿Ï·á");
+                Debug.Log("ê²Œì„ ì§„í–‰ ìƒí™© ì €ì¥ ì™„ë£Œ");
                 onComplete?.Invoke(true);
             }
             else
             {
-                Debug.LogError("°ÔÀÓ ÀúÀå ½ÇÆĞ: " + request.error);
+                Debug.LogError("ê²Œì„ ì €ì¥ ì‹¤íŒ¨: " + request.error);
                 onComplete?.Invoke(false);
             }
         }
     }
 
-    // 3. °ÔÀÓ Á¾·á ¹× µ¥ÀÌÅÍ ÀúÀå (/v1/game/exit)
+    // 3. ê²Œì„ ì¢…ë£Œ ë° ë°ì´í„° ì €ì¥ (/v1/game/exit)
     public IEnumerator ExitGame(ExitGameRequest exitData, Action<bool> onComplete = null)
     {
         string jsonBody = JsonUtility.ToJson(exitData);
@@ -116,19 +116,19 @@ public class NetworkManager : MonoBehaviour
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                Debug.Log("°ÔÀÓ Á¾·á ¹× ÀúÀå Ã³¸® ¿Ï·á");
-                CurrentSessionId = null; // ¼¼¼Ç ÃÊ±âÈ­
+                Debug.Log("ê²Œì„ ì¢…ë£Œ ë° ì €ì¥ ì²˜ë¦¬ ì™„ë£Œ");
+                CurrentSessionId = null; // ì„¸ì…˜ ì´ˆê¸°í™”
                 onComplete?.Invoke(true);
             }
             else
             {
-                Debug.LogError("°ÔÀÓ Á¾·á Ã³¸® ½ÇÆĞ: " + request.error);
+                Debug.LogError("ê²Œì„ ì¢…ë£Œ ì²˜ë¦¬ ì‹¤íŒ¨: " + request.error);
                 onComplete?.Invoke(false);
             }
         }
     }
 
-    // 4. È¯°æ¼³Á¤ ºÒ·¯¿À±â (/v1/settings)
+    // 4. í™˜ê²½ì„¤ì • ë¶ˆëŸ¬ì˜¤ê¸° (/v1/settings)
     public IEnumerator GetSettings(Action<SettingsData> onComplete)
     {
         using (UnityWebRequest request = CreateRequest("/settings", "GET"))
@@ -138,18 +138,18 @@ public class NetworkManager : MonoBehaviour
             if (request.result == UnityWebRequest.Result.Success)
             {
                 var response = JsonUtility.FromJson<ApiResponse<SettingsData>>(request.downloadHandler.text);
-                Debug.Log("È¯°æ¼³Á¤ ºÒ·¯¿À±â ¼º°ø");
+                Debug.Log("í™˜ê²½ì„¤ì • ë¶ˆëŸ¬ì˜¤ê¸° ì„±ê³µ");
                 onComplete?.Invoke(response?.data);
             }
             else
             {
-                Debug.LogError("È¯°æ¼³Á¤ Á¶È¸ ½ÇÆĞ: " + request.error);
+                Debug.LogError("í™˜ê²½ì„¤ì • ì¡°íšŒ ì‹¤íŒ¨: " + request.error);
                 onComplete?.Invoke(null);
             }
         }
     }
 
-    // 5. È¯°æ¼³Á¤ º¯°æ ÀúÀå (/v1/settings)
+    // 5. í™˜ê²½ì„¤ì • ë³€ê²½ ì €ì¥ (/v1/settings)
     public IEnumerator UpdateSettings(SettingsUpdateRequest newSettings, Action<bool> onComplete = null)
     {
         string jsonBody = JsonUtility.ToJson(newSettings);
@@ -159,12 +159,12 @@ public class NetworkManager : MonoBehaviour
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                Debug.Log("È¯°æ¼³Á¤ ¾÷µ¥ÀÌÆ® ¿Ï·á");
+                Debug.Log("í™˜ê²½ì„¤ì • ì—…ë°ì´íŠ¸ ì™„ë£Œ");
                 onComplete?.Invoke(true);
             }
             else
             {
-                Debug.LogError("È¯°æ¼³Á¤ º¯°æ ½ÇÆĞ: " + request.error);
+                Debug.LogError("í™˜ê²½ì„¤ì • ë³€ê²½ ì‹¤íŒ¨: " + request.error);
                 onComplete?.Invoke(false);
             }
         }

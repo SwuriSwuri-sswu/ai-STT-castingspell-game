@@ -1,21 +1,21 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.UI;
 
-// µµ°¨ ÅÇ ÀüÈ¯ (BookPanel¿¡ ºÙÀÌ±â)
-// ½ºÆç ¹öÆ° ¡æ ½ºÆç µµ°¨ / ¸ó½ºÅÍ ¹öÆ° ¡æ ¸÷ µµ°¨. ¼±ÅÃµÈ ÅÇ ¹öÆ°Àº ¹à°Ô, ³ª¸ÓÁö´Â ¾îµÓ°Ô
-// Ä­À» ºñ¿ö µÎ¸é ÀÚ½Ä Áß SpellPanel / MonsterPanel / Spell_Button / Monster_ButtonÀ» ÀÌ¸§À¸·Î Ã£À½
+// ë„ê° íƒ­ ì „í™˜ (BookPanelì— ë¶™ì´ê¸°)
+// ìŠ¤í  ë²„íŠ¼ â†’ ìŠ¤í  ë„ê° / ëª¬ìŠ¤í„° ë²„íŠ¼ â†’ ëª¹ ë„ê°. ì„ íƒëœ íƒ­ ë²„íŠ¼ì€ ë°ê²Œ, ë‚˜ë¨¸ì§€ëŠ” ì–´ë‘¡ê²Œ
+// ì¹¸ì„ ë¹„ì›Œ ë‘ë©´ ìì‹ ì¤‘ SpellPanel / MonsterPanel / Spell_Button / Monster_Buttonì„ ì´ë¦„ìœ¼ë¡œ ì°¾ìŒ
 public class BookTabs : MonoBehaviour
 {
-    [Header("ÆäÀÌÁö")]
+    [Header("í˜ì´ì§€")]
     public GameObject spellPage;
     public GameObject monsterPage;
 
-    [Header("ÅÇ ¹öÆ°")]
+    [Header("íƒ­ ë²„íŠ¼")]
     public Button spellButton;
     public Button monsterButton;
 
-    [Header("Ç¥½Ã")]
-    [Tooltip("µµ°¨À» ¿­ ¶§ ¸¶Áö¸·À¸·Î º¸´ø ÅÇÀ» ´Ù½Ã º¸¿© ÁÜ (²ô¸é Ç×»ó ½ºÆç ÅÇºÎÅÍ)")]
+    [Header("í‘œì‹œ")]
+    [Tooltip("ë„ê°ì„ ì—´ ë•Œ ë§ˆì§€ë§‰ìœ¼ë¡œ ë³´ë˜ íƒ­ì„ ë‹¤ì‹œ ë³´ì—¬ ì¤Œ (ë„ë©´ í•­ìƒ ìŠ¤í  íƒ­ë¶€í„°)")]
     public bool rememberLastTab = false;
     public Color selectedColor = Color.white;
     public Color unselectedColor = new Color(0.65f, 0.65f, 0.65f);
@@ -58,7 +58,7 @@ public class BookTabs : MonoBehaviour
         Highlight(monsterButton, monsters);
     }
 
-    // ¼±ÅÃµÈ ÅÇÀº ¹à°Ô, ³ª¸ÓÁö´Â ¾îµÓ°Ô (Å©±â´Â ±×´ë·Î)
+    // ì„ íƒëœ íƒ­ì€ ë°ê²Œ, ë‚˜ë¨¸ì§€ëŠ” ì–´ë‘¡ê²Œ (í¬ê¸°ëŠ” ê·¸ëŒ€ë¡œ)
     private void Highlight(Button button, bool selected)
     {
         if (button == null) return;

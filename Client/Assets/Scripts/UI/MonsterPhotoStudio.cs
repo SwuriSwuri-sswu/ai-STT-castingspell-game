@@ -1,41 +1,41 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// ¸÷ µµ°¨ ÃÊ»óÈ­ ÀÚµ¿ ÃÔ¿µ
-// ¸÷ ÇÁ¸®ÆÕÀ» ¸Ê¿¡¼­ ¸Õ °÷¿¡ ÇÏ³ª¾¿ Àá±ñ ²¨³»¼­ Àü¿ë Ä«¸Ş¶ó·Î Âï°í, »çÁø(Texture2D)À¸·Î º¸°üÇÕ´Ï´Ù.
-// ¡æ ¸÷¸¶´Ù Ä«¸Ş¶ó¡¤RenderTexture¸¦ µû·Î ¸¸µé ÇÊ¿ä ¾øÀ½. »õ ¸÷À» Ãß°¡ÇØµµ ÀÚµ¿À¸·Î ÂïÈû
+// ëª¹ ë„ê° ì´ˆìƒí™” ìë™ ì´¬ì˜
+// ëª¹ í”„ë¦¬íŒ¹ì„ ë§µì—ì„œ ë¨¼ ê³³ì— í•˜ë‚˜ì”© ì ê¹ êº¼ë‚´ì„œ ì „ìš© ì¹´ë©”ë¼ë¡œ ì°ê³ , ì‚¬ì§„(Texture2D)ìœ¼ë¡œ ë³´ê´€í•©ë‹ˆë‹¤.
+// â†’ ëª¹ë§ˆë‹¤ ì¹´ë©”ë¼Â·RenderTextureë¥¼ ë”°ë¡œ ë§Œë“¤ í•„ìš” ì—†ìŒ. ìƒˆ ëª¹ì„ ì¶”ê°€í•´ë„ ìë™ìœ¼ë¡œ ì°í˜
 //
-// ¾À¿¡ ºó ¿ÀºêÁ§Æ® ÇÏ³ª ¸¸µé°í ºÙÀÌ±â (GameScene / TitleScene °¢°¢)
-//   - GameScene: EnemyManager¿¡ µî·ÏµÈ ¸÷À» °ÔÀÓ ½ÃÀÛ ¶§ ¹Ì¸® ÃÔ¿µ
-//   - TitleSceneÃ³·³ EnemyManager°¡ ¾ø´Â ¾À: Monsters ¸ñ·Ï¿¡ ¸÷ ÇÁ¸®ÆÕ ³Ö±â
+// ì”¬ì— ë¹ˆ ì˜¤ë¸Œì íŠ¸ í•˜ë‚˜ ë§Œë“¤ê³  ë¶™ì´ê¸° (GameScene / TitleScene ê°ê°)
+//   - GameScene: EnemyManagerì— ë“±ë¡ëœ ëª¹ì„ ê²Œì„ ì‹œì‘ ë•Œ ë¯¸ë¦¬ ì´¬ì˜
+//   - TitleSceneì²˜ëŸ¼ EnemyManagerê°€ ì—†ëŠ” ì”¬: Monsters ëª©ë¡ì— ëª¹ í”„ë¦¬íŒ¹ ë„£ê¸°
 public class MonsterPhotoStudio : MonoBehaviour
 {
     public static MonsterPhotoStudio Instance { get; private set; }
 
-    [Header("ÃÔ¿µÇÒ ¸÷ (ºñ¿ì¸é EnemyManager¿¡ µî·ÏµÈ ¸÷ ÀüºÎ)")]
+    [Header("ì´¬ì˜í•  ëª¹ (ë¹„ìš°ë©´ EnemyManagerì— ë“±ë¡ëœ ëª¹ ì „ë¶€)")]
     public List<EnemyController> monsters = new List<EnemyController>();
-    [Tooltip("¾À ½ÃÀÛ ¶§ ¹Ì¸® ÀüºÎ Âï¾î µÎ±â (µµ°¨À» Ã³À½ ¿­ ¶§ »çÁøÀÌ ¹Ù·Î º¸ÀÌ°Ô)")]
+    [Tooltip("ì”¬ ì‹œì‘ ë•Œ ë¯¸ë¦¬ ì „ë¶€ ì°ì–´ ë‘ê¸° (ë„ê°ì„ ì²˜ìŒ ì—´ ë•Œ ì‚¬ì§„ì´ ë°”ë¡œ ë³´ì´ê²Œ)")]
     public bool captureOnStart = true;
 
-    [Header("ÃÔ¿µ ¼³Á¤")]
-    [Tooltip("»çÁø Å©±â (ÇÈ¼¿)")]
+    [Header("ì´¬ì˜ ì„¤ì •")]
+    [Tooltip("ì‚¬ì§„ í¬ê¸° (í”½ì…€)")]
     public int photoSize = 256;
-    [Tooltip("ÃÔ¿µ Àå¼Ò (¸Ê°ú °ãÄ¡Áö ¾Ê´Â ¸Õ °÷)")]
+    [Tooltip("ì´¬ì˜ ì¥ì†Œ (ë§µê³¼ ê²¹ì¹˜ì§€ ì•ŠëŠ” ë¨¼ ê³³)")]
     public Vector3 studioPosition = new Vector3(0f, -500f, 0f);
-    [Tooltip("ÃÔ¿µ¿ë ·¹ÀÌ¾î (¸ŞÀÎ Ä«¸Ş¶ó Culling Mask¿¡¼­ ºüÁ® ÀÖ´Â ·¹ÀÌ¾î. ÁÖÀÎ°ø ÃÊ»óÈ­¿ë Portrait¸¦ °°ÀÌ ½áµµ µÊ)")]
+    [Tooltip("ì´¬ì˜ìš© ë ˆì´ì–´ (ë©”ì¸ ì¹´ë©”ë¼ Culling Maskì—ì„œ ë¹ ì ¸ ìˆëŠ” ë ˆì´ì–´. ì£¼ì¸ê³µ ì´ˆìƒí™”ìš© Portraitë¥¼ ê°™ì´ ì¨ë„ ë¨)")]
     public string photoLayer = "Portrait";
     public float fieldOfView = 25f;
-    [Tooltip("¸÷À» ºñ½ºµëÈ÷ µ¹·Á¼­ Âï´Â °¢µµ (0 = Á¤¸é)")]
+    [Tooltip("ëª¹ì„ ë¹„ìŠ¤ë“¬íˆ ëŒë ¤ì„œ ì°ëŠ” ê°ë„ (0 = ì •ë©´)")]
     public float yawAngle = 25f;
-    [Tooltip("À§¿¡¼­ ³»·Á´Ùº¸´Â Á¤µµ (0 = ¼öÆò)")]
+    [Tooltip("ìœ„ì—ì„œ ë‚´ë ¤ë‹¤ë³´ëŠ” ì •ë„ (0 = ìˆ˜í‰)")]
     [Range(0f, 1f)] public float lookDown = 0.2f;
-    [Tooltip("¿©¹é (1 = ¸÷ÀÌ »çÁø¿¡ µü ¸ÂÀ½, Å¬¼ö·Ï ¿©¹éÀÌ ¸¹À½, 1º¸´Ù ÀÛÀ¸¸é »ìÂ¦ Àß¸²)")]
+    [Tooltip("ì—¬ë°± (1 = ëª¹ì´ ì‚¬ì§„ì— ë”± ë§ìŒ, í´ìˆ˜ë¡ ì—¬ë°±ì´ ë§ìŒ, 1ë³´ë‹¤ ì‘ìœ¼ë©´ ì‚´ì§ ì˜ë¦¼)")]
     public float padding = 1.05f;
-    [Tooltip("Idle ¾Ö´Ï¸ŞÀÌ¼ÇÀ» ÀÌ ½Ã°£¸¸Å­ ÁøÇà½ÃÅ² ÀÚ¼¼·Î Âï±â (0 = Ã¹ ÇÁ·¹ÀÓ)")]
+    [Tooltip("Idle ì• ë‹ˆë©”ì´ì…˜ì„ ì´ ì‹œê°„ë§Œí¼ ì§„í–‰ì‹œí‚¨ ìì„¸ë¡œ ì°ê¸° (0 = ì²« í”„ë ˆì„)")]
     public float poseTime = 0.3f;
 
-    // Å° = ÇÁ¸®ÆÕ ÀÌ¸§
+    // í‚¤ = í”„ë¦¬íŒ¹ ì´ë¦„
     private static readonly Dictionary<string, Texture2D> photos = new Dictionary<string, Texture2D>();
     private readonly Queue<EnemyController> queue = new Queue<EnemyController>();
     private bool working;
@@ -66,7 +66,7 @@ public class MonsterPhotoStudio : MonoBehaviour
     private IEnumerator Start()
     {
         if (!captureOnStart) yield break;
-        yield return null; // ´Ù¸¥ ¸Å´ÏÀúµéÀÌ ÁØºñµÉ ¶§±îÁö ÇÑ ÇÁ·¹ÀÓ ´ë±â
+        yield return null; // ë‹¤ë¥¸ ë§¤ë‹ˆì €ë“¤ì´ ì¤€ë¹„ë  ë•Œê¹Œì§€ í•œ í”„ë ˆì„ ëŒ€ê¸°
         RequestAll();
     }
 
@@ -78,7 +78,7 @@ public class MonsterPhotoStudio : MonoBehaviour
         foreach (EnemyController m in list) Request(m);
     }
 
-    // ¾ÆÁ÷ »çÁøÀÌ ¾øÀ¸¸é ÃÔ¿µ ¿¹¾à
+    // ì•„ì§ ì‚¬ì§„ì´ ì—†ìœ¼ë©´ ì´¬ì˜ ì˜ˆì•½
     public void Request(EnemyController prefab)
     {
         if (prefab == null || photos.ContainsKey(prefab.gameObject.name) || queue.Contains(prefab)) return;
@@ -107,7 +107,7 @@ public class MonsterPhotoStudio : MonoBehaviour
         int layer = LayerMask.NameToLayer(photoLayer);
         if (layer < 0)
         {
-            Debug.LogWarning($"[MonsterPhotoStudio] '{photoLayer}' ·¹ÀÌ¾î°¡ ¾ø½À´Ï´Ù. Layers¿¡ Ãß°¡ÇØ ÁÖ¼¼¿ä.");
+            Debug.LogWarning($"[MonsterPhotoStudio] '{photoLayer}' ë ˆì´ì–´ê°€ ì—†ìŠµë‹ˆë‹¤. Layersì— ì¶”ê°€í•´ ì£¼ì„¸ìš”.");
             layer = 0;
         }
 
@@ -119,7 +119,7 @@ public class MonsterPhotoStudio : MonoBehaviour
         photoCamera = camGo.AddComponent<Camera>();
         photoCamera.enabled = false;
         photoCamera.clearFlags = CameraClearFlags.SolidColor;
-        photoCamera.backgroundColor = new Color(0f, 0f, 0f, 0f); // Åõ¸í ¹è°æ
+        photoCamera.backgroundColor = new Color(0f, 0f, 0f, 0f); // íˆ¬ëª… ë°°ê²½
         photoCamera.cullingMask = 1 << layer;
         photoCamera.fieldOfView = fieldOfView;
         photoCamera.nearClipPlane = 0.05f;
@@ -131,7 +131,7 @@ public class MonsterPhotoStudio : MonoBehaviour
     {
         int layer = Mathf.Max(0, LayerMask.NameToLayer(photoLayer));
 
-        // 1. ²¨Áø ºÎ¸ğ ¾Æ·¡¿¡ º¹Á¦ ¡æ ¸÷ ½ºÅ©¸³Æ®(°ø°İ¡¤µî·Ï µî)°¡ ½ÇÇàµÇÁö ¾ÊÀ½
+        // 1. êº¼ì§„ ë¶€ëª¨ ì•„ë˜ì— ë³µì œ â†’ ëª¹ ìŠ¤í¬ë¦½íŠ¸(ê³µê²©Â·ë“±ë¡ ë“±)ê°€ ì‹¤í–‰ë˜ì§€ ì•ŠìŒ
         GameObject holder = new GameObject("PhotoHolder_" + prefab.gameObject.name);
         holder.SetActive(false);
         holder.transform.position = studioPosition;
@@ -139,19 +139,19 @@ public class MonsterPhotoStudio : MonoBehaviour
         GameObject clone = Instantiate(prefab.gameObject, holder.transform);
         clone.transform.localPosition = Vector3.zero;
         clone.transform.localScale = prefab.transform.localScale;
-        // Á¤¸é(+Z)ÀÌ Ä«¸Ş¶ó¸¦ º¸µµ·Ï + ºñ½ºµëÈ÷
+        // ì •ë©´(+Z)ì´ ì¹´ë©”ë¼ë¥¼ ë³´ë„ë¡ + ë¹„ìŠ¤ë“¬íˆ
         clone.transform.localRotation = Quaternion.Euler(0f, 180f + prefab.facingYawOffset + yawAngle, 0f);
 
-        // ÄÑ±â Àü¿¡ Áï½Ã Á¦°ÅÇØ¾ß Awake/OnEnable(¸÷ µî·Ï¡¤°ø°İ µî)ÀÌ ½ÇÇàµÇÁö ¾ÊÀ½
+        // ì¼œê¸° ì „ì— ì¦‰ì‹œ ì œê±°í•´ì•¼ Awake/OnEnable(ëª¹ ë“±ë¡Â·ê³µê²© ë“±)ì´ ì‹¤í–‰ë˜ì§€ ì•ŠìŒ
         foreach (MonoBehaviour mb in clone.GetComponentsInChildren<MonoBehaviour>(true)) DestroyImmediate(mb);
         foreach (Collider c in clone.GetComponentsInChildren<Collider>(true)) c.enabled = false;
         foreach (ParticleSystemRenderer pr in clone.GetComponentsInChildren<ParticleSystemRenderer>(true)) pr.enabled = false;
         foreach (Transform t in clone.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = layer;
 
         holder.SetActive(true);
-        yield return null; // ÇÑ ÇÁ·¹ÀÓ (Animator ÃÊ±âÈ­)
+        yield return null; // í•œ í”„ë ˆì„ (Animator ì´ˆê¸°í™”)
 
-        // 2. Idle ÀÚ¼¼ Àâ±â
+        // 2. Idle ìì„¸ ì¡ê¸°
         Animator anim = clone.GetComponentInChildren<Animator>();
         if (anim != null && anim.runtimeAnimatorController != null)
         {
@@ -159,7 +159,7 @@ public class MonsterPhotoStudio : MonoBehaviour
             if (poseTime > 0f) anim.Update(poseTime);
         }
 
-        // 3. ¸÷ Å©±â¿¡ ¸ÂÃç Ä«¸Ş¶ó À§Ä¡ ÀÚµ¿ Á¶Àı
+        // 3. ëª¹ í¬ê¸°ì— ë§ì¶° ì¹´ë©”ë¼ ìœ„ì¹˜ ìë™ ì¡°ì ˆ
         Bounds b = new Bounds(clone.transform.position, Vector3.zero);
         bool has = false;
         foreach (Renderer r in clone.GetComponentsInChildren<Renderer>())
@@ -169,17 +169,17 @@ public class MonsterPhotoStudio : MonoBehaviour
         }
         if (has)
         {
-            // ¸÷ÀÇ °¡Àå ±ä º¯(³ôÀÌ ¶Ç´Â °¡·ÎÆø)ÀÌ »çÁø¿¡ µü ¸Â´Â °Å¸®
+            // ëª¹ì˜ ê°€ì¥ ê¸´ ë³€(ë†’ì´ ë˜ëŠ” ê°€ë¡œí­)ì´ ì‚¬ì§„ì— ë”± ë§ëŠ” ê±°ë¦¬
             float halfSize = Mathf.Max(b.extents.y, Mathf.Max(b.extents.x, b.extents.z)) * padding;
             float depth = Mathf.Max(b.extents.x, b.extents.z);
             float dist = halfSize / Mathf.Tan(fieldOfView * 0.5f * Mathf.Deg2Rad) + depth;
             float radius = b.extents.magnitude;
-            Vector3 dir = new Vector3(0f, lookDown, -1f).normalized; // ¸÷ ¾Õ(-Z ÂÊ)¿¡¼­ ¹Ù¶óº½
+            Vector3 dir = new Vector3(0f, lookDown, -1f).normalized; // ëª¹ ì•(-Z ìª½)ì—ì„œ ë°”ë¼ë´„
             photoCamera.transform.position = b.center + dir * dist;
             photoCamera.transform.LookAt(b.center);
             photoCamera.farClipPlane = dist + radius * 2f;
 
-            // 4. ÃÔ¿µ: ÀÌ¹ø ÇÁ·¹ÀÓ ³¡¿¡ ·»´õµÈ °á°ú¸¦ »çÁøÀ¸·Î º¹»ç
+            // 4. ì´¬ì˜: ì´ë²ˆ í”„ë ˆì„ ëì— ë Œë”ëœ ê²°ê³¼ë¥¼ ì‚¬ì§„ìœ¼ë¡œ ë³µì‚¬
             photoCamera.enabled = true;
             yield return new WaitForEndOfFrame();
             photoCamera.enabled = false;
@@ -197,7 +197,7 @@ public class MonsterPhotoStudio : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"[MonsterPhotoStudio] {prefab.gameObject.name}: º¸ÀÌ´Â ¸ğµ¨ÀÌ ¾ø¾î ÃÔ¿µÇÏÁö ¸øÇß½À´Ï´Ù.");
+            Debug.LogWarning($"[MonsterPhotoStudio] {prefab.gameObject.name}: ë³´ì´ëŠ” ëª¨ë¸ì´ ì—†ì–´ ì´¬ì˜í•˜ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.");
         }
 
         Destroy(holder);
