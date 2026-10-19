@@ -1016,7 +1016,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 72393938}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd65006f5338cf34a88aef639bed8469, type: 3}
   m_Name: 
@@ -1028,6 +1028,9 @@ MonoBehaviour:
   castTestKey: 99
   unlockKey: 117
   resetKey: 114
+  dropItemPrefab: {fileID: 9009495989836976630, guid: ad5534dabd1333e419fc48a593487964, type: 3}
+  dropOffset: {x: 0, y: 1, z: 0}
+  cameraDropDistance: 4
   show: 1
   screenPosition: {x: 10, y: 260}
   width: 480
@@ -1050,7 +1053,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38b64766c9a3e6a4a97b8f669ef42ca2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceInput
-  deviceName: Microphone Array (AMD Audio Device)
+  deviceName: 
   requestedSampleRate: 16000
   loopBufferSec: 10
 --- !u!114 &72393943
@@ -1101,7 +1104,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceSocket
   serverUrl: ws://127.0.0.1:8000/ws/voice/analyzing
-  unlockedOnly: 0
+  unlockedOnly: 1
 --- !u!114 &72393945
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1115,7 +1118,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::VoiceStreamSocket
   serverUrl: ws://127.0.0.1:8000/ws/voice/streaming
-  unlockedOnly: 0
+  unlockedOnly: 1
   logPartials: 1
 --- !u!114 &72393946
 MonoBehaviour:
@@ -35290,20 +35293,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpellBookUI
   source: 0
   allSpells: []
-  sections:
-  - element: 0
-    root: {fileID: 1485141732}
-    countText: {fileID: 436921896}
-  - element: 2
-    root: {fileID: 618999205}
-    countText: {fileID: 1424558773}
-  - element: 1
-    root: {fileID: 857507587}
-    countText: {fileID: 1339438963}
-  - element: 3
-    root: {fileID: 139277882}
-    countText: {fileID: 1021797005}
-  labelTemplate: {fileID: 296099930}
+  sections: []
+  labelTemplate: {fileID: 0}
   showLockedAsUnknown: 1
   unknownText: ???
   hideUnusedSlots: 1
