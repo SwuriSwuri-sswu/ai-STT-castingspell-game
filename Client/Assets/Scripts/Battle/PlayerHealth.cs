@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -11,17 +11,17 @@ public class PlayerHealth : MonoBehaviour
 {
     public static PlayerHealth Instance { get; private set; }
 
-    [Header("ü��")]
+    [Header("체력")]
     public float maxHP = 100f;
-    [Tooltip("�� �� ���� �� �� �ð� ������ �߰� ���� ���� (���� �ǰ� ����)")]
+    [Tooltip("한 번 맞은 뒤 이 시간 동안은 추가 피해 없음 (연속 피격 방지)")]
     public float invulnerableTime = 0.5f;
 
     [Header("게임 오버")]
     public string endingSceneName = "EndingScene";
-    [Tooltip("������ �� �������� ���� (���� �ð� ��)")]
+    [Tooltip("쓰러질 때 느려지는 연출 (실제 시간 초)")]
     public float slowMotionTime = 1.2f;
     [Range(0.05f, 1f)] public float slowMotionScale = 0.3f;
-    [Tooltip("(����) ȭ���� ��İ� ���� CanvasGroup. ���� �ٷ� �Ѿ")]
+    [Tooltip("(선택) 화면을 까맣게 덮을 CanvasGroup. 비우면 바로 넘어감")]
     public CanvasGroup fadeOverlay;
     public float fadeTime = 1f;
 
@@ -29,12 +29,12 @@ public class PlayerHealth : MonoBehaviour
     public bool IsDead { get; private set; }
     public float Ratio => maxHP > 0f ? CurrentHP / maxHP : 0f;
 
-    // (����, �ִ�)
+    // (현재, 최대)
     public event Action<float, float> OnHealthChanged;
-    // (���� ��, ����)
+    // (깎인 양, 이유)
     public event Action<float, string> OnDamaged;
     public event Action OnDied;
-    // (ȸ���� ��, ����)
+    // (회복한 양, 이유)
     public event Action<float, string> OnHealed;
 
     private float lastHitTime = -999f;
@@ -69,14 +69,14 @@ public class PlayerHealth : MonoBehaviour
         lastHitTime = Time.time;
 
         CurrentHP = Mathf.Max(0f, CurrentHP - amount);
-        Debug.Log($"[�÷��̾�] {reason} -{amount} �� ü�� {CurrentHP}/{maxHP}");
+        Debug.Log($"[플레이어] {reason} -{amount} → 체력 {CurrentHP}/{maxHP}");
         OnDamaged?.Invoke(amount, reason);
         OnHealthChanged?.Invoke(CurrentHP, maxHP);
 
         if (CurrentHP <= 0f) Die();
     }
 
-    // ������ ȸ���� ���� ������ (�̹� ���� �� ������ 0)
+    // 실제로 회복된 양을 돌려줌 (이미 가득 차 있으면 0)
     public float Heal(float amount, string reason = "")
     {
         if (IsDead || amount <= 0f) return 0f;
@@ -85,7 +85,7 @@ public class PlayerHealth : MonoBehaviour
         float healed = CurrentHP - before;
         if (healed <= 0f) return 0f;
 
-        Debug.Log($"[�÷��̾�] {reason} +{healed} �� ü�� {CurrentHP}/{maxHP}");
+        Debug.Log($"[플레이어] {reason} +{healed} → 체력 {CurrentHP}/{maxHP}");
         OnHealed?.Invoke(healed, reason);
         OnHealthChanged?.Invoke(CurrentHP, maxHP);
         return healed;
@@ -96,10 +96,10 @@ public class PlayerHealth : MonoBehaviour
     {
         if (IsDead) return;
         IsDead = true;
-        Debug.Log("[�÷��̾�] ���������ϴ�. ���� ����");
+        Debug.Log("[플레이어] 쓰러졌습니다. 게임 오버");
         OnDied?.Invoke();
 
-        // �� ���������� �Է� ����
+        // 몹 스폰·음성 입력 정지
         if (EnemyManager.Instance != null) EnemyManager.Instance.StopSpawning();
         VoiceSender sender = FindFirstObjectByType<VoiceSender>();
         if (sender != null) sender.enabled = false;
@@ -108,7 +108,7 @@ public class PlayerHealth : MonoBehaviour
 
         GameResult.Record(false, Time.time - startTime);
 
-        // ������ ���� ��� (���� �Ŵ����� ���� ����)
+        // 서버에 종료 기록 (서버 매니저가 있을 때만)
         if (GameManager.Instance != null && NetworkManager.Instance != null)
         {
             GameManager.Instance.SetState(GameState.GameOver);
@@ -119,11 +119,11 @@ public class PlayerHealth : MonoBehaviour
 
     private IEnumerator GameOverSequence()
     {
-        // ���θ��
+        // 슬로모션
         Time.timeScale = slowMotionScale;
         yield return new WaitForSecondsRealtime(slowMotionTime);
 
-        // ����
+        // 암전
         if (fadeOverlay != null)
         {
             fadeOverlay.gameObject.SetActive(true);
