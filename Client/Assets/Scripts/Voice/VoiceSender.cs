@@ -183,7 +183,7 @@ public class VoiceSender : MonoBehaviour
         ignoringCurrentSpeech = false;
         utterance.Clear();
         ResetPushToTalk();   // 샘플레이트가 바뀔 수 있으므로 프리롤 버퍼도 다시 만든다
-        if (wasCollecting) RecordingRejected?.Invoke("마이크가 바뀌어 녹음을 취소했습니다.");
+        if (wasCollecting) RecordingRejected?.Invoke("The microphone changed, so recording was canceled.");
         Debug.Log("[MIC] 마이크가 바뀌어 감지를 다시 시작합니다.");
     }
 
@@ -199,8 +199,8 @@ public class VoiceSender : MonoBehaviour
         if (waitingForResult && Time.unscaledTime >= waitDeadline)
         {
             MarkExpired(pendingRequestId ?? CurrentRequestId);   // 이 요청의 결과가 나중에 와도 쓰지 않는다
-            ReleaseWait("응답 시간 초과");
-            RecordingRejected?.Invoke("주문 해석 시간이 초과되었습니다.");   // 자막이 '해석 중'에 멈추지 않게 알린다
+            ReleaseWait("response timeout");
+            RecordingRejected?.Invoke("Reading the spell took too long.");   // 자막이 '해석 중'에 멈추지 않게 알린다
         }
 
         // 플레이 중 Inspector 에서 입력 방식을 바꾸면 모으던 발화를 버리고 새 방식으로 시작한다
@@ -208,7 +208,7 @@ public class VoiceSender : MonoBehaviour
         {
             Debug.Log($"[MIC] 입력 방식 변경: {appliedMode} → {inputMode}");
             appliedMode = inputMode;
-            CancelRecording("입력 방식이 바뀌어 녹음을 취소했습니다.");
+            CancelRecording("The input mode changed, so recording was canceled.");
             ignoringCurrentSpeech = false;
         }
 
@@ -258,7 +258,7 @@ public class VoiceSender : MonoBehaviour
         {
             ignoringCurrentSpeech = true;
             Debug.Log("[MIC] 지금은 주문을 받을 수 없어 이번 발화는 무시합니다 (공격할 적 없음)");
-            RecordingRejected?.Invoke("아직 적이 자리에 오지 않았습니다.");
+            RecordingRejected?.Invoke("The enemy hasn't arrived yet.");
             return;
         }
         BeginUtterance(preroll);
@@ -288,7 +288,7 @@ public class VoiceSender : MonoBehaviour
         if (remove > 0 && remove < utterance.Count)
             utterance.RemoveRange(utterance.Count - remove, remove);
 
-        FinishUtterance(reason == SpeechEndReason.Silence ? "무음" : "최대 길이");
+        FinishUtterance(reason == SpeechEndReason.Silence ? "silence" : "max length");
     }
 
     // ─────────────────────────────────────────────
@@ -309,7 +309,7 @@ public class VoiceSender : MonoBehaviour
         if (pttStopAt >= 0f && Time.unscaledTime >= pttStopAt)
         {
             pttStopAt = -1f;
-            if (collecting) FinishUtterance("키 뗌");
+            if (collecting) FinishUtterance("key released");
         }
     }
 
@@ -321,7 +321,7 @@ public class VoiceSender : MonoBehaviour
         if (voiceInput == null || !voiceInput.IsRunning)
         {
             Debug.LogWarning("[MIC] 마이크가 준비되지 않아 녹음을 시작할 수 없습니다.");
-            RecordingRejected?.Invoke("마이크가 준비되지 않았습니다.");
+            RecordingRejected?.Invoke("The microphone isn't ready.");
             return;
         }
 
@@ -343,7 +343,7 @@ public class VoiceSender : MonoBehaviour
         if (CanAccept != null && !CanAccept())
         {
             Debug.Log("[MIC] 지금은 주문을 받을 수 없어 녹음하지 않습니다 (공격할 적 없음)");
-            RecordingRejected?.Invoke("아직 적이 자리에 오지 않았습니다.");
+            RecordingRejected?.Invoke("The enemy hasn't arrived yet.");
             return;
         }
 
@@ -357,7 +357,7 @@ public class VoiceSender : MonoBehaviour
         if (!collecting) return;
 
         if (pttReleaseTailSec > 0f) pttStopAt = Time.unscaledTime + pttReleaseTailSec;
-        else FinishUtterance("키 뗌");
+        else FinishUtterance("key released");
     }
 
     /// <summary>VoiceInput 의 소리를 받는다. 녹음 중이면 발화에 모으고, 아니면 프리롤 버퍼에 보관한다.</summary>
@@ -377,7 +377,7 @@ public class VoiceSender : MonoBehaviour
         {
             pttHeld = false;
             pttStopAt = -1f;
-            FinishUtterance("최대 길이");
+            FinishUtterance("max length");
         }
     }
 
@@ -422,7 +422,7 @@ public class VoiceSender : MonoBehaviour
     {
         // 키를 누른 채 다른 창으로 가면 키를 뗀 신호를 못 받을 수 있으므로 녹음을 버린다
         if (!hasFocus && inputMode == InputMode.PushToTalk && collecting)
-            CancelRecording("창이 바뀌어 녹음을 취소했습니다.");
+            CancelRecording("The window changed, so recording was canceled.");
     }
 
     /// <summary>모으던 발화를 보내지 않고 버린다 (창 전환, 입력 방식 변경 등). 결과 대기 상태는 건드리지 않는다.</summary>
@@ -481,7 +481,7 @@ public class VoiceSender : MonoBehaviour
         {
             StopStream(cancel: true);
             Debug.LogWarning($"[MIC] 발화가 너무 짧아 보내지 않습니다 ({sec:F2}초).");
-            RecordingRejected?.Invoke("주문이 들리지 않았습니다.");
+            RecordingRejected?.Invoke("No spell was heard.");
             return;
         }
 
@@ -511,7 +511,7 @@ public class VoiceSender : MonoBehaviour
 
         if (voiceSocket == null)
         {
-            RecordingRejected?.Invoke("서버 연결 설정이 없습니다.");
+            RecordingRejected?.Invoke("No server connection is set up.");
             return;
         }
         SubmitUtterance(wav);
@@ -588,8 +588,8 @@ public class VoiceSender : MonoBehaviour
             string id = await voiceSocket.SendWavWithId(wav, CurrentRequestId);   // 실시간 자막과 같은 번호
             if (id == null)
             {
-                ReleaseWait("서버 연결 없음");
-                RecordingRejected?.Invoke("서버에 연결되어 있지 않습니다.");
+                ReleaseWait("no server connection");
+                RecordingRejected?.Invoke("Not connected to the server.");
                 return;
             }
             // 결과가 이미 도착해 대기가 풀렸다면 번호를 기록할 필요가 없다
@@ -598,8 +598,8 @@ public class VoiceSender : MonoBehaviour
         catch (Exception e)
         {
             Debug.LogError("[MIC] 전송 실패: " + e);
-            ReleaseWait("전송 실패");
-            RecordingRejected?.Invoke("주문 전송에 실패했습니다.");
+            ReleaseWait("send failed");
+            RecordingRejected?.Invoke("Failed to send the spell.");
         }
     }
 
@@ -616,7 +616,7 @@ public class VoiceSender : MonoBehaviour
             return;
         }
         if (IsMyResult(r.RequestId))
-            ReleaseWait(r.Success ? "발동" : $"불발 {r.RejectReason}");
+            ReleaseWait(r.Success ? "cast" : $"rejected {r.RejectReason}");
     }
 
     void OnServerError(ErrorResponse err)
@@ -624,11 +624,11 @@ public class VoiceSender : MonoBehaviour
         if (err == null) return;
         if (IsStaleResult(err.RequestId))
         {
-            LogStale(err.RequestId, $"오류 {err.Code}");
+            LogStale(err.RequestId, $"error {err.Code}");
             return;
         }
         if (IsMyResult(err.RequestId))
-            ReleaseWait($"오류 {err.Code}");
+            ReleaseWait($"error {err.Code}");
     }
 
     /// <summary>

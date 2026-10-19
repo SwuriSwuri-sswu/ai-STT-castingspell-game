@@ -228,13 +228,13 @@ public class EnemyController : MonoBehaviour
         }
     }
 
-    public static string RankToKorean(MonsterRank r)
+    public static string RankName(MonsterRank r)
     {
         switch (r)
         {
-            case MonsterRank.Mid: return "중급";
-            case MonsterRank.High: return "상급";
-            default: return "하급";
+            case MonsterRank.Mid: return "Mid";
+            case MonsterRank.High: return "High";
+            default: return "Low";
         }
     }
 
@@ -356,14 +356,14 @@ public class EnemyController : MonoBehaviour
         return withoutFinal;
     }
 
-    public static string ElementToKorean(MagicElement e)
+    public static string ElementName(MagicElement e)
     {
         switch (e)
         {
-            case MagicElement.Water: return "물";
-            case MagicElement.Fire: return "불";
-            case MagicElement.Grass: return "풀";
-            default: return "노말";
+            case MagicElement.Water: return "Water";
+            case MagicElement.Fire: return "Fire";
+            case MagicElement.Grass: return "Grass";
+            default: return "Normal";
         }
     }
 
@@ -452,7 +452,7 @@ public class EnemyController : MonoBehaviour
         // 3. 적중 (그 사이 마법에 쓰러졌으면 취소)
         if (!IsDying && PlayerHealth.Instance != null)
         {
-            PlayerHealth.Instance.TakeDamage(attackDamage, $"{RankToKorean(rank)} {ElementToKorean(enemyType)} 몬스터의 공격");
+            PlayerHealth.Instance.TakeDamage(attackDamage, $"{RankName(rank)} {ElementName(enemyType)} monster attack");
         }
 
         // 4. 제자리로
@@ -743,7 +743,7 @@ public class EnemyController : MonoBehaviour
         {
             string hex = ColorUtility.ToHtmlStringRGB(ElementColor(enemyType));
             BattleUIManager.Instance.ShowKill(
-                $"{RankToKorean(rank)} <color=#{hex}>{ElementToKorean(enemyType)} 속성</color> 몬스터 처치!");
+                $"Defeated a {RankName(rank)} <color=#{hex}>{ElementName(enemyType)}</color> monster!");
         }
 
         // 처치 카운트 + 드랍 여부 결정 (여기서 미리 정해두고, 애니메이션이 끝나면 생성)

@@ -1,35 +1,35 @@
-using System.Collections;
+ï»¿using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// ¿£µù ¾À (°ÔÀÓ ¿À¹ö / Å¬¸®¾î °á°ú È­¸é). EndingSceneÀÇ Canvas ¾Æ·¡ ¿ÀºêÁ§Æ®¿¡ ºÙÀÌ±â
-//   Á¦¸ñ ¡æ °á°ú ¡æ ¹öÆ° ¼ø¼­·Î ÃµÃµÈ÷ ³ªÅ¸³²
-//   ¹öÆ° OnClick¿¡ OnClickRetry / OnClickTitle ¿¬°á
+// ì—”ë”© ì”¬ (ê²Œì„ ì˜¤ë²„ / í´ë¦¬ì–´ ê²°ê³¼ í™”ë©´). EndingSceneì˜ Canvas ì•„ë˜ ì˜¤ë¸Œì íŠ¸ì— ë¶™ì´ê¸°
+//   ì œëª© â†’ ê²°ê³¼ â†’ ë²„íŠ¼ ìˆœì„œë¡œ ì²œì²œíˆ ë‚˜íƒ€ë‚¨
+//   ë²„íŠ¼ OnClickì— OnClickRetry / OnClickTitle ì—°ê²°
 public class EndingSceneController : MonoBehaviour
 {
-    [Header("±ÛÀÚ")]
+    [Header("ê¸€ì")]
     public TMP_Text titleText;
-    [Tooltip("Ã³Ä¡ ¼ö¡¤Á¡¼ö¡¤ÇÃ·¹ÀÌ ½Ã°£ µî")]
+    [Tooltip("ì²˜ì¹˜ ìˆ˜Â·ì ìˆ˜Â·í”Œë ˆì´ ì‹œê°„ ë“±")]
     public TMP_Text resultText;
     public string gameOverTitle = "GAME OVER";
     public string clearTitle = "STAGE CLEAR";
-    [Tooltip("º¸½º¸¦ ¹°¸®ÃÆÀ» ¶§ Á¦¸ñ")]
+    [Tooltip("ë³´ìŠ¤ë¥¼ ë¬¼ë¦¬ì³¤ì„ ë•Œ ì œëª©")]
     public string bossClearTitle = "VICTORY";
     public Color gameOverColor = new Color(0.85f, 0.15f, 0.15f);
     public Color clearColor = new Color(1f, 0.84f, 0f);
 
-    [Header("³ªÅ¸³ª´Â ¼ø¼­ (°¢°¢ CanvasGroup, ºñ¿öµµ µÊ)")]
+    [Header("ë‚˜íƒ€ë‚˜ëŠ” ìˆœì„œ (ê°ê° CanvasGroup, ë¹„ì›Œë„ ë¨)")]
     public CanvasGroup titleGroup;
     public CanvasGroup resultGroup;
     public CanvasGroup buttonGroup;
     public float startDelay = 0.5f;
     public float fadeTime = 0.8f;
     public float gap = 0.4f;
-    [Tooltip("Á¦¸ñÀÌ Å©°Ô ½ÃÀÛÇØ¼­ ¿ø·¡ Å©±â·Î ÁÙ¾îµå´Â ¿¬Ãâ")]
+    [Tooltip("ì œëª©ì´ í¬ê²Œ ì‹œì‘í•´ì„œ ì›ë˜ í¬ê¸°ë¡œ ì¤„ì–´ë“œëŠ” ì—°ì¶œ")]
     public float titleStartScale = 1.6f;
 
-    [Header("¾À ÀÌ¸§")]
+    [Header("ì”¬ ì´ë¦„")]
     public string gameSceneName = "GameScene";
     public string titleSceneName = "TitleScene";
 
@@ -48,12 +48,12 @@ public class EndingSceneController : MonoBehaviour
             if (!GameResult.HasResult) resultText.text = "";
             else if (GameResult.IsBossFight) resultText.text = BossResultText(cleared);
             else resultText.text =
-                  $"Ã³Ä¡ÇÑ ¸ó½ºÅÍ  {GameResult.Kills}\n" +
-                  $"¹è¿î ½ºÆç  {GameResult.LearnedSpells}\n" +
-                  $"¹öÆ¾ ½Ã°£  {GameResult.PlayTimeText}\n" +
-                  $"Á¡¼ö  {GameResult.Score}";
+                  $"Monsters defeated  {GameResult.Kills}\n" +
+                  $"Spells learned  {GameResult.LearnedSpells}\n" +
+                  $"Time survived  {GameResult.PlayTimeText}\n" +
+                  $"Score  {GameResult.Score}";
         }
-        // ´Ù½ÃÇÏ±â: º¸½ºÀü¿¡¼­ Á³À¸¸é º¸½ºÀüºÎÅÍ, ±× ¿Ü¿¡´Â Ã³À½ºÎÅÍ
+        // ë‹¤ì‹œí•˜ê¸°: ë³´ìŠ¤ì „ì—ì„œ ì¡Œìœ¼ë©´ ë³´ìŠ¤ì „ë¶€í„°, ê·¸ ì™¸ì—ëŠ” ì²˜ìŒë¶€í„°
         retryScene = (!cleared && GameResult.HasResult && !string.IsNullOrEmpty(GameResult.RetryScene))
             ? GameResult.RetryScene : gameSceneName;
         GameResult.ClearBoss();
@@ -111,11 +111,11 @@ public class EndingSceneController : MonoBehaviour
 
     private static string BossResultText(bool cleared)
     {
-        string text = cleared ? $"µî±Ş  <b>{GameResult.BossGrade}</b>\n" : $"¸¶¿ÕÀÇ ³²Àº Ã¼·Â  {Mathf.CeilToInt(GameResult.BossHpLeftRatio * 100f)}%\n";
-        text += $"»ç¿ëÇÑ ÅÏ  {GameResult.BossTurnsUsed} / {GameResult.BossMaxTurns}\n" +
-                $"»ó¼º ÀûÁß·ü  {Mathf.RoundToInt(GameResult.BossWeaknessRate * 100f)}%\n" +
-                $"¹è¿î ½ºÆç  {GameResult.LearnedSpells}";
-        if (cleared) text += $"\n³²Àº Ã¼·Â  {Mathf.CeilToInt(GameResult.PlayerHpLeft)}";
+        string text = cleared ? $"Grade  <b>{GameResult.BossGrade}</b>\n" : $"Demon Lord HP left  {Mathf.CeilToInt(GameResult.BossHpLeftRatio * 100f)}%\n";
+        text += $"Turns used  {GameResult.BossTurnsUsed} / {GameResult.BossMaxTurns}\n" +
+                $"Weakness hit rate  {Mathf.RoundToInt(GameResult.BossWeaknessRate * 100f)}%\n" +
+                $"Spells learned  {GameResult.LearnedSpells}";
+        if (cleared) text += $"\nHP left  {Mathf.CeilToInt(GameResult.PlayerHpLeft)}";
         return text;
     }
 

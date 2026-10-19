@@ -1,27 +1,27 @@
-using System;
+ï»¿using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// ÇÃ·¹ÀÌ¾î Ã¼·Â (GameSceneÀÇ [SYSTEM_MANAGERS] ¾Æ·¡ ºó ¿ÀºêÁ§Æ®¿¡ ºÙÀÌ±â)
-// Ã¼·ÂÀÌ ±ğÀÌ´Â °æ¿ì: ¸÷ÀÇ °ø°İ¸¸ (EnemyController / º¸½ºÀüÀÇ BossSpell¡¤ÇÏ¼öÀÎ)
-//   ¡Ø À½¼º ÀÎ½Ä ½ÇÆĞ¡¤¹è¿ìÁö ¾ÊÀº ÁÖ¹®À¸·Î´Â Ã¼·ÂÀÌ ±ğÀÌÁö ¾ÊÀ½
-// Ã¼·ÂÀÌ 0ÀÌ µÇ¸é: ¸÷ ½ºÆù¡¤À½¼º ÀÔ·Â Á¤Áö ¡æ ½½·Î¸ğ¼Ç ¡æ È­¸é ¾ÏÀü ¡æ EndingScene (°ÔÀÓ ¿À¹ö)
+// í”Œë ˆì´ì–´ ì²´ë ¥ (GameSceneì˜ [SYSTEM_MANAGERS] ì•„ë˜ ë¹ˆ ì˜¤ë¸Œì íŠ¸ì— ë¶™ì´ê¸°)
+// ì²´ë ¥ì´ ê¹ì´ëŠ” ê²½ìš°: ëª¹ì˜ ê³µê²©ë§Œ (EnemyController / ë³´ìŠ¤ì „ì˜ BossSpellÂ·í•˜ìˆ˜ì¸)
+//   â€» ìŒì„± ì¸ì‹ ì‹¤íŒ¨Â·ë°°ìš°ì§€ ì•Šì€ ì£¼ë¬¸ìœ¼ë¡œëŠ” ì²´ë ¥ì´ ê¹ì´ì§€ ì•ŠìŒ
+// ì²´ë ¥ì´ 0ì´ ë˜ë©´: ëª¹ ìŠ¤í°Â·ìŒì„± ì…ë ¥ ì •ì§€ â†’ ìŠ¬ë¡œëª¨ì…˜ â†’ í™”ë©´ ì•”ì „ â†’ EndingScene (ê²Œì„ ì˜¤ë²„)
 public class PlayerHealth : MonoBehaviour
 {
     public static PlayerHealth Instance { get; private set; }
 
-    [Header("Ã¼·Â")]
+    [Header("ì²´ë ¥")]
     public float maxHP = 100f;
-    [Tooltip("ÇÑ ¹ø ¸ÂÀº µÚ ÀÌ ½Ã°£ µ¿¾ÈÀº Ãß°¡ ÇÇÇØ ¾øÀ½ (¿¬¼Ó ÇÇ°İ ¹æÁö)")]
+    [Tooltip("í•œ ë²ˆ ë§ì€ ë’¤ ì´ ì‹œê°„ ë™ì•ˆì€ ì¶”ê°€ í”¼í•´ ì—†ìŒ (ì—°ì† í”¼ê²© ë°©ì§€)")]
     public float invulnerableTime = 0.5f;
 
-    [Header("°ÔÀÓ ¿À¹ö")]
+    [Header("ê²Œì„ ì˜¤ë²„")]
     public string endingSceneName = "EndingScene";
-    [Tooltip("¾²·¯Áú ¶§ ´À·ÁÁö´Â ¿¬Ãâ (½ÇÁ¦ ½Ã°£ ÃÊ)")]
+    [Tooltip("ì“°ëŸ¬ì§ˆ ë•Œ ëŠë ¤ì§€ëŠ” ì—°ì¶œ (ì‹¤ì œ ì‹œê°„ ì´ˆ)")]
     public float slowMotionTime = 1.2f;
     [Range(0.05f, 1f)] public float slowMotionScale = 0.3f;
-    [Tooltip("(¼±ÅÃ) È­¸éÀ» ±î¸Ä°Ô µ¤À» CanvasGroup. ºñ¿ì¸é ¹Ù·Î ³Ñ¾î°¨")]
+    [Tooltip("(ì„ íƒ) í™”ë©´ì„ ê¹Œë§£ê²Œ ë®ì„ CanvasGroup. ë¹„ìš°ë©´ ë°”ë¡œ ë„˜ì–´ê°")]
     public CanvasGroup fadeOverlay;
     public float fadeTime = 1f;
 
@@ -29,12 +29,12 @@ public class PlayerHealth : MonoBehaviour
     public bool IsDead { get; private set; }
     public float Ratio => maxHP > 0f ? CurrentHP / maxHP : 0f;
 
-    // (ÇöÀç, ÃÖ´ë)
+    // (í˜„ì¬, ìµœëŒ€)
     public event Action<float, float> OnHealthChanged;
-    // (±ğÀÎ ¾ç, ÀÌÀ¯)
+    // (ê¹ì¸ ì–‘, ì´ìœ )
     public event Action<float, string> OnDamaged;
     public event Action OnDied;
-    // (È¸º¹ÇÑ ¾ç, ÀÌÀ¯)
+    // (íšŒë³µí•œ ì–‘, ì´ìœ )
     public event Action<float, string> OnHealed;
 
     private float lastHitTime = -999f;
@@ -69,14 +69,14 @@ public class PlayerHealth : MonoBehaviour
         lastHitTime = Time.time;
 
         CurrentHP = Mathf.Max(0f, CurrentHP - amount);
-        Debug.Log($"[ÇÃ·¹ÀÌ¾î] {reason} -{amount} ¡æ Ã¼·Â {CurrentHP}/{maxHP}");
+        Debug.Log($"[í”Œë ˆì´ì–´] {reason} -{amount} â†’ ì²´ë ¥ {CurrentHP}/{maxHP}");
         OnDamaged?.Invoke(amount, reason);
         OnHealthChanged?.Invoke(CurrentHP, maxHP);
 
         if (CurrentHP <= 0f) Die();
     }
 
-    // ½ÇÁ¦·Î È¸º¹µÈ ¾çÀ» µ¹·ÁÁÜ (ÀÌ¹Ì °¡µæ Â÷ ÀÖÀ¸¸é 0)
+    // ì‹¤ì œë¡œ íšŒë³µëœ ì–‘ì„ ëŒë ¤ì¤Œ (ì´ë¯¸ ê°€ë“ ì°¨ ìˆìœ¼ë©´ 0)
     public float Heal(float amount, string reason = "")
     {
         if (IsDead || amount <= 0f) return 0f;
@@ -85,21 +85,21 @@ public class PlayerHealth : MonoBehaviour
         float healed = CurrentHP - before;
         if (healed <= 0f) return 0f;
 
-        Debug.Log($"[ÇÃ·¹ÀÌ¾î] {reason} +{healed} ¡æ Ã¼·Â {CurrentHP}/{maxHP}");
+        Debug.Log($"[í”Œë ˆì´ì–´] {reason} +{healed} â†’ ì²´ë ¥ {CurrentHP}/{maxHP}");
         OnHealed?.Invoke(healed, reason);
         OnHealthChanged?.Invoke(CurrentHP, maxHP);
         return healed;
     }
 
-    // ¦¡¦¡ °ÔÀÓ ¿À¹ö ¦¡¦¡
+    // â”€â”€ ê²Œì„ ì˜¤ë²„ â”€â”€
     private void Die()
     {
         if (IsDead) return;
         IsDead = true;
-        Debug.Log("[ÇÃ·¹ÀÌ¾î] ¾²·¯Á³½À´Ï´Ù. °ÔÀÓ ¿À¹ö");
+        Debug.Log("[í”Œë ˆì´ì–´] ì“°ëŸ¬ì¡ŒìŠµë‹ˆë‹¤. ê²Œì„ ì˜¤ë²„");
         OnDied?.Invoke();
 
-        // ¸÷ ½ºÆù¡¤À½¼º ÀÔ·Â Á¤Áö
+        // ëª¹ ìŠ¤í°Â·ìŒì„± ì…ë ¥ ì •ì§€
         if (EnemyManager.Instance != null) EnemyManager.Instance.StopSpawning();
         VoiceSender sender = FindFirstObjectByType<VoiceSender>();
         if (sender != null) sender.enabled = false;
@@ -108,7 +108,7 @@ public class PlayerHealth : MonoBehaviour
 
         GameResult.Record(false, Time.time - startTime);
 
-        // ¼­¹ö¿¡ Á¾·á ±â·Ï (¼­¹ö ¸Å´ÏÀú°¡ ÀÖÀ» ¶§¸¸)
+        // ì„œë²„ì— ì¢…ë£Œ ê¸°ë¡ (ì„œë²„ ë§¤ë‹ˆì €ê°€ ìˆì„ ë•Œë§Œ)
         if (GameManager.Instance != null && NetworkManager.Instance != null)
         {
             GameManager.Instance.SetState(GameState.GameOver);
@@ -119,11 +119,11 @@ public class PlayerHealth : MonoBehaviour
 
     private IEnumerator GameOverSequence()
     {
-        // ½½·Î¸ğ¼Ç
+        // ìŠ¬ë¡œëª¨ì…˜
         Time.timeScale = slowMotionScale;
         yield return new WaitForSecondsRealtime(slowMotionTime);
 
-        // ¾ÏÀü
+        // ì•”ì „
         if (fadeOverlay != null)
         {
             fadeOverlay.gameObject.SetActive(true);

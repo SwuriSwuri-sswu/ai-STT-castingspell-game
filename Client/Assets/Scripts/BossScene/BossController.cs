@@ -14,7 +14,7 @@ using UnityEngine.Playables;
 public class BossController : MonoBehaviour
 {
     [Header("기본")]
-    public string bossName = "침묵의 마왕";
+    public string bossName = "Demon Lord of Silence";
     public float maxHP = 800f;
 
     [Header("페이즈 (체력 비율 경계)")]
@@ -366,7 +366,7 @@ public class BossController : MonoBehaviour
     // 공격 (BossBattleDirector가 호출, 마법이 플레이어에게 닿을 때까지 기다림)
     // =========================================================
     private float BasicDamage => basicDamage != null && basicDamage.Length >= Phase ? basicDamage[Phase - 1] : 8f;
-    private string AttackReason => $"{bossName}의 마법";
+    private string AttackReason => $"{bossName}'s magic";
 
     public IEnumerator DoBasicAttack()
     {

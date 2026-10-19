@@ -1,19 +1,19 @@
-using System;
+ï»¿using System;
 using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// [MicrophoneDevice] °¡ ºÙÀº string ÇÊµå¸¦ "¿¬°áµÈ ¸¶ÀÌÅ© ¸ñ·Ï + ½Ã½ºÅÛ ±âº» ÀåÄ¡" Åä±Û·Î Ç¥½ÃÇÑ´Ù.
-/// ÇÏ³ª¸¦ Ã¼Å©ÇÏ¸é ³ª¸ÓÁö´Â ÇØÁ¦µÈ´Ù (ÇÑ °³¸¸ ¼±ÅÃ).
-/// ¸ñ·ÏÀº Inspector °¡ ´Ù½Ã ±×·ÁÁú ¶§ Microphone.devices ¿¡¼­ »õ·Î ÀĞ´Â´Ù.
+/// [MicrophoneDevice] ê°€ ë¶™ì€ string í•„ë“œë¥¼ "ì—°ê²°ëœ ë§ˆì´í¬ ëª©ë¡ + ì‹œìŠ¤í…œ ê¸°ë³¸ ì¥ì¹˜" í† ê¸€ë¡œ í‘œì‹œí•œë‹¤.
+/// í•˜ë‚˜ë¥¼ ì²´í¬í•˜ë©´ ë‚˜ë¨¸ì§€ëŠ” í•´ì œëœë‹¤ (í•œ ê°œë§Œ ì„ íƒ).
+/// ëª©ë¡ì€ Inspector ê°€ ë‹¤ì‹œ ê·¸ë ¤ì§ˆ ë•Œ Microphone.devices ì—ì„œ ìƒˆë¡œ ì½ëŠ”ë‹¤.
 /// </summary>
 [CustomPropertyDrawer(typeof(MicrophoneDeviceAttribute))]
 public class MicrophoneDeviceDrawer : PropertyDrawer
 {
-    const float Line = 18f;   // ÇÑ ÁÙ ³ôÀÌ
-    const float Gap = 2f;     // ÁÙ °£°İ
+    const float Line = 18f;   // í•œ ì¤„ ë†’ì´
+    const float Gap = 2f;     // ì¤„ ê°„ê²©
 
-    /// <summary>ÀúÀåµÈ ÀåÄ¡ ÀÌ¸§ÀÌ ÇöÀç ¸ñ·Ï¿¡ ¾ø´ÂÁö (ºó ¹®ÀÚ¿­ = ±âº» ÀåÄ¡´Â Ç×»ó ÀÖÀ½À¸·Î º»´Ù)</summary>
+    /// <summary>ì €ì¥ëœ ì¥ì¹˜ ì´ë¦„ì´ í˜„ì¬ ëª©ë¡ì— ì—†ëŠ”ì§€ (ë¹ˆ ë¬¸ìì—´ = ê¸°ë³¸ ì¥ì¹˜ëŠ” í•­ìƒ ìˆìŒìœ¼ë¡œ ë³¸ë‹¤)</summary>
     static bool IsMissing(string value) =>
         !string.IsNullOrEmpty(value) && Array.IndexOf(Microphone.devices, value) < 0;
 
@@ -21,7 +21,7 @@ public class MicrophoneDeviceDrawer : PropertyDrawer
     {
         if (property.propertyType != SerializedPropertyType.String) return Line;
 
-        // Á¦¸ñ 1ÁÙ + ±âº» ÀåÄ¡ 1ÁÙ + ÀåÄ¡ ¼ö + (¾ø´Â ÀåÄ¡ °æ°í 2ÁÙ)
+        // ì œëª© 1ì¤„ + ê¸°ë³¸ ì¥ì¹˜ 1ì¤„ + ì¥ì¹˜ ìˆ˜ + (ì—†ëŠ” ì¥ì¹˜ ê²½ê³  2ì¤„)
         int rows = 2 + Microphone.devices.Length;
         float height = rows * (Line + Gap);
         if (IsMissing(property.stringValue)) height += Line * 2 + Gap;
@@ -32,7 +32,7 @@ public class MicrophoneDeviceDrawer : PropertyDrawer
     {
         if (property.propertyType != SerializedPropertyType.String)
         {
-            EditorGUI.LabelField(position, label.text, "[MicrophoneDevice] ´Â string ÇÊµå¿¡¸¸ »ç¿ëÇÒ ¼ö ÀÖ½À´Ï´Ù");
+            EditorGUI.LabelField(position, label.text, "[MicrophoneDevice] can only be used on string fields");
             return;
         }
 
@@ -42,17 +42,17 @@ public class MicrophoneDeviceDrawer : PropertyDrawer
         string[] devices = Microphone.devices;
         Rect r = new Rect(position.x, position.y, position.width, Line);
 
-        // Á¦¸ñ
+        // ì œëª©
         EditorGUI.LabelField(r, label);
         EditorGUI.indentLevel++;
 
-        // ½Ã½ºÅÛ ±âº» ÀåÄ¡ (ºó ¹®ÀÚ¿­)
+        // ì‹œìŠ¤í…œ ê¸°ë³¸ ì¥ì¹˜ (ë¹ˆ ë¬¸ìì—´)
         r.y += Line + Gap;
         bool isDefault = string.IsNullOrEmpty(current);
-        if (EditorGUI.ToggleLeft(r, "(½Ã½ºÅÛ ±âº» ÀåÄ¡)", isDefault) && !isDefault)
+        if (EditorGUI.ToggleLeft(r, "(System default device)", isDefault) && !isDefault)
             property.stringValue = "";
 
-        // ¿¬°áµÈ ÀåÄ¡ ¸ñ·Ï. ÀÌ¹Ì ¼±ÅÃµÈ Ç×¸ñÀ» ´Ù½Ã ´­·¯µµ ÇØÁ¦µÇÁö ¾Ê´Â´Ù (Ç×»ó ÇÏ³ª´Â ¼±ÅÃµÈ »óÅÂ)
+        // ì—°ê²°ëœ ì¥ì¹˜ ëª©ë¡. ì´ë¯¸ ì„ íƒëœ í•­ëª©ì„ ë‹¤ì‹œ ëˆŒëŸ¬ë„ í•´ì œë˜ì§€ ì•ŠëŠ”ë‹¤ (í•­ìƒ í•˜ë‚˜ëŠ” ì„ íƒëœ ìƒíƒœ)
         foreach (string d in devices)
         {
             r.y += Line + Gap;
@@ -64,15 +64,15 @@ public class MicrophoneDeviceDrawer : PropertyDrawer
         if (devices.Length == 0)
         {
             r.y += Line + Gap;
-            EditorGUI.LabelField(r, "¿¬°áµÈ ¸¶ÀÌÅ©°¡ ¾ø½À´Ï´Ù");
+            EditorGUI.LabelField(r, "No microphone connected");
         }
 
-        // ÀúÀåµÈ ÀåÄ¡°¡ Áö±İ ¿¬°áµÇ¾î ÀÖÁö ¾ÊÀº °æ¿ì
+        // ì €ì¥ëœ ì¥ì¹˜ê°€ ì§€ê¸ˆ ì—°ê²°ë˜ì–´ ìˆì§€ ì•Šì€ ê²½ìš°
         if (IsMissing(current))
         {
             r.y += Line + Gap;
             Rect box = new Rect(r.x, r.y, r.width, Line * 2);
-            EditorGUI.HelpBox(box, $"'{current}' ÀÌ(°¡) ¿¬°áµÇ¾î ÀÖÁö ¾Ê¾Æ ½Ã½ºÅÛ ±âº» ÀåÄ¡¸¦ »ç¿ëÇÕ´Ï´Ù.", MessageType.Warning);
+            EditorGUI.HelpBox(box, $"'{current}' is not connected, so the system default device is used.", MessageType.Warning);
         }
 
         EditorGUI.indentLevel--;

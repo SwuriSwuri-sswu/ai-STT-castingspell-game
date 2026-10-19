@@ -179,7 +179,7 @@ public class VoiceSocket : MonoBehaviour
 
         if (r.Audio != null)
         {
-            string pitch = r.Audio.PitchHz.HasValue ? $"{r.Audio.PitchHz.Value:F0}Hz" : "검출 실패";
+            string pitch = r.Audio.PitchHz.HasValue ? $"{r.Audio.PitchHz.Value:F0}Hz" : "n/a";
             Debug.Log($"   성량 {r.Audio.VolumeDb:F1}dB, 피치 {pitch}, 발화 {r.Audio.SpeechSec:F2}s / 전체 {r.Audio.DurationSec:F2}s ({r.Audio.SampleRate}Hz)");
         }
         string tokens = r.Stt == null ? "-" : $"{r.Stt.Tokens}/{(r.Stt.TokenLimit.HasValue ? r.Stt.TokenLimit.Value.ToString() : "제한 없음")}";

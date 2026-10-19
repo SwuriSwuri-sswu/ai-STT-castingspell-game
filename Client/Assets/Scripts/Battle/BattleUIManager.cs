@@ -45,11 +45,11 @@ public class BattleUIManager : MonoBehaviour
 
         string message;
         if (multiplier >= 1.5f)
-            message = "<color=#FF5555>효과가 굉장했다!</color>";   // 빨간색 계열
+            message = "<color=#FF5555>It's super effective!</color>";   // 빨간색 계열
         else if (multiplier <= 0.5f)
-            message = "<color=#AAAAAA>효과가 별로 없었다...</color>"; // 회색 계열
+            message = "<color=#AAAAAA>It's not very effective...</color>"; // 회색 계열
         else
-            message = "<color=#FFFFFF>효과가 있었다.</color>";      // 흰색
+            message = "<color=#FFFFFF>It's effective.</color>";      // 흰색
 
         Restart(ref effectivenessRoutine, ShowFor(effectivenessText, message, effectivenessDuration, 0f));
     }
