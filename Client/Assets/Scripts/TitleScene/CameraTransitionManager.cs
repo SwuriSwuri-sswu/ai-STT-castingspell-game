@@ -5,31 +5,31 @@ using UnityEngine.UI;
 
 public class CameraTransitionManager : MonoBehaviour
 {
-    [Header("카메라 설정")]
+    [Header("ī�޶� ����")]
     public Camera mainCamera;
 
-    [Header("도착지 좌표 오브젝트")]
+    [Header("������ ��ǥ ������Ʈ")]
     public Transform throneZoomTarget;
     public Transform firstPersonTarget;
 
-    [Header("UI 제어")]
+    [Header("UI ����")]
     public CanvasGroup titleUIGroup;
     public Image blackFadeScreen;
 
-    [Header("카메라 연출 시간 설정")]
+    [Header("ī�޶� ���� �ð� ����")]
     public float uiFadeDuration = 0.5f;
     public float zoomDuration = 2.0f;
     public float holdDuration = 1.0f;
     public float firstPersonDuration = 1.5f;
 
-    [Header("화면 페이드 연출 시간 (요청하신 타이밍)")]
-    public float delayBeforeFadeOut = 0.5f;      // 1. 1인칭 전환 후 대기 시간 (0.5초)
-    public float screenFadeOutDuration = 1.5f;   // 2. 화면 페이드 아웃 시간 (1.5초)
-    public float blackScreenHoldDuration = 1.0f; // 3. 검은 화면 유지 시간 (1.0초)
+    [Header("ȭ�� ���̵� ���� �ð� (��û�Ͻ� Ÿ�̹�)")]
+    public float delayBeforeFadeOut = 0.5f;      // 1. 1��Ī ��ȯ �� ��� �ð� (0.5��)
+    public float screenFadeOutDuration = 1.5f;   // 2. ȭ�� ���̵� �ƿ� �ð� (1.5��)
+    public float blackScreenHoldDuration = 1.0f; // 3. ���� ȭ�� ���� �ð� (1.0��)
 
     private void Start()
     {
-        // 타이틀 씬 시작 시 검은 화면을 완벽하게 숨김 (시작 시 페이드인 방지)
+        // Ÿ��Ʋ �� ���� �� ���� ȭ���� �Ϻ��ϰ� ���� (���� �� ���̵��� ����)
         if (blackFadeScreen != null)
         {
             Color c = blackFadeScreen.color;
@@ -52,7 +52,7 @@ public class CameraTransitionManager : MonoBehaviour
         Quaternion startRot = mainCamera.transform.rotation;
         float elapsedTime = 0f;
 
-        // 줌인 연출
+        // ���� ����
         while (elapsedTime < zoomDuration)
         {
             float t = Mathf.SmoothStep(0f, 1f, elapsedTime / zoomDuration);
@@ -64,14 +64,14 @@ public class CameraTransitionManager : MonoBehaviour
         mainCamera.transform.position = throneZoomTarget.position;
         mainCamera.transform.rotation = throneZoomTarget.rotation;
 
-        // 왕좌 앞 대기
+        // ���� �� ���
         yield return new WaitForSeconds(holdDuration);
 
         elapsedTime = 0f;
         Vector3 zoomPos = mainCamera.transform.position;
         Quaternion zoomRot = mainCamera.transform.rotation;
 
-        // 1인칭 회전 연출
+        // 1��Ī ȸ�� ����
         while (elapsedTime < firstPersonDuration)
         {
             float t = Mathf.SmoothStep(0f, 1f, elapsedTime / firstPersonDuration);
@@ -83,10 +83,10 @@ public class CameraTransitionManager : MonoBehaviour
         mainCamera.transform.position = firstPersonTarget.position;
         mainCamera.transform.rotation = firstPersonTarget.rotation;
 
-        // 1. 1인칭 완료 후 잠깐 대기 (0.5초)
+        // 1. 1��Ī �Ϸ� �� ��� ��� (0.5��)
         yield return new WaitForSeconds(delayBeforeFadeOut);
 
-        // 2. 검은 화면으로 페이드 아웃 (1.5초)
+        // 2. ���� ȭ������ ���̵� �ƿ� (1.5��)
         if (blackFadeScreen != null)
         {
             blackFadeScreen.gameObject.SetActive(true);
@@ -104,11 +104,12 @@ public class CameraTransitionManager : MonoBehaviour
             blackFadeScreen.color = fadeColor;
         }
 
-        // 3. 완전히 까매진 상태로 대기 (1.0초)
+        // 3. ������ ����� ���·� ��� (1.0��)
         yield return new WaitForSeconds(blackScreenHoldDuration);
 
-        // 4. 게임 씬 로드
-        SceneManager.LoadScene("GameScene");
+        // 4. ���� �� �ε�
+        string nextScene = Application.CanStreamedLevelBeLoaded("simul") ? "simul" : "GameScene";
+        SceneManager.LoadScene(nextScene);
     }
 
     private IEnumerator FadeOutUI()
