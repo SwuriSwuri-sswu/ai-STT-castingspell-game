@@ -1,49 +1,62 @@
-using System;
+ï»¿using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
 /// <summary>
-/// µğ¹ö±×¿ë ½Ç½Ã°£ ¼Ò¸® Ç¥½Ã (Game È­¸é).
-///  - À§ ±×·¡ÇÁ: ÆÄÇü. ÃÖ±Ù waveformSec ÃÊÀÇ »ùÇÃÀ» °¡·Î ÇÈ¼¿ ¼ö·Î ³ª´©°í, ¿­¸¶´Ù ÃÖ¼Ò~ÃÖ´ë ÁøÆøÀ» ¼¼·Î¼±À¸·Î ±×¸°´Ù.
-///               |°ª| ÀÌ clipLevel ÀÌ»óÀÌ¸é »¡°£»ö (ÀÔ·ÂÀÌ ³Ê¹« Ä¿¼­ ¼Ò¸®°¡ ±úÁö´Â »óÅÂ).
-///  - ¾Æ·¡ ±×·¡ÇÁ: VAD À½·®(dB) ±â·Ï. ÃÖ±Ù historySec ÃÊ¸¦ °¡·Î ÇÈ¼¿ ¼ö¸¸Å­ÀÇ Ä­À¸·Î ³ª´²,
-///               Ä­¸¶´Ù ±× ½Ã°£ µ¿¾ÈÀÇ ÃÖ´ë dB ¸¦ ¸·´ë·Î ±×¸°´Ù. ¸·´ë »öÀº ±× ½ÃÁ¡ÀÇ »óÅÂ.
-///               ³ë¶õ °¡·Î¼± = ¸»¼Ò¸® ±âÁØ, È¸»ö °¡·Î¼± = ¼ÒÀ½ ±âÁØ.
-///  - ¸Ç À§ ÇÑ ÁÙ: ¼­¹ö ¿¬°á »óÅÂ, ³ìÀ½¡¤ÆÇÁ¤ ´ë±â »óÅÂ, ¸¶Áö¸· ¹ßÈ­ Á¤º¸.
-///  - µğ¹ö±× WAV ÀúÀå: VoiceSender °¡ ¼­¹ö·Î º¸³½ WAV ¸¦ persistentDataPath/mic_debug ¿¡ ÀúÀåÇÑ´Ù (ÆÇÁ¤ ¹®Á¦ È®ÀÎ¿ë).
-/// VoiceInput¡¤VoiceSender¡¤VoiceSocket ÀÇ °ªÀ» ÀĞ±â¸¸ ÇÏ¸ç, °¨Áö¡¤Àü¼Û µ¿ÀÛ¿¡´Â ¿µÇâÀ» ÁÖÁö ¾Ê´Â´Ù.
-///  - Å×½ºÆ® Å°: C = ÇØ±İµÈ ½ºÆç ÇÏ³ª¸¦ À½¼º ¾øÀÌ ½ÃÀü, U = Àá±ä ½ºÆç ÇÏ³ª ÇØ±İ(µå¶ø È¹µæ Èä³»), R = ÇØ±İ ÃÊ±âÈ­.
-/// Å×½ºÆ®¿ë ÄÄÆ÷³ÍÆ®ÀÌ¹Ç·Î ¹èÆ÷ÇÒ ¶§´Â ²ô°Å³ª Á¦°ÅÇÑ´Ù.
+/// ë””ë²„ê·¸ìš© ì‹¤ì‹œê°„ ì†Œë¦¬ í‘œì‹œ (Game í™”ë©´).
+///  - ìœ„ ê·¸ë˜í”„: íŒŒí˜•. ìµœê·¼ waveformSec ì´ˆì˜ ìƒ˜í”Œì„ ê°€ë¡œ í”½ì…€ ìˆ˜ë¡œ ë‚˜ëˆ„ê³ , ì—´ë§ˆë‹¤ ìµœì†Œ~ìµœëŒ€ ì§„í­ì„ ì„¸ë¡œì„ ìœ¼ë¡œ ê·¸ë¦°ë‹¤.
+///               |ê°’| ì´ clipLevel ì´ìƒì´ë©´ ë¹¨ê°„ìƒ‰ (ì…ë ¥ì´ ë„ˆë¬´ ì»¤ì„œ ì†Œë¦¬ê°€ ê¹¨ì§€ëŠ” ìƒíƒœ).
+///  - ì•„ë˜ ê·¸ë˜í”„: VAD ìŒëŸ‰(dB) ê¸°ë¡. ìµœê·¼ historySec ì´ˆë¥¼ ê°€ë¡œ í”½ì…€ ìˆ˜ë§Œí¼ì˜ ì¹¸ìœ¼ë¡œ ë‚˜ëˆ ,
+///               ì¹¸ë§ˆë‹¤ ê·¸ ì‹œê°„ ë™ì•ˆì˜ ìµœëŒ€ dB ë¥¼ ë§‰ëŒ€ë¡œ ê·¸ë¦°ë‹¤. ë§‰ëŒ€ ìƒ‰ì€ ê·¸ ì‹œì ì˜ ìƒíƒœ.
+///               ë…¸ë€ ê°€ë¡œì„  = ë§ì†Œë¦¬ ê¸°ì¤€, íšŒìƒ‰ ê°€ë¡œì„  = ì†ŒìŒ ê¸°ì¤€.
+///  - ë§¨ ìœ„ í•œ ì¤„: ì„œë²„ ì—°ê²° ìƒíƒœ, ë…¹ìŒÂ·íŒì • ëŒ€ê¸° ìƒíƒœ, ë§ˆì§€ë§‰ ë°œí™” ì •ë³´.
+///  - ë””ë²„ê·¸ WAV ì €ì¥: VoiceSender ê°€ ì„œë²„ë¡œ ë³´ë‚¸ WAV ë¥¼ persistentDataPath/mic_debug ì— ì €ì¥í•œë‹¤ (íŒì • ë¬¸ì œ í™•ì¸ìš©).
+/// VoiceInputÂ·VoiceSenderÂ·VoiceSocket ì˜ ê°’ì„ ì½ê¸°ë§Œ í•˜ë©°, ê°ì§€Â·ì „ì†¡ ë™ì‘ì—ëŠ” ì˜í–¥ì„ ì£¼ì§€ ì•ŠëŠ”ë‹¤.
+///  - í…ŒìŠ¤íŠ¸ í‚¤: C = í•´ê¸ˆëœ ìŠ¤í  í•˜ë‚˜ë¥¼ ìŒì„± ì—†ì´ ì‹œì „, U = ì ê¸´ ìŠ¤í  í•˜ë‚˜ì˜ ë‘ë£¨ë§ˆë¦¬ ë“œë(ì‹¤ì œ ë“œë ëª¨ì…˜ â†’ íšë“),
+///               Shift+U = ì ê¸´ ìŠ¤í  í•˜ë‚˜ ë°”ë¡œ í•´ê¸ˆ, R = í•´ê¸ˆ ì´ˆê¸°í™”.
+/// í…ŒìŠ¤íŠ¸ìš© ì»´í¬ë„ŒíŠ¸ì´ë¯€ë¡œ ë°°í¬í•  ë•ŒëŠ” ë„ê±°ë‚˜ ì œê±°í•œë‹¤.
 /// </summary>
 public class VoiceDebug : MonoBehaviour
 {
-    [Header("¿¬°á")]
+    [Header("ì—°ê²°")]
     [SerializeField] VoiceInput voiceInput;
     [SerializeField] VoiceSender voiceSender;
     [SerializeField] VoiceSocket voiceSocket;
 
-    [Header("µğ¹ö±× WAV ÀúÀå")]
-    [Tooltip("ÄÑ¸é ¼­¹ö·Î º¸³½ ¹ßÈ­ WAV ¸¦ persistentDataPath/mic_debug ¿¡ ÀúÀåÇÑ´Ù")]
+    [Header("ë””ë²„ê·¸ WAV ì €ì¥")]
+    [Tooltip("ì¼œë©´ ì„œë²„ë¡œ ë³´ë‚¸ ë°œí™” WAV ë¥¼ persistentDataPath/mic_debug ì— ì €ì¥í•œë‹¤")]
     [SerializeField] bool saveDebugWav = true;
 
-    [Header("Å×½ºÆ® Å° (°ÔÀÓ Á¶ÀÛ°ú °ãÄ¡¸é None)")]
-    [SerializeField] KeyCode castTestKey = KeyCode.C;   // ÇØ±İµÈ ½ºÆç ÇÏ³ª¸¦ À½¼º ¾øÀÌ ½ÃÀü (½ÃÀü °æ·Î È®ÀÎ)
-    [SerializeField] KeyCode unlockKey = KeyCode.U;     // Àá±ä ½ºÆç ÇÏ³ª ÇØ±İ (µå¶ø È¹µæ Èä³»)
-    [SerializeField] KeyCode resetKey = KeyCode.R;      // ÇØ±İ ÃÊ±âÈ­ (°ÔÀÓ Àç½ÃÀÛ Èä³»)
+    [Header("í…ŒìŠ¤íŠ¸ í‚¤ (ê²Œì„ ì¡°ì‘ê³¼ ê²¹ì¹˜ë©´ None)")]
+    [SerializeField] KeyCode castTestKey = KeyCode.C;   // í•´ê¸ˆëœ ìŠ¤í  í•˜ë‚˜ë¥¼ ìŒì„± ì—†ì´ ì‹œì „ (ì‹œì „ ê²½ë¡œ í™•ì¸)
+    [SerializeField] KeyCode unlockKey = KeyCode.U;     // ì ê¸´ ìŠ¤í  í•˜ë‚˜ì˜ ë‘ë£¨ë§ˆë¦¬ ë“œë (Shift ì™€ í•¨ê»˜ ëˆ„ë¥´ë©´ ë°”ë¡œ í•´ê¸ˆ)
+    [SerializeField] KeyCode resetKey = KeyCode.R;      // í•´ê¸ˆ ì´ˆê¸°í™” (ê²Œì„ ì¬ì‹œì‘ í‰ë‚´)
 
-    [Header("Ç¥½Ã")]
+    [Header("í…ŒìŠ¤íŠ¸ ë“œë (U = ë‘ë£¨ë§ˆë¦¬ ë“œë, Shift+U = ë°”ë¡œ í•´ê¸ˆ)")]
+    [Tooltip("U í‚¤ë¡œ ë–¨ì–´ëœ¨ë¦´ ë‘ë£¨ë§ˆë¦¬ í”„ë¦¬íŒ¹ (Assets/Prefabs/SpellDrop). ë¹„ìš°ë©´ U ë„ ë°”ë¡œ í•´ê¸ˆí•œë‹¤")]
+    [SerializeField] DropItem dropItemPrefab;
+    [Tooltip("ëª¹ ìœ„ì¹˜ì—ì„œ ë–¨ì–´ëœ¨ë¦´ ë•Œ ë‘ë£¨ë§ˆë¦¬ê°€ ì²˜ìŒ ìƒê¸°ëŠ” ìœ„ì¹˜ ë³´ì • (ëª¹ ë°œë°‘ ê¸°ì¤€)")]
+    [SerializeField] Vector3 dropOffset = new Vector3(0f, 1f, 0f);
+    [Tooltip("ëª¹ì´ ì—†ì„ ë•Œ ë‘ë£¨ë§ˆë¦¬ê°€ ìƒê¸°ëŠ” ê±°ë¦¬ (ì¹´ë©”ë¼ ì •ë©´, m)")]
+    [SerializeField] float cameraDropDistance = 4f;
+
+    // ë‚ ì•„ì˜¤ëŠ” ì¤‘ì¸ í…ŒìŠ¤íŠ¸ ë‘ë£¨ë§ˆë¦¬ (ê°™ì€ ìŠ¤í ì´ ê²¹ì³ ë–¨ì–´ì§€ì§€ ì•Šê²Œ). íšë“í•˜ë©´ ë‘ë£¨ë§ˆë¦¬ê°€ ì‚­ì œë˜ì–´ null ì´ ëœë‹¤
+    readonly Dictionary<SpellData, DropItem> pendingDrops = new Dictionary<SpellData, DropItem>();
+
+    [Header("í‘œì‹œ")]
     [SerializeField] bool show = true;
-    [SerializeField] Vector2 screenPosition = new Vector2(10, 260);   // È­¸é ¿ŞÂÊ À§ ±âÁØ À§Ä¡ (ÇÈ¼¿)
-    [SerializeField] int width = 480;          // ±×·¡ÇÁ °¡·Î ÇÈ¼¿ ¼ö
-    [SerializeField] int waveHeight = 100;     // ÆÄÇü ±×·¡ÇÁ ¼¼·Î ÇÈ¼¿ ¼ö
-    [SerializeField] int dbHeight = 120;       // dB ±×·¡ÇÁ ¼¼·Î ÇÈ¼¿ ¼ö
-    [SerializeField] float waveformSec = 0.5f; // ÆÄÇü¿¡ Ç¥½ÃÇÒ ½Ã°£ (ÃÊ)
-    [SerializeField] float historySec = 6f;    // dB ±â·Ï¿¡ Ç¥½ÃÇÒ ½Ã°£ (ÃÊ)
-    [SerializeField] float dbMin = -80f;       // dB ±×·¡ÇÁ ¾Æ·¡ ³¡
-    [SerializeField] float dbMax = 0f;         // dB ±×·¡ÇÁ À§ ³¡ (0dBFS = ÃÖ´ë ÀÔ·Â)
-    [SerializeField] float clipLevel = 0.99f;  // ÀÌ ÀÌ»óÀÌ¸é ¼Ò¸® ±úÁüÀ¸·Î Ç¥½Ã
+    [SerializeField] Vector2 screenPosition = new Vector2(10, 260);   // í™”ë©´ ì™¼ìª½ ìœ„ ê¸°ì¤€ ìœ„ì¹˜ (í”½ì…€)
+    [SerializeField] int width = 480;          // ê·¸ë˜í”„ ê°€ë¡œ í”½ì…€ ìˆ˜
+    [SerializeField] int waveHeight = 100;     // íŒŒí˜• ê·¸ë˜í”„ ì„¸ë¡œ í”½ì…€ ìˆ˜
+    [SerializeField] int dbHeight = 120;       // dB ê·¸ë˜í”„ ì„¸ë¡œ í”½ì…€ ìˆ˜
+    [SerializeField] float waveformSec = 0.5f; // íŒŒí˜•ì— í‘œì‹œí•  ì‹œê°„ (ì´ˆ)
+    [SerializeField] float historySec = 6f;    // dB ê¸°ë¡ì— í‘œì‹œí•  ì‹œê°„ (ì´ˆ)
+    [SerializeField] float dbMin = -80f;       // dB ê·¸ë˜í”„ ì•„ë˜ ë
+    [SerializeField] float dbMax = 0f;         // dB ê·¸ë˜í”„ ìœ„ ë (0dBFS = ìµœëŒ€ ì…ë ¥)
+    [SerializeField] float clipLevel = 0.99f;  // ì´ ì´ìƒì´ë©´ ì†Œë¦¬ ê¹¨ì§ìœ¼ë¡œ í‘œì‹œ
 
-    // »ö»ó
+    // ìƒ‰ìƒ
     static readonly Color32 Bg = new Color32(20, 20, 20, 220);
     static readonly Color32 Grid = new Color32(70, 70, 70, 255);
     static readonly Color32 Wave = new Color32(80, 220, 120, 255);
@@ -55,26 +68,26 @@ public class VoiceDebug : MonoBehaviour
     static readonly Color32 SpeakingColor = new Color32(80, 200, 120, 255);
     static readonly Color32 WaitingColor = new Color32(90, 140, 230, 255);
 
-    // Ç¥½Ã »óÅÂ (VadState 3°³ + ÆÇÁ¤ ´ë±â)
+    // í‘œì‹œ ìƒíƒœ (VadState 3ê°œ + íŒì • ëŒ€ê¸°)
     const byte StCalibrating = 0, StIdle = 1, StSpeaking = 2, StWaiting = 3;
 
     Texture2D waveTex, dbTex;
     Color32[] wavePixels, dbPixels;
 
-    // ÆÄÇü: ÃÖ±Ù »ùÇÃÀ» º¸°üÇÏ´Â ¿øÇü ¹öÆÛ (waveHead = °¡Àå ¿À·¡µÈ »ùÇÃ À§Ä¡ = ´ÙÀ½¿¡ ¾µ À§Ä¡)
+    // íŒŒí˜•: ìµœê·¼ ìƒ˜í”Œì„ ë³´ê´€í•˜ëŠ” ì›í˜• ë²„í¼ (waveHead = ê°€ì¥ ì˜¤ë˜ëœ ìƒ˜í”Œ ìœ„ì¹˜ = ë‹¤ìŒì— ì“¸ ìœ„ì¹˜)
     float[] waveRing;
     int waveHead;
     int waveRate;
 
-    // dB ±â·Ï: °¡·Î ÇÈ¼¿ 1Ä­ = historySec / width ÃÊ (histHead = °¡Àå ¿À·¡µÈ Ä­ = ´ÙÀ½¿¡ ¾µ Ä­)
+    // dB ê¸°ë¡: ê°€ë¡œ í”½ì…€ 1ì¹¸ = historySec / width ì´ˆ (histHead = ê°€ì¥ ì˜¤ë˜ëœ ì¹¸ = ë‹¤ìŒì— ì“¸ ì¹¸)
     float[] dbHist, thrHist, noiseHist;
     byte[] stateHist;
     int histHead;
     float histTimer;
-    float peakDbInColumn = float.NegativeInfinity;   // ÇöÀç Ä­ ½Ã°£ µ¿¾ÈÀÇ ÃÖ´ë dB
+    float peakDbInColumn = float.NegativeInfinity;   // í˜„ì¬ ì¹¸ ì‹œê°„ ë™ì•ˆì˜ ìµœëŒ€ dB
 
     string statusText = "";
-    string headerText = "";   // ¸Ç À§ ÇÑ ÁÙ (¿¬°á¡¤³ìÀ½ »óÅÂ)
+    string headerText = "";   // ë§¨ ìœ„ í•œ ì¤„ (ì—°ê²°Â·ë…¹ìŒ ìƒíƒœ)
 
     void OnEnable()
     {
@@ -113,11 +126,11 @@ public class VoiceDebug : MonoBehaviour
         return tex;
     }
 
-    // ¦¡¦¡ »ùÇÃ ¼ö½Å: ÆÄÇü ¿øÇü ¹öÆÛ¿¡ º¹»ç (¹è¿­Àº Àç»ç¿ëµÇ¹Ç·Î Áï½Ã º¹»ç) ¦¡¦¡
+    // â”€â”€ ìƒ˜í”Œ ìˆ˜ì‹ : íŒŒí˜• ì›í˜• ë²„í¼ì— ë³µì‚¬ (ë°°ì—´ì€ ì¬ì‚¬ìš©ë˜ë¯€ë¡œ ì¦‰ì‹œ ë³µì‚¬) â”€â”€
     void OnSamples(float[] samples, int count)
     {
         int rate = voiceInput.SampleRate;
-        if (waveRing == null || rate != waveRate)   // Ã³À½ ¶Ç´Â ÀåÄ¡ º¯°æÀ¸·Î »ùÇÃ·¹ÀÌÆ®°¡ ¹Ù²ï °æ¿ì
+        if (waveRing == null || rate != waveRate)   // ì²˜ìŒ ë˜ëŠ” ì¥ì¹˜ ë³€ê²½ìœ¼ë¡œ ìƒ˜í”Œë ˆì´íŠ¸ê°€ ë°”ë€ ê²½ìš°
         {
             waveRate = rate;
             waveRing = new float[Mathf.Max(width, Mathf.RoundToInt(waveformSec * rate))];
@@ -135,7 +148,7 @@ public class VoiceDebug : MonoBehaviour
         HandleTestKeys();
         if (!show || dbHist == null) return;
 
-        // ¦¡¦¡ dB ±â·Ï: VAD ÀÇ ÇöÀç °ªÀ» ÀĞ¾î Ä­ ´ÜÀ§·Î ½×´Â´Ù ¦¡¦¡
+        // â”€â”€ dB ê¸°ë¡: VAD ì˜ í˜„ì¬ ê°’ì„ ì½ì–´ ì¹¸ ë‹¨ìœ„ë¡œ ìŒ“ëŠ”ë‹¤ â”€â”€
         VoiceActivityDetector vad = voiceSender != null ? voiceSender.Vad : null;
         if (vad != null) peakDbInColumn = Mathf.Max(peakDbInColumn, vad.CurrentDb);
 
@@ -160,10 +173,10 @@ public class VoiceDebug : MonoBehaviour
             : $"dB {vad.CurrentDb:F1}  |  noise {vad.NoiseFloorDb:F1}  |  threshold {vad.ThresholdDb:F1}  |  " +
               (voiceSender.IsWaitingForResult ? "Waiting (blocked)" : vad.State.ToString());
 
-        // ¸Ç À§ ÇÑ ÁÙ: ¼­¹ö ¿¬°á, ³ìÀ½¡¤ÆÇÁ¤ ´ë±â »óÅÂ, ¸¶Áö¸· ¹ßÈ­ Á¤º¸
+        // ë§¨ ìœ„ í•œ ì¤„: ì„œë²„ ì—°ê²°, ë…¹ìŒÂ·íŒì • ëŒ€ê¸° ìƒíƒœ, ë§ˆì§€ë§‰ ë°œí™” ì •ë³´
         string server = voiceSocket == null ? "-" : voiceSocket.IsConnected ? "Connected" : "Disconnected";
         string rec = voiceSender == null ? "-"
-            : voiceSender.IsRecording ? "¡Ü REC"
+            : voiceSender.IsRecording ? "â— REC"
             : voiceSender.IsWaitingForResult ? "Waiting for result (blocked)"
             : "Ready";
         headerText = $"Server: {server}   |   {rec}   |   Last: {(voiceSender != null ? voiceSender.LastInfo : "-")}";
@@ -171,7 +184,7 @@ public class VoiceDebug : MonoBehaviour
 
     byte CurrentStateCode(VoiceActivityDetector vad)
     {
-        if (voiceSender != null && voiceSender.IsWaitingForResult) return StWaiting;   // ÆÇÁ¤ ´ë±â(¸·±â)¸¦ ¿ì¼± Ç¥½Ã
+        if (voiceSender != null && voiceSender.IsWaitingForResult) return StWaiting;   // íŒì • ëŒ€ê¸°(ë§‰ê¸°)ë¥¼ ìš°ì„  í‘œì‹œ
         if (vad == null) return StIdle;
         switch (vad.State)
         {
@@ -181,8 +194,8 @@ public class VoiceDebug : MonoBehaviour
         }
     }
 
-    // ¦¡¦¡ ÆÄÇü: ¿­¸¶´Ù ´ã´ç ±¸°£ÀÇ ÃÖ¼Ò~ÃÖ´ë ÁøÆøÀ» ¼¼·Î¼±À¸·Î ±×¸°´Ù ¦¡¦¡
-    // ¦¡¦¡ Å×½ºÆ® Å°: SkillManager ¸¦ Á÷Á¢ È£ÃâÇÑ´Ù. ¸ñ·ÏÀÌ ¹Ù²î¸é SpellsChanged ·Î ¼­¹ö¿¡ ÀÚµ¿ ÀçÀü¼ÛµÈ´Ù ¦¡¦¡
+    // â”€â”€ íŒŒí˜•: ì—´ë§ˆë‹¤ ë‹´ë‹¹ êµ¬ê°„ì˜ ìµœì†Œ~ìµœëŒ€ ì§„í­ì„ ì„¸ë¡œì„ ìœ¼ë¡œ ê·¸ë¦°ë‹¤ â”€â”€
+    // â”€â”€ í…ŒìŠ¤íŠ¸ í‚¤: SkillManager ë¥¼ ì§ì ‘ í˜¸ì¶œí•œë‹¤. ëª©ë¡ì´ ë°”ë€Œë©´ SpellsChanged ë¡œ ì„œë²„ì— ìë™ ì¬ì „ì†¡ëœë‹¤ â”€â”€
     void HandleTestKeys()
     {
         SkillManager sm = SkillManager.Instance;
@@ -194,23 +207,64 @@ public class VoiceDebug : MonoBehaviour
             if (list.Count > 0)
             {
                 string name = list[UnityEngine.Random.Range(0, list.Count)].spellName;
-                Debug.Log($"[Å×½ºÆ®] {name} ½ÃÀü: {sm.TryCastByVoice(name) ?? "¼º°ø"}");
+                Debug.Log($"[í…ŒìŠ¤íŠ¸] {name} ì‹œì „: {sm.TryCastByVoice(name) ?? "ì„±ê³µ"}");
             }
         }
         if (Input.GetKeyDown(unlockKey))
         {
-            var locked = sm.spellDatabase.FindAll(s => s != null && !sm.IsUnlocked(s));
-            if (locked.Count > 0) sm.UnlockSpell(locked[UnityEngine.Random.Range(0, locked.Count)]);
-            else Debug.Log("[Å×½ºÆ®] ¸ğµç ½ºÆçÀ» ÇØ±İÇß½À´Ï´Ù.");
+            bool instant = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+            SpellData spell = PickLockedSpell(sm);
+            if (spell == null) Debug.Log("[í…ŒìŠ¤íŠ¸] í•´ê¸ˆí•  ìŠ¤í ì´ ì—†ìŠµë‹ˆë‹¤ (ëª¨ë‘ í•´ê¸ˆí–ˆê±°ë‚˜ ë‘ë£¨ë§ˆë¦¬ê°€ ë‚ ì•„ì˜¤ëŠ” ì¤‘).");
+            else if (instant || dropItemPrefab == null) sm.UnlockSpell(spell);
+            else SpawnTestDrop(spell);
         }
         if (Input.GetKeyDown(resetKey)) sm.ResetSpellUnlocks();
+    }
+
+    // ì ê¸´ ìŠ¤í  ì¤‘ í•˜ë‚˜ë¥¼ ê³ ë¥¸ë‹¤. ë‚ ì•„ì˜¤ëŠ” ì¤‘ì¸ ë‘ë£¨ë§ˆë¦¬ì˜ ìŠ¤í ì€ ëº€ë‹¤
+    SpellData PickLockedSpell(SkillManager sm)
+    {
+        // íšë“ë˜ì–´ ì‚­ì œëœ ë‘ë£¨ë§ˆë¦¬ëŠ” ëª©ë¡ì—ì„œ ì •ë¦¬ (Unity ì˜¤ë¸Œì íŠ¸ëŠ” ì‚­ì œë˜ë©´ null ê³¼ ê°™ë‹¤)
+        var finished = new List<SpellData>();
+        foreach (var pair in pendingDrops)
+            if (pair.Value == null) finished.Add(pair.Key);
+        foreach (var s in finished) pendingDrops.Remove(s);
+
+        var locked = sm.spellDatabase.FindAll(s => s != null && !sm.IsUnlocked(s) && !pendingDrops.ContainsKey(s));
+        return locked.Count > 0 ? locked[UnityEngine.Random.Range(0, locked.Count)] : null;
+    }
+
+    // ì‹¤ì œ ì²˜ì¹˜ ë“œëê³¼ ê°™ì€ ë‘ë£¨ë§ˆë¦¬ë¥¼ ë§Œë“ ë‹¤: í˜„ì¬ ëª¹ ìœ„ì¹˜(ì—†ìœ¼ë©´ ì¹´ë©”ë¼ ì•) â†’ ë‚ ì•„ì™€ íšë“ â†’ UnlockSpell + íšë“ ì•Œë¦¼
+    void SpawnTestDrop(SpellData spell)
+    {
+        EnemyController enemy = EnemyManager.Instance != null ? EnemyManager.Instance.CurrentEnemy : null;
+        DropItem drop;
+        if (enemy != null)
+        {
+            drop = Instantiate(dropItemPrefab, enemy.transform.position + dropOffset, Quaternion.identity);
+            drop.Initialize(spell, enemy.GroundPoint);   // ë°”ë‹¥ ë†’ì´ ê¸°ì¤€ (EnemyController ì™€ ê°™ì€ ë°©ì‹)
+        }
+        else
+        {
+            Camera cam = Camera.main;
+            if (cam == null)
+            {
+                Debug.LogWarning("[í…ŒìŠ¤íŠ¸] ë©”ì¸ ì¹´ë©”ë¼ê°€ ì—†ì–´ ë‘ë£¨ë§ˆë¦¬ ëŒ€ì‹  ë°”ë¡œ í•´ê¸ˆí•©ë‹ˆë‹¤.");
+                SkillManager.Instance.UnlockSpell(spell);
+                return;
+            }
+            drop = Instantiate(dropItemPrefab, cam.transform.position + cam.transform.forward * cameraDropDistance, Quaternion.identity);
+            drop.Initialize(spell);
+        }
+        pendingDrops[spell] = drop;
+        Debug.Log($"[í…ŒìŠ¤íŠ¸] {spell.spellName} ë‘ë£¨ë§ˆë¦¬ ë“œë ({(enemy != null ? "ëª¹ ìœ„ì¹˜" : "ì¹´ë©”ë¼ ì•")})");
     }
 
     void DrawWaveform()
     {
         Fill(wavePixels, Bg);
         int mid = waveHeight / 2;
-        HLine(wavePixels, width, mid, Grid);   // 0 ±âÁØ¼±
+        HLine(wavePixels, width, mid, Grid);   // 0 ê¸°ì¤€ì„ 
 
         if (waveRing != null)
         {
@@ -223,7 +277,7 @@ public class VoiceDebug : MonoBehaviour
                 float min = 0f, max = 0f;
                 for (int i = start; i < end; i++)
                 {
-                    float v = waveRing[(waveHead + i) % n];   // waveHead ºÎÅÍ ÀĞÀ¸¸é ¿À·¡µÈ »ùÇÃ ¡æ ÃÖ½Å »ùÇÃ ¼ø¼­
+                    float v = waveRing[(waveHead + i) % n];   // waveHead ë¶€í„° ì½ìœ¼ë©´ ì˜¤ë˜ëœ ìƒ˜í”Œ â†’ ìµœì‹  ìƒ˜í”Œ ìˆœì„œ
                     if (v < min) min = v;
                     if (v > max) max = v;
                 }
@@ -237,16 +291,16 @@ public class VoiceDebug : MonoBehaviour
         waveTex.Apply(false);
     }
 
-    // ¦¡¦¡ dB ±â·Ï: ¸·´ë(»óÅÂ »ö) + ¼ÒÀ½ ±âÁØ¼± + ¸»¼Ò¸® ±âÁØ¼± ¦¡¦¡
+    // â”€â”€ dB ê¸°ë¡: ë§‰ëŒ€(ìƒíƒœ ìƒ‰) + ì†ŒìŒ ê¸°ì¤€ì„  + ë§ì†Œë¦¬ ê¸°ì¤€ì„  â”€â”€
     void DrawDbHistory()
     {
         Fill(dbPixels, Bg);
-        // -20, -40, -60 dB ´«±İ¼±
+        // -20, -40, -60 dB ëˆˆê¸ˆì„ 
         for (float g = -20f; g > dbMin; g -= 20f) HLine(dbPixels, width, DbToY(g), Grid);
 
         for (int x = 0; x < width; x++)
         {
-            int idx = (histHead + x) % width;   // °¡Àå ¿À·¡µÈ Ä­ºÎÅÍ ¿ŞÂÊ¿¡ ±×¸°´Ù
+            int idx = (histHead + x) % width;   // ê°€ì¥ ì˜¤ë˜ëœ ì¹¸ë¶€í„° ì™¼ìª½ì— ê·¸ë¦°ë‹¤
             int top = DbToY(dbHist[idx]);
             Color32 c = StateColor(stateHist[idx]);
             for (int y = 0; y <= top; y++) dbPixels[y * width + x] = c;
@@ -260,7 +314,7 @@ public class VoiceDebug : MonoBehaviour
 
     int DbToY(float db)
     {
-        float t = Mathf.InverseLerp(dbMin, dbMax, db);   // dbMin ¡æ 0, dbMax ¡æ 1 (¹üÀ§ ¹ÛÀº Àß¸²)
+        float t = Mathf.InverseLerp(dbMin, dbMax, db);   // dbMin â†’ 0, dbMax â†’ 1 (ë²”ìœ„ ë°–ì€ ì˜ë¦¼)
         return Mathf.Clamp(Mathf.RoundToInt(t * (dbHeight - 1)), 0, dbHeight - 1);
     }
 
@@ -279,7 +333,7 @@ public class VoiceDebug : MonoBehaviour
 
     static void HLine(Color32[] px, int w, int y, Color32 c) { for (int x = 0; x < w; x++) px[y * w + x] = c; }
 
-    // ¦¡¦¡ µğ¹ö±× WAV ÀúÀå: VoiceSender °¡ ¼­¹ö·Î º¸³½ WAV ¸¦ ±×´ë·Î ÆÄÀÏ·Î ³²±ä´Ù ¦¡¦¡
+    // â”€â”€ ë””ë²„ê·¸ WAV ì €ì¥: VoiceSender ê°€ ì„œë²„ë¡œ ë³´ë‚¸ WAV ë¥¼ ê·¸ëŒ€ë¡œ íŒŒì¼ë¡œ ë‚¨ê¸´ë‹¤ â”€â”€
     void SaveDebugWav(byte[] wav)
     {
         if (!saveDebugWav) return;
@@ -287,7 +341,7 @@ public class VoiceDebug : MonoBehaviour
         Directory.CreateDirectory(dir);
         string path = Path.Combine(dir, $"mic_{DateTime.Now:yyyyMMdd_HHmmss_fff}.wav");
         File.WriteAllBytes(path, wav);
-        Debug.Log($"[DEBUG] µğ¹ö±× WAV ÀúÀå: {path}");
+        Debug.Log($"[DEBUG] ë””ë²„ê·¸ WAV ì €ì¥: {path}");
     }
 
     void OnGUI()
