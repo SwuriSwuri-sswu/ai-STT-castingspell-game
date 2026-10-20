@@ -194,7 +194,8 @@ public class VoiceRecorder : MonoBehaviour
     }
 
     // 중간 자막 한 줄: 흐린 색 + 끝에 '…' (아직 확정이 아님)
-    string PartialLine(string text) => $"<color=#{ColorUtility.ToHtmlStringRGB(partialColor)}>\"{text}…\"</color>";
+    //   서버 글자 끝에 이미 '...'이 붙어 오면 떼고 붙인다 ("돌메...…" 처럼 두 번 찍히지 않게)
+    string PartialLine(string text) => $"<color=#{ColorUtility.ToHtmlStringRGB(partialColor)}>\"{text.TrimEnd('.', '…', '·', ' ')}…\"</color>";
 
     // 너무 짧음, 시간 초과, 연결 없음, 적 없음 → 자막 지움 + 로그
     void OnRejected(string reason)

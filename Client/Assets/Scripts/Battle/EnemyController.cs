@@ -644,7 +644,9 @@ public class EnemyController : MonoBehaviour
             BattleUIManager.Instance.ShowEffectiveness(multiplier);
         }
 
-        // ※ 폭발 이펙트는 ProjectileController / SkillManager에서만 생성합니다 (중복 방지)
+        // ※ 투사체·차지·빔의 폭발은 ProjectileController / SkillManager에서 생성.
+        //   주문마다 지정한 '적중 폭발'(SpellData.Impact Prefab)은 여기서 데미지가 들어가는 순간 터뜨림
+        SkillManager.SpawnHitEffect(spell, AimPoint);
 
         // 맞으면 공격이 잠깐 늦춰짐 (경직)
         attackTimer = Mathf.Max(0f, attackTimer - hitStagger);

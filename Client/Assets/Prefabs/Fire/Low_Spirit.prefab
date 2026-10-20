@@ -79,8 +79,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyController
   enemyType: 2
   rank: 0
+  displayName: 
   useRankDefaultHP: 1
   maxHP: 20
+  targetPriority: 0
+  showKillText: 1
   anim: {fileID: 0}
   dieTrigger: Die
   deathStateName: Die
@@ -93,11 +96,19 @@ MonoBehaviour:
   shrinkDuration: 0.4
   punchOnHit: 1
   punchScale: 0.15
-  deathEffectPrefab: {fileID: 4809171458859421548, guid: 4e91ed1a8efe7044785b9bd97a47d87f, type: 3}
+  deathEffectPrefab: {fileID: 0}
   dropItemPrefab: {fileID: 9009495989836976630, guid: ad5534dabd1333e419fc48a593487964, type: 3}
   dropOffset: {x: 0, y: 1, z: 0}
   hoverHeight: 1.05
   facingYawOffset: 180
+  canAttack: 1
+  useRankDefaultAttack: 1
+  attackInterval: 9
+  attackDamage: 8
+  attackTelegraph: 0.7
+  telegraphShake: 0.05
+  lungeDistance: 0.8
+  hitStagger: 1.5
   moveSpeed: 3
   turnSpeed: 360
   moveBool: 

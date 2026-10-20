@@ -58,6 +58,53 @@ public class WandCaster : MonoBehaviour
     [Tooltip("강한 영창(power 1.5)일 때 휘두르는 크기 배율")]
     public float strongCastScale = 1.4f;
 
+    [Header("걷기 (보스전 입장 연출에서 BossBattleDirector가 켬)")]
+    [Tooltip("팔을 앞뒤로 흔드는 거리 (두 걸음에 한 번 앞→뒤)")]
+    public float walkSwing = 0.07f;
+    [Tooltip("팔을 흔들 때 지팡이가 기우는 각도 (도). 팔이 앞으로 가면 지팡이 끝은 뒤로 살짝 젖혀짐 (음수면 반대)")]
+    public float walkSwingAngle = 10f;
+    [Tooltip("팔이 앞·뒤 끝에 갈 때 살짝 올라가는 정도 (진자처럼 호를 그림)")]
+    public float walkSwingLift = 0.015f;
+    [Tooltip("발걸음마다 위아래로 출렁이는 정도 (카메라도 출렁이니 작게)")]
+    public float walkBob = 0.005f;
+    [Tooltip("두 걸음에 한 번 좌우로 흔들리는 정도")]
+    public float walkSway = 0.008f;
+    [Tooltip("좌우로 기우는 각도 (도)")]
+    public float walkRoll = 1.5f;
+    [Tooltip("발걸음마다 앞뒤로 끄덕이는 각도 (도). 팔 흔들기와 겹치므로 보통 0")]
+    public float walkPitch = 0f;
+    [Tooltip("걷는 동안 살짝 내려 드는 정도")]
+    public float walkLower = 0.03f;
+
+    [Header("내리기 (줌인할 때) / 전투 준비 (마왕이 일어날 때)")]
+    [Tooltip("화면 아래로 내리는 거리")]
+    public float lowerDistance = 0.5f;
+    [Tooltip("내리고 올리는 속도 (1초에 0→1)")]
+    public float lowerSpeed = 2.5f;
+    [Tooltip("지팡이를 치켜드는 전체 시간 (초)")]
+    public float readyTime = 1.1f;
+    [Tooltip("치켜들 때 올라가는 정도")]
+    public float readyRaise = 0.06f;
+    [Tooltip("치켜들 때 뒤로 젖히는 각도 (도)")]
+    public float readyTilt = 18f;
+
+    private float walkWeight, walkPhase;
+    private float lowerWeight, lowerTarget;
+    private float readyTimer = -1f;
+
+    // 걷는 흔들림 (weight 0 = 멈춤, phase = 발걸음 위상. 카메라 흔들림과 같은 값을 넘기면 박자가 맞음)
+    public void SetWalk(float weight, float phase)
+    {
+        walkWeight = Mathf.Clamp01(weight);
+        walkPhase = phase;
+    }
+
+    // 화면 아래로 내리기 / 다시 올리기
+    public void SetLowered(bool lowered) => lowerTarget = lowered ? 1f : 0f;
+
+    // 지팡이를 앞으로 치켜들었다가 자리 잡기 (전투 준비)
+    public void PlayReady() => readyTimer = 0f;
+
     // 쉬는 자세 (부모 = 카메라 기준). 카메라가 걸어가거나 돌아도 지팡이가 따라옴
     private Vector3 restLocalPos;
     private Quaternion restLocalRot;
@@ -188,6 +235,45 @@ public class WandCaster : MonoBehaviour
             rotOffset = aim * Quaternion.AngleAxis(angle, right) * rotOffset;
 
             if (castTimer >= CastDuration) castTimer = -1f;
+        }
+
+        // 5. 걷기: 팔을 앞뒤로 흔듦 (두 걸음에 한 번) + 발걸음마다 살짝 출렁임
+        if (walkWeight > 0f)
+        {
+            float step = Mathf.Abs(Mathf.Sin(walkPhase));   // 0 → 1 → 0 (한 걸음)
+            float swing = Mathf.Sin(walkPhase);              // -1 ↔ 1 (두 걸음 = 팔 한 번 앞뒤)
+            float side = Mathf.Sin(walkPhase * 0.5f);
+            float w = walkWeight;
+
+            // 팔 흔들기: 앞뒤로 움직이면서 끝에서 살짝 올라감 (진자), 지팡이는 반대로 살짝 기움
+            posOffset += forward * (swing * walkSwing * w)
+                       + up * (swing * swing * walkSwingLift * w);
+            rotOffset = Quaternion.AngleAxis(-swing * walkSwingAngle * w, right) * rotOffset;
+
+            // 발걸음 출렁임 (작게) + 좌우
+            posOffset += up * ((step - 0.5f) * 2f * walkBob * w - walkLower * w) + right * (side * walkSway * w);
+            rotOffset = Quaternion.AngleAxis(-side * walkRoll * w, forward)
+                      * Quaternion.AngleAxis((0.5f - step) * 2f * walkPitch * w, right) * rotOffset;
+        }
+
+        // 6. 내리기 (줌인 동안 화면 밖으로)
+        lowerWeight = Mathf.MoveTowards(lowerWeight, lowerTarget, lowerSpeed * Time.deltaTime);
+        if (lowerWeight > 0f)
+        {
+            float k = Smooth(lowerWeight);
+            posOffset -= up * (lowerDistance * k);
+            rotOffset = Quaternion.AngleAxis(12f * k, right) * rotOffset;
+        }
+
+        // 7. 전투 준비: 앞으로 치켜들었다가 원래 자리로
+        if (readyTimer >= 0f)
+        {
+            readyTimer += Time.deltaTime;
+            float k = Mathf.Clamp01(readyTimer / Mathf.Max(0.05f, readyTime));
+            float a = Mathf.Sin(k * Mathf.PI);
+            posOffset += up * (readyRaise * a) + forward * (0.04f * a);
+            rotOffset = Quaternion.AngleAxis(-readyTilt * a, right) * rotOffset;
+            if (k >= 1f) readyTimer = -1f;
         }
 
         transform.position = RestPos + posOffset;

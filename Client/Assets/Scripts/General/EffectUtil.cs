@@ -17,6 +17,50 @@ public static class EffectUtil
     /// <param name="overrideDuration">0보다 크면 이 시간 동안 재생 (루프 유지)</param>
     /// <param name="runner">overrideDuration을 쓸 때 타이머를 돌릴 MonoBehaviour (보통 SkillManager)</param>
     /// <returns>연출 시간(초). prefab이 없으면 0</returns>
+    /// <summary>
+    /// 크기 배율을 적용해 생성 → 재생 → 자동 삭제. scale이 1이면 SpawnAndAutoDestroy와 같음
+    /// </summary>
+    public static float SpawnScaled(GameObject prefab, Vector3 position, Quaternion rotation, float scale,
+                                    float overrideDuration = 0f, MonoBehaviour runner = null)
+    {
+        if (prefab == null) return 0f;
+        GameObject instance = Object.Instantiate(prefab, position, rotation);
+        Scale(instance, scale);
+        return PlayOnce(instance, overrideDuration, runner);
+    }
+
+    /// <summary>
+    /// 이펙트 크기를 배율만큼 키움. 파티클도 같이 커지도록 Scaling Mode를 Hierarchy로 바꿈 (배율 1이면 아무것도 안 함)
+    /// </summary>
+    public static void Scale(GameObject instance, float scale)
+    {
+        if (instance == null || Mathf.Approximately(scale, 1f) || scale <= 0f) return;
+        foreach (ParticleSystem ps in instance.GetComponentsInChildren<ParticleSystem>(true))
+        {
+            ParticleSystem.MainModule main = ps.main;
+            main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+        }
+        foreach (TrailRenderer tr in instance.GetComponentsInChildren<TrailRenderer>(true)) tr.widthMultiplier *= scale;
+        foreach (Light l in instance.GetComponentsInChildren<Light>(true)) l.range *= scale;
+        instance.transform.localScale *= scale;
+    }
+
+    /// <summary>
+    /// 크기 배율을 적용해 생성 → 최대 maxTime초만 보여 준 뒤 방출을 멈추고, 남은 입자는 tail초 안에 정리.
+    /// 에셋 길이가 너무 길어도 화면에 오래 남지 않게 할 때 사용
+    /// </summary>
+    public static GameObject SpawnCapped(GameObject prefab, Vector3 position, Quaternion rotation, float scale,
+                                         float maxTime, float tail = 0.3f)
+    {
+        if (prefab == null) return null;
+        GameObject instance = Object.Instantiate(prefab, position, rotation);
+        Scale(instance, scale);
+        ForceSingleCycle(instance);
+        float length = Mathf.Min(GetDuration(instance), Mathf.Max(0.05f, maxTime));
+        instance.AddComponent<EffectAutoStop>().Begin(length, tail);
+        return instance;
+    }
+
     public static float SpawnAndAutoDestroy(GameObject prefab, Vector3 position, Quaternion rotation,
                                             float overrideDuration = 0f, MonoBehaviour runner = null)
     {
@@ -96,5 +140,26 @@ public static class EffectUtil
         }
 
         return max > 0f ? max : fallback;
+    }
+}
+
+// SpawnCapped가 붙이는 타이머: 정해진 시간이 되면 방출을 멈추고 짧게 정리
+public class EffectAutoStop : MonoBehaviour
+{
+    private float stopAt, tail;
+    private bool stopped;
+
+    public void Begin(float length, float tailTime)
+    {
+        stopAt = Time.time + length;
+        tail = tailTime;
+    }
+
+    private void Update()
+    {
+        if (stopped || Time.time < stopAt) return;
+        stopped = true;
+        float left = EffectUtil.StopEmitting(gameObject);
+        Destroy(gameObject, Mathf.Min(left, tail) + 0.05f);
     }
 }

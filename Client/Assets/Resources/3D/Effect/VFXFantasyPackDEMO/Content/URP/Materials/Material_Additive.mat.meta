@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6703e9076d3870342926f395fdbede12
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 384902
+  packageName: VFX Fantasy Pack DEMO
+  packageVersion: 1.0
+  assetPath: Assets/VFXFantasyPackDEMO/Content/URP/Materials/Material_Additive.mat
+  uploadId: 928334

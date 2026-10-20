@@ -147,6 +147,8 @@ public class MonsterPhotoStudio : MonoBehaviour
         foreach (Collider c in clone.GetComponentsInChildren<Collider>(true)) c.enabled = false;
         foreach (ParticleSystemRenderer pr in clone.GetComponentsInChildren<ParticleSystemRenderer>(true)) pr.enabled = false;
         foreach (Transform t in clone.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = layer;
+        // 스킨 메시의 크기(Bounds)를 실제 자세 기준으로 계산하게 (기본값은 임포트 때 크기라 틀릴 수 있음 → 카메라가 몸 안에 들어가 빈 사진)
+        foreach (SkinnedMeshRenderer smr in clone.GetComponentsInChildren<SkinnedMeshRenderer>(true)) smr.updateWhenOffscreen = true;
 
         holder.SetActive(true);
         yield return null; // 한 프레임 (Animator 초기화)
@@ -158,6 +160,7 @@ public class MonsterPhotoStudio : MonoBehaviour
             anim.Update(0f);
             if (poseTime > 0f) anim.Update(poseTime);
         }
+        yield return null; // 바뀐 자세로 Bounds 갱신
 
         // 3. 몹 크기에 맞춰 카메라 위치 자동 조절
         Bounds b = new Bounds(clone.transform.position, Vector3.zero);
@@ -190,6 +193,13 @@ public class MonsterPhotoStudio : MonoBehaviour
             tex.ReadPixels(new Rect(0, 0, photoSize, photoSize), 0, 0);
             tex.Apply();
             RenderTexture.active = prev;
+
+            if (IsEmpty(tex))
+            {
+                Debug.LogWarning($"[MonsterPhotoStudio] {prefab.gameObject.name}: 사진이 비어 있습니다. " +
+                                 $"(크기 {b.size}, 중심 {b.center - studioPosition}, 카메라 거리 {dist:F2}) " +
+                                 "몹 프리팹의 렌더러·머티리얼 또는 Idle 애니메이션 위치를 확인해 주세요.");
+            }
             tex.name = "Photo_" + prefab.gameObject.name;
 
             photos[prefab.gameObject.name] = tex;
@@ -197,9 +207,20 @@ public class MonsterPhotoStudio : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"[MonsterPhotoStudio] {prefab.gameObject.name}: 보이는 모델이 없어 촬영하지 못했습니다.");
+            Debug.LogWarning($"[MonsterPhotoStudio] {prefab.gameObject.name}: 보이는 모델(켜진 Renderer)이 없어 촬영하지 못했습니다.");
         }
 
         Destroy(holder);
+    }
+
+    // 투명한 픽셀만 있는 사진인지 (몹이 하나도 안 찍힘)
+    private static bool IsEmpty(Texture2D tex)
+    {
+        Color32[] px = tex.GetPixels32();
+        for (int i = 0; i < px.Length; i += 7)
+        {
+            if (px[i].a > 10) return false;
+        }
+        return true;
     }
 }

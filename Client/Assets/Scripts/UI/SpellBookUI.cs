@@ -115,6 +115,7 @@ public class SpellBookUI : MonoBehaviour
     private void Initialize()
     {
         initialized = true;
+        AutoWire();
 
         foreach (ElementSection section in sections)
         {
@@ -152,6 +153,48 @@ public class SpellBookUI : MonoBehaviour
             if (section.slots != null) foreach (List<Image> l in section.slots) slotCount += l.Count;
         }
         Debug.Log($"[SpellBookUI] 칸 {slotCount}개 인식, 전체 스펠 {AllSpells().Count}개, 표시 기록: {(UseCollection ? "누적" : "이번 판")}");
+    }
+
+    // Inspector의 Sections / Label Template이 비어 있으면 자식 이름으로 자동 연결
+    //   속성 묶음: 이름이 Normal / Fire / Water / Grass인 자식
+    //   수집 현황: 그 안에서 이름이 "_Count"로 끝나는 글자
+    //   견본 글자: 이름에 "Template"이 들어간 글자
+    private void AutoWire()
+    {
+        if (sections == null) sections = new List<ElementSection>();
+        if (sections.Count == 0)
+        {
+            foreach (MagicElement e in (MagicElement[])Enum.GetValues(typeof(MagicElement)))
+            {
+                Transform root = FindChildByName(transform, e.ToString());
+                if (root == null) continue;
+                ElementSection section = new ElementSection { element = e, root = root };
+                foreach (TMP_Text t in root.GetComponentsInChildren<TMP_Text>(true))
+                {
+                    if (t.name.EndsWith("_Count", StringComparison.OrdinalIgnoreCase)) { section.countText = t; break; }
+                }
+                sections.Add(section);
+            }
+            if (sections.Count > 0) Debug.Log($"[SpellBookUI] Sections가 비어 있어 자식에서 {sections.Count}개 속성 묶음을 자동으로 찾았습니다.");
+            else Debug.LogWarning("[SpellBookUI] Sections가 비어 있고, Normal / Fire / Water / Grass 자식도 찾지 못했습니다.");
+        }
+
+        if (labelTemplate == null)
+        {
+            foreach (TMP_Text t in GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (t.name.IndexOf("Template", StringComparison.OrdinalIgnoreCase) >= 0) { labelTemplate = t; break; }
+            }
+        }
+    }
+
+    private static Transform FindChildByName(Transform parent, string childName)
+    {
+        foreach (Transform child in parent)
+        {
+            if (string.Equals(child.name, childName, StringComparison.OrdinalIgnoreCase)) return child;
+        }
+        return null;
     }
 
     private bool UseCollection =>

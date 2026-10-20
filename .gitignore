@@ -126,3 +126,4 @@ __pycache__/
 # 녹음 파일
 *.wav
 *.wav.meta
+Server/game.db

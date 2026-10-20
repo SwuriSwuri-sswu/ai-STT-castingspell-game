@@ -16,6 +16,12 @@ public class PlayerHealth : MonoBehaviour
     [Tooltip("한 번 맞은 뒤 이 시간 동안은 추가 피해 없음 (연속 피격 방지)")]
     public float invulnerableTime = 0.5f;
 
+    [Header("맞았을 때 화면 흔들림")]
+    [Tooltip("세기 (0 = 끔). 데미지가 클수록 더 세게 (데미지 10 = 이 값 그대로)")]
+    [Min(0f)] public float hitShake = 1.5f;
+    [Tooltip("흔들리는 시간 (초)")]
+    public float hitShakeTime = 0.3f;
+
     [Header("게임 오버")]
     public string endingSceneName = "EndingScene";
     [Tooltip("쓰러질 때 느려지는 연출 (실제 시간 초)")]
@@ -72,6 +78,7 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log($"[플레이어] {reason} -{amount} → 체력 {CurrentHP}/{maxHP}");
         OnDamaged?.Invoke(amount, reason);
         OnHealthChanged?.Invoke(CurrentHP, maxHP);
+        if (hitShake > 0f) CameraKick.Shake(hitShake * Mathf.Clamp(amount / 10f, 0.6f, 2f), hitShakeTime);
 
         if (CurrentHP <= 0f) Die();
     }

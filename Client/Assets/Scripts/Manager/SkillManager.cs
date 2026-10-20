@@ -14,6 +14,46 @@ public class SkillManager : MonoBehaviour
     [Tooltip("게임에 존재하는 모든 SpellData 에셋")]
     public List<SpellData> spellDatabase = new List<SpellData>();
 
+    [Header("이펙트 크기·속도 (씬마다 다르게)")]
+    [Tooltip("몹 위치에 터지는 이펙트(폭발·장판·차지 마무리) 크기 배율. 맵이 큰 BossScene은 1.8~2.2 추천, GameScene은 1")]
+    [Min(0.1f)] public float effectScale = 1f;
+    [Tooltip("지팡이에서 날아가는 투사체 크기 배율 (카메라 가까이에서 출발하므로 너무 키우면 화면을 가림. 1.2~1.5 정도)")]
+    [Min(0.1f)] public float projectileScale = 1f;
+    [Tooltip("투사체가 날아가는 속도 배율. 맵이 커서 마법이 늦게 닿으면 올리기")]
+    [Min(0.1f)] public float projectileSpeedScale = 1f;
+
+    // ProjectileController 등에서 쓰는 현재 씬의 배율 (SkillManager가 없으면 1)
+    public static float EffectScale => Instance != null ? Instance.effectScale : 1f;
+
+    // 데미지가 들어가는 순간 (EnemyController.TakeDamage에서 호출)
+    //   주문마다 SpellData의 Impact Prefab을 몹 몸 중앙에 터뜨림 (비어 있으면 아무것도 안 함)
+    public static void SpawnHitEffect(SpellData spell, Vector3 position)
+    {
+        if (spell == null || spell.impactPrefab == null) return;
+        EffectUtil.SpawnScaled(spell.impactPrefab, position + spell.impactOffset, Quaternion.identity, EffectScale * spell.impactScale);
+    }
+
+    [Header("시전 순간 카메라 움찔")]
+    [Tooltip("세기 (0 = 끔, 1 = 보통). 강한 영창이면 영창 배율만큼 더 크게")]
+    [Min(0f)] public float castKick = 1f;
+    [Tooltip("움찔하는 시간 (초)")]
+    public float castKickTime = 0.18f;
+
+    [Header("장판·빔 연출 시간")]
+    [Tooltip("장판·빔 마법의 Effect Duration이 0일 때 보여 줄 최대 시간 (초).\n" +
+             "이 시간이 끝나면 이펙트를 멈추고 데미지 + 적중 폭발. 그동안은 다음 주문을 받지 않음")]
+    [Min(0.1f)] public float areaEffectTime = 1.2f;
+    [Tooltip("장판·빔이 끝난 뒤 남은 입자가 사라지는 최대 시간 (초). 길면 끝난 뒤에도 잔상이 오래 남음")]
+    [Min(0f)] public float areaEffectTail = 0.3f;
+
+    [Header("장판 바닥 맞추기")]
+    [Tooltip("장판을 몹 발밑의 실제 바닥(레드카펫 등 Collider 윗면)에 맞춰 놓기")]
+    public bool snapAreaToFloor = true;
+    [Tooltip("바닥에서 살짝 띄우는 높이 (m). 장판이 바닥과 겹쳐 깜빡이면 조금 올리기")]
+    [Min(0f)] public float areaFloorLift = 0.03f;
+    [Tooltip("바닥을 찾을 때 몹 발밑에서 위로 몇 m부터 아래로 찾을지")]
+    public float floorProbeHeight = 1f;
+
     [Header("즉발형(장판) 이펙트 위치 보정")]
     [Tooltip("몹 발밑 기준 높이 보정 (메테오처럼 위에서 떨어지는 이펙트면 값을 올리세요)")]
     public float instantSpawnHeightOffset = 0f;
@@ -95,6 +135,7 @@ public class SkillManager : MonoBehaviour
         {
             case CastType.Projectile: casted = CastProjectile(spell, target, origin, power); break;
             case CastType.WandCharge: casted = CastCharge(spell, target, origin, power); break;
+            case CastType.Beam: casted = CastBeam(spell, target, origin, power); break;
             default: casted = CastInstant(spell, target, power); break;
         }
 
@@ -103,6 +144,7 @@ public class SkillManager : MonoBehaviour
         // 데미지 예약: 이 마법으로 몹이 쓰러질 예정이면 그 즉시 영창이 막힌다 (이펙트 연출과 별개)
         if (target != null) target.ReserveDamage(spell, power);
         OnSpellCast?.Invoke(spell, target, power);
+        if (castKick > 0f) CameraKick.Kick(castKick * Mathf.Max(1f, power), castKickTime);   // 시전 순간 카메라 움찔 (강한 영창일수록 크게)
 
         // 점수 처리 (GameManager가 씬에 없을 수도 있으므로 null 체크)
         if (GameManager.Instance != null)
@@ -132,10 +174,13 @@ public class SkillManager : MonoBehaviour
         if (dir.sqrMagnitude > 0.0001f) rotation = Quaternion.LookRotation(dir);
 
         GameObject projectile = Instantiate(spell.projectilePrefab, origin, rotation);
+        EffectUtil.Scale(projectile, projectileScale);
 
         // 에셋 팩 이펙트에는 스크립트가 없을 수 있으므로 없으면 붙여줌
         ProjectileController controller = projectile.GetComponent<ProjectileController>();
         if (controller == null) controller = projectile.AddComponent<ProjectileController>();
+        controller.speed *= projectileSpeedScale;
+        controller.hitDistance *= Mathf.Max(1f, projectileScale);
         controller.Initialize(spell, target, power);
 
         Debug.Log($"[마법 시전] {spell.spellName} 발사!");
@@ -150,15 +195,149 @@ public class SkillManager : MonoBehaviour
             return false;
         }
 
-        Vector3 spawnPos = target.GroundPoint + Vector3.up * instantSpawnHeightOffset;
-        float effectLength = EffectUtil.SpawnAndAutoDestroy(spell.explosionPrefab, spawnPos, Quaternion.identity,
-                                                            spell.effectDuration, this);
+        Vector3 spawnPos = FloorPoint(target) + Vector3.up * instantSpawnHeightOffset + spell.explosionOffset;
+        float effectLength = 0f;
+        if (spell.explosionPrefab != null)
+        {
+            GameObject area = Instantiate(spell.explosionPrefab, spawnPos, Quaternion.identity);
+            EffectUtil.Scale(area, effectScale * spell.explosionScale);
+            effectLength = AreaLength(spell, area);
+            StartCoroutine(EndAreaEffect(area, effectLength));
+        }
 
-        // 기본값: 장판 연출이 끝난 뒤 데미지 → 사망 애니메이션
+        // 기본값: 장판을 Area Effect Time(1.2초)만큼 보여 준 뒤 데미지 + 적중 폭발 → 사망 애니메이션
         target.ReceiveSpell(spell, spell.ResolveDamageDelay(effectLength), power);
 
         Debug.Log($"[마법 시전] {spell.spellName} 타겟 위치에 발동!");
         return true;
+    }
+
+    // 빔형: 지팡이 끝에서 몹을 향해 뿜어짐 (지팡이를 따라다니며 계속 몹을 겨눔) → 닿는 순간 데미지
+    private bool CastBeam(SpellData spell, EnemyController target, Vector3 origin, float power)
+    {
+        if (spell.beamPrefab == null)
+        {
+            Debug.LogWarning($"[{spell.spellName}] beamPrefab이 비어 있습니다.");
+            return false;
+        }
+        if (target == null)
+        {
+            Debug.Log($"[시전 실패] 타겟이 없어 {spell.spellName}을(를) 시전할 수 없습니다.");
+            return false;
+        }
+
+        GameObject beam = Instantiate(spell.beamPrefab, origin, Quaternion.identity);
+        Vector3 baseScale = beam.transform.localScale;
+
+        // 길이를 늘이려면 파티클도 오브젝트 크기를 따르게
+        if (spell.beamLength > 0f)
+        {
+            foreach (ParticleSystem ps in beam.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                ParticleSystem.MainModule main = ps.main;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+            }
+        }
+
+        // 연출 시간: Effect Duration → 없으면 Area Effect Time (단발 이펙트가 더 짧으면 그 길이)
+        float length = AreaLength(spell, beam);
+
+        AimBeam(beam, spell, target, baseScale);
+        StartCoroutine(RunBeam(beam, spell, target, baseScale, length));
+
+        // 데미지 (기본: 빔이 끝나는 순간 → 몹 위치 폭발)
+        float delay = spell.ResolveDamageDelay(length);
+        target.ReceiveSpell(spell, delay, power);
+        if (spell.explosionPrefab != null) StartCoroutine(BeamImpact(spell, target, delay));
+
+        Debug.Log($"[마법 시전] {spell.spellName} 빔 발사! ({length:F1}초)");
+        return true;
+    }
+
+    private IEnumerator RunBeam(GameObject beam, SpellData spell, EnemyController target, Vector3 baseScale, float length)
+    {
+        for (float t = 0f; t < length && beam != null; t += Time.deltaTime)
+        {
+            AimBeam(beam, spell, target, baseScale);   // 지팡이가 휘둘러져도 끝을 따라가며 몹을 겨눔
+            yield return null;
+        }
+        if (beam == null) yield break;
+        float tail = EffectUtil.StopEmitting(beam);
+        Destroy(beam, Mathf.Min(tail, areaEffectTail) + 0.05f);
+    }
+
+    // 몹 발밑의 실제 바닥 윗면 (레드카펫처럼 바닥보다 높은 Collider가 있으면 그 위). 못 찾으면 몹 발 높이
+    private Vector3 FloorPoint(EnemyController target)
+    {
+        Vector3 feet = target.GroundPoint;
+        if (!snapAreaToFloor) return feet;
+
+        Vector3 from = feet + Vector3.up * floorProbeHeight;
+        RaycastHit[] hits = Physics.RaycastAll(from, Vector3.down, floorProbeHeight + 2f, ~0, QueryTriggerInteraction.Ignore);
+        float best = float.MaxValue;
+        Vector3 point = feet;
+        foreach (RaycastHit h in hits)
+        {
+            if (h.transform.IsChildOf(target.transform)) continue;   // 몹 자신의 Collider는 무시
+            if (h.distance < best) { best = h.distance; point = h.point; }
+        }
+        return best < float.MaxValue ? point + Vector3.up * areaFloorLift : feet;
+    }
+
+    // 장판·빔 연출 시간: Effect Duration이 있으면 그 시간, 없으면 Area Effect Time (단발 이펙트가 더 짧으면 그 길이)
+    private float AreaLength(SpellData spell, GameObject instance)
+    {
+        if (spell.effectDuration > 0f) return spell.effectDuration;
+        if (IsLooping(instance)) return areaEffectTime;
+        return Mathf.Min(EffectUtil.GetDuration(instance), areaEffectTime);
+    }
+
+    // 장판을 length초 보여 준 뒤 방출을 멈추고, 남은 입자는 Area Effect Tail 안에 정리
+    private IEnumerator EndAreaEffect(GameObject area, float length)
+    {
+        yield return new WaitForSeconds(length);
+        if (area == null) yield break;
+        float tail = EffectUtil.StopEmitting(area);
+        Destroy(area, Mathf.Min(tail, areaEffectTail) + 0.05f);
+    }
+
+    // 지팡이 끝에 두고 몹 몸 중앙을 향하게 + (Beam Length가 있으면) 거리에 맞춰 길이 조절
+    private void AimBeam(GameObject beam, SpellData spell, EnemyController target, Vector3 baseScale)
+    {
+        Vector3 from = wandTip != null ? wandTip.position : transform.position;
+        beam.transform.position = from;
+        if (target == null || target.IsDying) return;
+
+        Vector3 to = target.AimPoint;
+        Vector3 dir = to - from;
+        if (dir.sqrMagnitude < 0.0001f) return;
+        Quaternion offset = Quaternion.Euler(spell.beamRotationOffset);
+        beam.transform.rotation = Quaternion.LookRotation(dir.normalized) * offset;
+
+        if (spell.beamLength > 0f)
+        {
+            // 에셋에서 빔이 뻗는 축 = 회전 보정을 되돌렸을 때의 앞(Z) 방향
+            Vector3 axis = Quaternion.Inverse(offset) * Vector3.forward;
+            Vector3 a = new Vector3(Mathf.Abs(axis.x), Mathf.Abs(axis.y), Mathf.Abs(axis.z));
+            int i = a.x >= a.y && a.x >= a.z ? 0 : (a.y >= a.z ? 1 : 2);
+            Vector3 scale = baseScale;
+            scale[i] = baseScale[i] * dir.magnitude / spell.beamLength;
+            beam.transform.localScale = scale;
+        }
+    }
+
+    private IEnumerator BeamImpact(SpellData spell, EnemyController target, float delay)
+    {
+        if (delay > 0f) yield return new WaitForSeconds(delay);
+        if (target == null) yield break;
+        EffectUtil.SpawnScaled(spell.explosionPrefab, target.AimPoint + spell.explosionOffset, Quaternion.identity, effectScale * spell.explosionScale);
+    }
+
+    private static bool IsLooping(GameObject go)
+    {
+        foreach (ParticleSystem ps in go.GetComponentsInChildren<ParticleSystem>(true))
+            if (ps.main.loop) return true;
+        return false;
     }
 
     // 차지형: 지팡이 끝에 이펙트가 붙어서 재생 → 한 번 끝나면 몹에게 데미지 (→ 쓰러짐)
@@ -177,7 +356,7 @@ public class SkillManager : MonoBehaviour
 
         // 지팡이 끝의 자식으로 생성 → 지팡이가 움직여도 따라다님
         Transform parent = wandTip != null ? wandTip : transform;
-        GameObject charge = Instantiate(spell.chargePrefab, origin, parent.rotation, parent);
+        GameObject charge = Instantiate(spell.chargePrefab, origin, parent.rotation, parent);   // 지팡이 끝(카메라 앞)이라 배율 적용 안 함
 
         // 연출 시간
         // - Effect Duration이 있으면: 그 시간 동안 (루프면 반복) 재생
@@ -234,7 +413,7 @@ public class SkillManager : MonoBehaviour
         // (선택) 몹 위치에 터지는 이펙트
         if (spell.explosionPrefab != null)
         {
-            EffectUtil.SpawnAndAutoDestroy(spell.explosionPrefab, target.AimPoint, Quaternion.identity);
+            EffectUtil.SpawnScaled(spell.explosionPrefab, target.AimPoint + spell.explosionOffset, Quaternion.identity, effectScale * spell.explosionScale);
         }
         target.TakeDamage(spell, power);
     }

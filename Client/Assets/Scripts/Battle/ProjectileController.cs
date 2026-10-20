@@ -79,9 +79,9 @@ public class ProjectileController : MonoBehaviour
         if (spell != null)
         {
             // 1. 투사체가 사라진 자리에 폭발 이펙트 (여기 한 곳에서만 생성)
-            float effectLength = EffectUtil.SpawnAndAutoDestroy(spell.explosionPrefab, transform.position,
-                                                                Quaternion.identity, spell.effectDuration,
-                                                                SkillManager.Instance);
+            float effectLength = EffectUtil.SpawnScaled(spell.explosionPrefab, transform.position + spell.explosionOffset,
+                                                        Quaternion.identity, SkillManager.EffectScale * spell.explosionScale,
+                                                        spell.effectDuration, SkillManager.Instance);
 
             // 2. 데미지 → (HP 0이면) 폭발과 함께 death 애니메이션
             enemy.ReceiveSpell(spell, spell.ResolveDamageDelay(effectLength), power);

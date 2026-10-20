@@ -12,14 +12,21 @@ public class BossSpell : MonoBehaviour
     private float damage;
     private string reason;
     private GameObject impactPrefab;
+    // 카메라 앞 폭발을 보여 주는 최대 시간 / 끝난 뒤 정리 시간 (BossController가 설정). 길게 남아 UI를 가리지 않게
+    public static float ImpactMaxTime = 1f;
+    public static float ImpactTail = 0.25f;
+    private float impactScale = 1f;
+    private float hitDistance = 0.6f;
     private float arcHeight;
     private float travel;      // 0 → 1
     private float distance;
     private Vector3 sideDir;
 
     // 발사
+    // impactScale: 닿을 때 터지는 폭발 크기 / hitDistance: 카메라 앞 몇 m에서 터질지 (너무 가까우면 화면을 가림)
     public static BossSpell Launch(GameObject visualPrefab, Vector3 from, Color color, float scale,
-                                   float speed, float damage, string reason, GameObject impactPrefab, float arcHeight = 0.8f)
+                                   float speed, float damage, string reason, GameObject impactPrefab,
+                                   float impactScale = 1f, float arcHeight = 0.8f, float hitDistance = 0.6f)
     {
         GameObject go = visualPrefab != null ? Instantiate(visualPrefab, from, Quaternion.identity) : CreateOrb(color);
         go.transform.position = from;
@@ -36,17 +43,19 @@ public class BossSpell : MonoBehaviour
         spell.damage = damage;
         spell.reason = reason;
         spell.impactPrefab = impactPrefab;
+        spell.impactScale = impactScale;
+        spell.hitDistance = Mathf.Max(0.3f, hitDistance);
         spell.arcHeight = arcHeight;
         spell.sideDir = Random.insideUnitSphere * 0.6f;
         return spell;
     }
 
     // 플레이어가 맞는 지점 (카메라 바로 앞, 살짝 아래)
-    private static Vector3 HitPoint()
+    private Vector3 HitPoint()
     {
         Camera cam = Camera.main;
         if (cam == null) return Vector3.zero;
-        return cam.transform.position + cam.transform.forward * 0.6f - cam.transform.up * 0.15f;
+        return cam.transform.position + cam.transform.forward * hitDistance - cam.transform.up * 0.15f;
     }
 
     private void Update()
@@ -74,7 +83,7 @@ public class BossSpell : MonoBehaviour
     {
         Done = true;
         if (PlayerHealth.Instance != null) PlayerHealth.Instance.TakeDamage(damage, reason);
-        if (impactPrefab != null) EffectUtil.SpawnAndAutoDestroy(impactPrefab, transform.position, Quaternion.identity);
+        if (impactPrefab != null) EffectUtil.SpawnCapped(impactPrefab, transform.position, Quaternion.identity, impactScale, ImpactMaxTime, ImpactTail);
         Vanish();
     }
 

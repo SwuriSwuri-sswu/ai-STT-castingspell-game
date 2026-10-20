@@ -7,7 +7,8 @@ public enum MagicElement { Normal, Water, Fire, Grass }
 // Projectile    : 지팡이 끝에서 투사체 발사 → 몹에 닿으면 폭발 이펙트
 // TargetInstant : 몹 위치에 장판/즉발 이펙트 바로 생성
 // WandCharge    : 지팡이 끝에 차지 이펙트가 머물렀다가, 한 번 끝나면 몹에게 데미지
-public enum CastType { Projectile, TargetInstant, WandCharge }
+// Beam          : 지팡이 끝에서 몹을 향해 뿜어져 나가는 빔·불기둥 (지팡이를 따라다니며 몹을 계속 겨눔)
+public enum CastType { Projectile, TargetInstant, WandCharge, Beam }
 
 [CreateAssetMenu(fileName = "NewSpell", menuName = "Magic/Spell Data")]
 public class SpellData : ScriptableObject
@@ -33,11 +34,13 @@ public class SpellData : ScriptableObject
     [Header("Cast")]
     public CastType castType = CastType.Projectile;
 
-    [Tooltip("폭발/장판 이펙트 연출 시간(초). 0이면 파티클 길이로 자동 계산합니다.")]
+    [Tooltip("폭발/장판/빔 이펙트 연출 시간(초).\n" +
+             "0 = 자동 (투사체·차지: 파티클 길이 / 장판·빔: SkillManager의 Area Effect Time, 기본 1.2초)\n" +
+             "장판·빔은 이 시간이 끝나는 순간 데미지 + 적중 폭발")]
     [Min(0f)] public float effectDuration = 0f;
 
     [Tooltip("이펙트가 시작된 뒤 데미지가 들어가기까지의 시간(초).\n" +
-             "-1 = 자동 (투사체형: 닿는 순간 / 즉발형·차지형: 이펙트가 끝날 때)")]
+             "-1 = 자동 (투사체형: 닿는 순간 / 장판·차지·빔: 이펙트가 끝날 때)")]
     public float damageDelay = -1f;
 
     [Header("Drop")]
@@ -50,14 +53,40 @@ public class SpellData : ScriptableObject
     [Tooltip("WandCharge 타입일 때 지팡이 끝에 머무를 차지 이펙트")]
     public GameObject chargePrefab;
     [Tooltip("Projectile: 적중 시 폭발 / TargetInstant: 몹 위치의 장판 이펙트\n" +
-             "WandCharge: (선택) 차지가 끝나는 순간 몹 위치에 터질 이펙트. 없으면 비워두기")]
+             "WandCharge: (선택) 차지가 끝나는 순간 몹 위치에 터질 이펙트. 없으면 비워두기\n" +
+             "Beam: (선택) 빔이 몹에 닿는 순간 몹 위치에 터질 이펙트")]
     public GameObject explosionPrefab;
+    [Tooltip("Explosion Prefab 크기 배율 (투사체 폭발 / 장판 / 차지·빔 끝 폭발). 에셋이 작으면 키우기\n" +
+             "플레이 중에 바꿔도 값이 남으니 몹을 보면서 맞추면 편함")]
+    [Min(0.01f)] public float explosionScale = 1f;
+    [Tooltip("Explosion Prefab 위치 보정 (m). 폭발이 너무 위에서 터지면 Y를 음수로 (예: -0.5)\n" +
+             "장판형은 장판 위치도 같이 움직임")]
+    public Vector3 explosionOffset = Vector3.zero;
+
+    [Header("Hit Explosion (데미지가 들어가는 순간)")]
+    [Tooltip("이 마법 전용 적중 폭발. 데미지가 들어가는 순간 몹 몸 중앙에서 터짐 (모든 타입 공통).\n" +
+             "장판만 있는 에셋은 여기에 폭발을 넣기. 비워 두면 추가 폭발 없음\n" +
+             "※ 투사체형은 Explosion Prefab이 이미 적중 폭발이라 보통 비워 둠")]
+    public GameObject impactPrefab;
+    [Tooltip("적중 폭발 크기 배율 (SkillManager의 Effect Scale에 곱함)")]
+    [Min(0.01f)] public float impactScale = 1f;
+    [Tooltip("적중 폭발 위치 보정 (m). 몹 몸 중앙 기준, 아래로 내리려면 Y를 음수로")]
+    public Vector3 impactOffset = Vector3.zero;
+
+    [Header("Beam (빔·불기둥)")]
+    [Tooltip("Beam 타입일 때 지팡이 끝에서 뿜어질 이펙트. 루프 이펙트면 Effect Duration 동안 뿜음 (0이면 1.5초)")]
+    public GameObject beamPrefab;
+    [Tooltip("에셋 원래 빔 길이(m). 몹까지 거리에 맞춰 이 길이를 늘이거나 줄임. 0 = 원래 길이 그대로")]
+    [Min(0f)] public float beamLength = 0f;
+    [Tooltip("빔이 몹 쪽으로 뻗지 않으면 돌려 주는 각도. 위(Y)로 뻗는 에셋이면 X 90, 옆(X)으로 뻗으면 Y -90 등")]
+    public Vector3 beamRotationOffset = Vector3.zero;
 
     // 실제로 적용될 데미지 지연 시간 계산
     public float ResolveDamageDelay(float effectLength)
     {
         if (damageDelay >= 0f) return damageDelay;
-        return castType == CastType.Projectile ? 0f : effectLength;
+        if (castType == CastType.Projectile) return 0f;
+        return effectLength;
     }
 
     // 실제로 적용될 드랍 가중치

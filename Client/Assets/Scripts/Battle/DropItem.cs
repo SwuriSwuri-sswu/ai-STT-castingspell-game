@@ -281,12 +281,13 @@ public class DropItem : MonoBehaviour
             bool isNew = SkillManager.Instance != null && SkillManager.Instance.UnlockSpell(spell);
             if (isNew && BattleUIManager.Instance != null)
             {
-                string name = spell.spellName;
+                // 스펠 이름 + 느낌표까지 같은 등급 색으로
+                string name = spell.spellName + "!";
                 if (colorSpellNameInNotice)
                 {
-                    name = $"<color=#{ColorUtility.ToHtmlStringRGB(GetTierColor())}>{spell.spellName}</color>";
+                    name = $"<color=#{ColorUtility.ToHtmlStringRGB(GetTierColor())}>{name}</color>";
                 }
-                BattleUIManager.Instance.ShowNotice($"New spell learned: {name}!");
+                BattleUIManager.Instance.ShowNotice($"New spell learned: {name}");
             }
         }
 

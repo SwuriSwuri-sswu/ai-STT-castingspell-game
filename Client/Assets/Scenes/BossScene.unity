@@ -2126,6 +2126,16 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 615b66af3165de84c8557331c467394a, type: 2}
   - {fileID: 11400000, guid: 93ad9741443dee247bd07a08989fa790, type: 2}
   - {fileID: 11400000, guid: ff251c8455a938e48925a4189ec0b80e, type: 2}
+  effectScale: 5
+  projectileScale: 1
+  projectileSpeedScale: 3
+  castKick: 1
+  castKickTime: 0.18
+  areaEffectTime: 1.2
+  areaEffectTail: 0.3
+  snapAreaToFloor: 1
+  areaFloorLift: 0.03
+  floorProbeHeight: 1
   instantSpawnHeightOffset: 0
   carryOverLearnedSpells: 1
 --- !u!1 &93692475
@@ -2778,6 +2788,8 @@ MonoBehaviour:
   headNod: 0.5
   stepsPerSecond: 3
   allowSkipEntrance: 1
+  wand: {fileID: 0}
+  lowerWandDuringZoom: 1
   zoomAtPoint: 2
   zoomFOV: 14
   zoomInTime: 1.4
@@ -2789,7 +2801,6 @@ MonoBehaviour:
   hideDuringIntro:
   - {fileID: 1164597918}
   - {fileID: 550901932}
-  - {fileID: 997847787}
   - {fileID: 1692415783}
   - {fileID: 178634330}
   - {fileID: 1874364583}
@@ -2809,16 +2820,18 @@ MonoBehaviour:
   entranceNotice: The Demon Lord of Silence has appeared!
   playerTurnTime: 10
   phase3TurnTime: 8
-  maxTurns: 30
+  maxTurns: 20
   castGraceTime: 4
-  afterHitDelay: 1
+  afterHitDelay: 0.5
+  bossTurnLead: 0.4
+  bossTurnTail: 0.3
   playerTurnText: Your turn!
   bossTurnText: Demon Lord's turn!
   playerTurnColor: {r: 1, g: 0.85, b: 0.3, a: 1}
   bossTurnColor: {r: 0.95, g: 0.25, b: 0.2, a: 1}
   waitHint: 
   castPrompt: {fileID: 1164597918}
-  turnBannerHold: 2
+  turnBannerHold: 1.2
   promptFadeTime: 0.25
   timeoutText: Time's up!
   chargeChance:
@@ -2833,20 +2846,22 @@ MonoBehaviour:
   chargeBreakNotice: You broke the Demon Lord's spell!
   chargeReleaseNotice: The charged magic explodes!
   minionPrefabs:
-  - {fileID: 4810158283756492896, guid: 0e4f835561f0412458f52d57681fb44c, type: 3}
   - {fileID: 4252839518874316634, guid: 9c2328b3a99ef7349827fd3e34f921fd, type: 3}
-  - {fileID: 5200099070597359893, guid: f060af89badf2404abd195c382b589d4, type: 3}
-  - {fileID: 5665961182751705397, guid: c3175e93d1c09dc4c9d0c4a30a0629df, type: 3}
+  - {fileID: 8958807036352146294, guid: d79ae3d6708238f4ba257081e324f937, type: 3}
+  - {fileID: 9103383723647574664, guid: df28bb2ce0fe8dd4dba306aff318bc27, type: 3}
   minionPoints:
   - {fileID: 1948110727}
   - {fileID: 1943518614}
   summonChance:
   - 0
+  - 0.25
   - 0.35
-  - 0.55
-  maxMinions: 000000000100000002000000
+  maxMinions: 000000000100000001000000
+  onlyWhenNoMinion: 1
+  summonCooldownTurns: 3
+  maxSummonsPerPhase: 2
   minionFuse: 12
-  minionDamage: 5
+  minionDamage: 7
   minionSpawnEffect: {fileID: 0}
   portalPrefab: {fileID: 4617036660772024948, guid: 52c7d057cba585641bb68312c10d7791, type: 3}
   portalBehind: 0.6
@@ -2859,6 +2874,21 @@ MonoBehaviour:
   portalLinger: 2
   portalCloseTime: 0.6
   summonNotice: A minion has been summoned! Defeat it first!
+  minionScale: 3
+  snapMinionToFloor: 1
+  portalFitMinion: 2
+  phaseCinematic: 1
+  phaseCamStart: {fileID: 230451451}
+  phaseCamByBossHeight: 1
+  phaseCamOffset: {x: 3.5, y: 2.5, z: 4.5}
+  phaseOrbitAngle: 40
+  phaseOrbitToRight: 1
+  phaseFOV: 40
+  phaseSlowMotion: 0.35
+  phaseCamMoveTime: 0.5
+  phaseHoldAfter: 0.4
+  hideUIDuringPhase: 1
+  wandLight: {fileID: 0}
   phaseHealRatio: 0.3
   minionKillHeal: 5
   weaknessHitHeal: 3
@@ -2866,6 +2896,8 @@ MonoBehaviour:
   stunStreak: 2
   stunNotice: The Demon Lord staggers! He'll skip his next turn!
   stunSkipNotice: The Demon Lord is still dazed...
+  stunRecoveredNotice: The Demon Lord is catching his breath... Your chance!
+  stunRecoveredTime: 1.5
   stunSkipTime: 1.5
   endingSceneName: EndingScene
   victoryNotice: You defeated the Demon Lord of Silence!
@@ -3167,7 +3199,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &166590491
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3846,6 +3878,156 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 187399891}
   m_CullTransparentMesh: 1
+--- !u!1 &193576666
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 193576667}
+  - component: {fileID: 193576669}
+  - component: {fileID: 193576668}
+  - component: {fileID: 193576670}
+  m_Layer: 0
+  m_Name: Wand Tip Point Light
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &193576667
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 193576666}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.203, y: -0, z: 0.244}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1972329562}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &193576668
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 193576666}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
+--- !u!108 &193576669
+Light:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 193576666}
+  m_Enabled: 1
+  serializedVersion: 12
+  m_Type: 2
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Intensity: 1
+  m_Range: 10
+  m_SpotAngle: 30
+  m_InnerSpotAngle: 21.80208
+  m_CookieSize2D: {x: 0.5, y: 0.5}
+  m_Shadows:
+    m_Type: 0
+    m_Resolution: -1
+    m_CustomResolution: -1
+    m_Strength: 1
+    m_Bias: 0.05
+    m_NormalBias: 0.4
+    m_NearPlane: 0.2
+    m_CullingMatrixOverride:
+      e00: 1
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 1
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 1
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 1
+    m_UseCullingMatrixOverride: 0
+  m_Cookie: {fileID: 0}
+  m_DrawHalo: 0
+  m_Flare: {fileID: 0}
+  m_RenderMode: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingLayerMask: 1
+  m_Lightmapping: 4
+  m_LightShadowCasterMode: 0
+  m_AreaSize: {x: 1, y: 1}
+  m_BounceIntensity: 1
+  m_ColorTemperature: 6570
+  m_UseColorTemperature: 0
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
+  m_ForceVisible: 0
+  m_ShadowRadius: 0
+  m_ShadowAngle: 0
+  m_LightUnit: 1
+  m_LuxAtDistance: 1
+  m_EnableSpotReflector: 1
+--- !u!114 &193576670
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 193576666}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d1b662a0cb7bca46917c052e2365c3e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WandTipLight
+  chantPulse: 0.15
+  chantSpeed: 2.5
+  chantFade: 0.2
+  pulseWhileWaiting: 1
+  flashIntensity: 4
+  flashRange: 2
+  flashRise: 0.06
+  flashFall: 0.45
+  colorReturn: 0.3
+  voiceSender: {fileID: 0}
 --- !u!1 &193871806
 GameObject:
   m_ObjectHideFlags: 0
@@ -4221,6 +4403,9 @@ MonoBehaviour:
   effectivenessDuration: 2
   killDuration: 2.5
   noticeDuration: 2
+  noticeTimePerChar: 0.05
+  noticeMaxDuration: 5
+  noticeMinTime: 1.6
   noticeFadeDuration: 0.5
 --- !u!1 &228099845
 GameObject:
@@ -4365,6 +4550,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 228505720}
   m_CullTransparentMesh: 1
+--- !u!1 &230451450
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 230451451}
+  m_Layer: 0
+  m_Name: PhaseCamStart
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &230451451
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 230451450}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.097867824, y: 0.4111144, z: 0.04444794, w: 0.90522444}
+  m_LocalPosition: {x: -3.3930182, y: 9.318128, z: -52.789726}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1588095795}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &244159864
 GameObject:
   m_ObjectHideFlags: 0
@@ -5211,8 +5427,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 266, y: 17}
+  m_AnchoredPosition: {x: 0.0031, y: 0}
+  m_SizeDelta: {x: 266.00623, y: 17}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &298319432
 MonoBehaviour:
@@ -6166,6 +6382,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
   maxHP: 100
   invulnerableTime: 0.5
+  hitShake: 1.5
+  hitShakeTime: 0.3
   endingSceneName: EndingScene
   slowMotionTime: 1.2
   slowMotionScale: 0.3
@@ -12188,6 +12406,19 @@ MonoBehaviour:
   recoverTime: 0.4
   aimAtTarget: 0.3
   strongCastScale: 1.4
+  walkSwing: 0.03
+  walkSwingAngle: -10
+  walkSwingLift: 0.01
+  walkBob: 0.02
+  walkSway: 0.02
+  walkRoll: 3
+  walkPitch: 4
+  walkLower: 0.03
+  lowerDistance: 0.5
+  lowerSpeed: 2.5
+  readyTime: 1.1
+  readyRaise: 0.06
+  readyTilt: 18
 --- !u!1 &832807901
 GameObject:
   m_ObjectHideFlags: 0
@@ -20701,6 +20932,7 @@ Transform:
   m_Children:
   - {fileID: 1689470517}
   - {fileID: 989813863}
+  - {fileID: 230451451}
   - {fileID: 1948110727}
   - {fileID: 1943518614}
   m_Father: {fileID: 1766166144}
@@ -21737,6 +21969,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Boss
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: ca0abbd715a91c84e96bc4accc672b66, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 65702495048144492, guid: ca0abbd715a91c84e96bc4accc672b66, type: 3}
@@ -21755,10 +21991,10 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ca0abbd715a91c84e96bc4accc672b66, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1689470521}
+      addedObject: {fileID: 1689470520}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ca0abbd715a91c84e96bc4accc672b66, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1689470520}
+      addedObject: {fileID: 1689470521}
   m_SourcePrefab: {fileID: 100100000, guid: ca0abbd715a91c84e96bc4accc672b66, type: 3}
 --- !u!4 &1689470517 stripped
 Transform:
@@ -21788,26 +22024,97 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossController
   bossName: Demon Lord of Silence
-  maxHP: 800
+  maxHP: 600
   phase2At: 0.66
   phase3At: 0.33
   phaseElements: 010000000200000003000000
   basicDamage:
-  - 6
-  - 8
   - 10
-  chargeDamage: 15
+  - 13
+  - 16
+  chargeDamage: 30
   castPoint: {fileID: 1601494555}
   castDelay: 0.6
-  spellSpeed: 14
-  spellPrefabs:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  impactPrefab: {fileID: 0}
-  spellScale: 1
-  chargeSpellScale: 2.2
+  spellSpeed: 22
+  spellScale: 1.8
+  chargeSpellScale: 3.5
+  attackMoves:
+  - clip: {fileID: -203655887218126122, guid: 6077c35072aa6b54287d296199860407, type: 3}
+    type: 0
+    castAt: 0.4
+    effectScale: 1
+    damageMultiplier: 1
+  - clip: {fileID: -203655887218126122, guid: c773f2d305491444a8b6f66f7e19f355, type: 3}
+    type: 0
+    castAt: 0.45
+    effectScale: 1
+    damageMultiplier: 1
+  - clip: {fileID: -203655887218126122, guid: 0d67c02bab90364418827fad3f30141a, type: 3}
+    type: 0
+    castAt: 0.4
+    effectScale: 1
+    damageMultiplier: 1
+  - clip: {fileID: -203655887218126122, guid: ab1286abdfab176469568b9e8230bdc1, type: 3}
+    type: 0
+    castAt: 0.4
+    effectScale: 1
+    damageMultiplier: 1
+  - clip: {fileID: -203655887218126122, guid: 8f636abcdc46b5e4fae75018b1ba969b, type: 3}
+    type: 0
+    castAt: 0.5
+    effectScale: 2
+    damageMultiplier: 1.3
+  - clip: {fileID: -203655887218126122, guid: 2910b7fc105f25c4189cdd954ffba562, type: 3}
+    type: 0
+    castAt: 0.5
+    effectScale: 2
+    damageMultiplier: 1.5
+  projectilePrefabs:
+  - {fileID: 1975959190090480, guid: eca000ab44c908d4dab395f654753038, type: 3}
+  - {fileID: 1900756431413560, guid: 529eb4216865eba419c1a4a68d0b0388, type: 3}
+  - {fileID: 7626139322179216226, guid: dc33e45a4bb28854c941caca0629dcce, type: 3}
+  - {fileID: 3473529909581181512, guid: bc142210df3ec4545a4e3e1f21e00da7, type: 3}
+  - {fileID: 3958596659431381315, guid: c50f9e2c685970e4c8ebcd5fc8c7b3e4, type: 3}
+  - {fileID: 2972392977303283589, guid: 11c9a5d587e034e43a68d4ebfb901206, type: 3}
+  - {fileID: 9027514048236820045, guid: effb650189dc5714e9e9801b1cfb3991, type: 3}
+  - {fileID: 8764043878647920493, guid: c4ed38c72957f2241ad144a1614956d9, type: 3}
+  - {fileID: 1206498299807332555, guid: af6c1e3f046eecd4d81330aeb285600f, type: 3}
+  - {fileID: 5824670795371433373, guid: f6fd568b816c64943a44efc3add3a881, type: 3}
+  explosionPrefabs:
+  - {fileID: 1141330259687333427, guid: 6718dc24203da53468af9ada8fef7d6d, type: 3}
+  - {fileID: 2433282508537954060, guid: 3ef3ae421f71c5c4e97fe12dc2fc6312, type: 3}
+  - {fileID: 725748389856807714, guid: 4bda94453d2ca7444a0fff05b2d425f5, type: 3}
+  - {fileID: 8194992990867289339, guid: 99bc28c0d45f51c4fbac01080b73edc7, type: 3}
+  - {fileID: 2504214343621411470, guid: 3ed0d324122d7b24eaec75c55c74aafc, type: 3}
+  - {fileID: 5112403345868107898, guid: 6f34ef0d986e9db4199cf75805f79753, type: 3}
+  - {fileID: 4021103657954561961, guid: 5c755f9bc5253ea418e919994537dcc7, type: 3}
+  - {fileID: 8205706795460263314, guid: 326e86d5729c54e479798cacab220bb2, type: 3}
+  groundPrefabs:
+  - {fileID: 5557362394125619005, guid: 43ca6b4775bfb1e45b1bfcce5303970b, type: 3}
+  - {fileID: 389821699222927281, guid: 856f1f18fb8861d4499813c38a5963ae, type: 3}
+  - {fileID: 7640970267051462298, guid: ae9bdcaa1a8496449b1068fd7844906c, type: 3}
+  - {fileID: 5793841387165916247, guid: 8a474c5401202784ab11371270ef4e33, type: 3}
+  - {fileID: 7607841488155974854, guid: ba3421ba5a7c1654cbf175aa232f24b8, type: 3}
+  - {fileID: 5557362394125619005, guid: 43ca6b4775bfb1e45b1bfcce5303970b, type: 3}
+  - {fileID: 7305185502956871417, guid: 85b062a5517cf8345bb6784ffbed4877, type: 3}
+  - {fileID: 8974203713140315807, guid: 709b0bd6b0b625249a98409dd7a87343, type: 3}
+  - {fileID: 7478731271839673279, guid: 4d3c8045dd8857a4b8d34c2361c61045, type: 3}
+  impactDistance: 1.6
+  castLight: {fileID: 729627323}
+  flashIntensity: 60
+  flashTime: 0.45
+  flashElementColor: 1
+  groundForward: 1.5
+  groundScale: 1
+  groundHitDelay: 0.35
+  groundExplosion: 1
+  groundExplosionHeight: 0.6
+  explosionMaxTime: 0.9
+  explosionTail: 0.25
+  groundEffectTime: 1.4
+  groundEffectTail: 0.3
+  chargeAttackType: 1
+  chargeEffectScale: 2.2
   staff: {fileID: 1724791778}
   staffAppearTime: 0.5
   staffAppearEffect: {fileID: 0}
@@ -21817,7 +22124,7 @@ MonoBehaviour:
   descendHover: 0.6
   descendClip: {fileID: 0}
   descendEffect: {fileID: 0}
-  chargePrefab: {fileID: 0}
+  chargePrefab: {fileID: 6441873369525384307, guid: 0f3d407feb92ebb49b98d0157de5008a, type: 3}
   chargeOrbSize: 0.9
   chargeHoldAt: 0.3
   chargeSlamAt: 0.75
@@ -21827,6 +22134,27 @@ MonoBehaviour:
   auraLight: {fileID: 2003727890}
   auraIntensity: 60
   auraParticles: []
+  waterCircle: {fileID: 1902839626373450777, guid: 377bd8e4df08cc444b8742609e5ebd73, type: 3}
+  fireCircle: {fileID: 6758447331484896283, guid: ab0346cd416646f439e9ec41b9f7be2d, type: 3}
+  grassCircle: {fileID: 7568505782868795063, guid: fc9179e31f338a34580c281aec328cc9, type: 3}
+  normalCircle: {fileID: 0}
+  circleOffset: {x: 0, y: 0.03, z: 0}
+  circleRotation: {x: 0, y: 0, z: 0}
+  circleScale: 5
+  circleForceLoop: 1
+  circleAfterDescend: 1
+  circleFollowHips: 1
+  waterPowerUpEffect: {fileID: 5717103110030015095, guid: 1f4f833dbe7d4ce4ab1913c9a31373fb, type: 3}
+  firePowerUpEffect: {fileID: 5908431506929731288, guid: 683762a4f07bd6d41932c9faa48f879a, type: 3}
+  grassPowerUpEffect: {fileID: 7843393377963387401, guid: d7b2f9e58518cc44d818f77d4473811d, type: 3}
+  powerUpEffect: {fileID: 0}
+  powerUpEffectScale: 9
+  hideCircleDuringPowerUp: 1
+  circlePopScale: 1.6
+  circlePopTime: 0.7
+  tintPowerUpEffect: 0
+  chargeBreath: 0.04
+  chargeBreathSpeed: 1.3
   idleClip: {fileID: -203655887218126122, guid: b49f84e8dbb63f44d8ca4588e27f186f, type: 3}
   sitClip: {fileID: -203655887218126122, guid: 82571737274aeb241ae179ec40582fe3, type: 3}
   standUpClip: {fileID: -203655887218126122, guid: 3cdff9c711fb7904a9c99ad42d67d049, type: 3}
@@ -21836,7 +22164,7 @@ MonoBehaviour:
   - {fileID: -203655887218126122, guid: 0d67c02bab90364418827fad3f30141a, type: 3}
   - {fileID: -203655887218126122, guid: ab1286abdfab176469568b9e8230bdc1, type: 3}
   - {fileID: -203655887218126122, guid: 8e32e042a0068b648ac479476b27f921, type: 3}
-  doubleAttackClip: {fileID: -203655887218126122, guid: 8f636abcdc46b5e4fae75018b1ba969b, type: 3}
+  doubleAttackClip: {fileID: 0}
   chargeClip: {fileID: -203655887218126122, guid: 9e49d33625cb0104b8b5433ac0d69f38, type: 3}
   chargeReleaseClip: {fileID: 0}
   summonClip: {fileID: -203655887218126122, guid: 542f6c574c1c296468b58943c4e70d34, type: 3}
@@ -21847,9 +22175,26 @@ MonoBehaviour:
   hitBigClip: {fileID: -203655887218126122, guid: 15f878c7a22b71348a9307bf96421cdc, type: 3}
   deathClip: {fileID: -203655887218126122, guid: 611c36b09a6014e4bbcd70c33b6aaf02, type: 3}
   crossFade: 0.2
-  stunIdleClip: {fileID: -203655887218126122, guid: fb711f563c988a740a311b44354b489d, type: 3}
+  actionSpeed: 1.4
+  returnToIdleFade: 0.35
+  hitRootMotion: 1
+  maxDrift: 1.5
+  driftReturnSpeed: 0.35
+  stunEnterClip: {fileID: -203655887218126122, guid: 7308b87408ceb0447b4422c5ed0c9786, type: 3}
+  hitBigBlendAt: 0.8
+  stunEnterFade: 0.3
+  stunIdleFade: 0.3
+  stunIdleClip: {fileID: 0}
+  stunHoldTime: 2.5
+  stunAutoRecover: 1
   stunRecoverClip: {fileID: -203655887218126122, guid: d6434affb4e7a524abf6c74f28e210bf, type: 3}
-  stunEffectPrefab: {fileID: 0}
+  stunEffectPrefab: {fileID: 6703250321131892297, guid: 2b987d41506d172419fa18578f6ac380, type: 3}
+  stunEffectScale: 2
+  stunEffectRotation: {x: 30, y: 0, z: 0}
+  stunEffectLoop: 1
+  stunEffectSpeed: 0.5
+  starsWithEffect: 1
+  starsScaleWithBoss: 1
   starHeight: 0.35
   starRadius: 0.35
   starCount: 4
@@ -22953,7 +23298,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 824799259}
-  - {fileID: 1983206314}
   m_Father: {fileID: 2049233460}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1738896867
@@ -25190,7 +25534,7 @@ Camera:
     serializedVersion: 2
     m_Bits: 64
   m_RenderingPath: -1
-  m_TargetTexture: {fileID: 0}
+  m_TargetTexture: {fileID: 8400000, guid: 89e810c9ddf53f249bad9462fba82d60, type: 2}
   m_TargetDisplay: 0
   m_TargetEye: 3
   m_HDR: 1
@@ -26296,7 +26640,7 @@ Transform:
   m_GameObject: {fileID: 1943518613}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 42.4, y: 22.9, z: -30.98}
+  m_LocalPosition: {x: 42.4, y: 12.96, z: -30.98}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -26454,7 +26798,7 @@ Transform:
   m_GameObject: {fileID: 1948110726}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 22.9, z: -30.98}
+  m_LocalPosition: {x: 0, y: 12.96, z: -30.98}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -27041,7 +27385,9 @@ Transform:
   m_LocalPosition: {x: 0.20720005, y: 1.1915001, z: -1.468399}
   m_LocalScale: {x: 0.16031, y: 0.16031, z: 0.16031}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 193576667}
+  - {fileID: 1983206314}
   m_Father: {fileID: 824799259}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1983206313
@@ -27070,12 +27416,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1983206313}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.37, y: 0.08, z: 1.04}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: 0.0028146245, y: 0.98895466, z: 0.14769974, w: 0.012065194}
+  m_LocalPosition: {x: 3.4967656, y: 0.0629881, z: 9.550586}
+  m_LocalScale: {x: 6.2379117, y: 6.237914, z: 6.237913}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1738896866}
+  m_Father: {fileID: 1972329562}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1983206315
 MonoBehaviour:
