@@ -161,6 +161,7 @@ public class VoiceRecorder : MonoBehaviour
 
     void OnStarted()
     {
+        SoundManager.Play(L => L.chantStart, 1f, 1f, false);   // [사운드] 영창 시작
         StopSequence();
         lastPartialSeq = 0;
         lastPartialText = null;
@@ -284,6 +285,7 @@ public class VoiceRecorder : MonoBehaviour
     IEnumerator SuccessSequence(string spellName, ChantResult chant)
     {
         castPending = true;
+        SoundManager.Play(L => L.castSuccess, 1f, 1f, false);   // [사운드] 판정 성공 '띠링'
 
         if (subtitleText != null)
         {
@@ -312,6 +314,7 @@ public class VoiceRecorder : MonoBehaviour
         {
             castPending = false;
             Debug.Log($"[자막] 시전 실패: {fail} ({spellName})");
+            SoundManager.Play(L => L.castFail, 1f, 1f, false);   // [사운드] 시전 실패
             Show(Gray(CastFailToMessage(fail, spellName)));
             yield return new WaitForSeconds(failHoldSec);
             ShowHint();
@@ -342,6 +345,7 @@ public class VoiceRecorder : MonoBehaviour
     {
         StopSequence();
         if (string.IsNullOrEmpty(message)) { ShowHint(); return; }
+        SoundManager.Play(L => L.castFail, 1f, 1f, false);   // [사운드] 불발
         sequence = StartCoroutine(FailureSequence(message, heardText));
     }
 

@@ -60,7 +60,7 @@ public class BattleUIManager : MonoBehaviour
         if (multiplier >= 1.5f)
             message = "<color=#FF5555>It's super effective!</color>";   // 빨간색 계열
         else if (multiplier <= 0.5f)
-            message = "<color=#AAAAAA>It's not very effective...</color>"; // 회색 계열
+            message = "<color=#C8C8C8>It's not very effective...</color>"; // 밝은 회색 (흰색보다 옅게, 잘 보이게)
         else
             message = "<color=#FFFFFF>It's effective.</color>";      // 흰색
 

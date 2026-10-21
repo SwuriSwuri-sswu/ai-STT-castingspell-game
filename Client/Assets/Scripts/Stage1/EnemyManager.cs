@@ -234,6 +234,7 @@ public class EnemyManager : MonoBehaviour
             BattleUIManager.Instance.ShowKill(BuildAppearText(CurrentEnemy, isNew));
         }
         OnEnemySpawned?.Invoke(CurrentEnemy);
+        SoundManager.Play(L => L.monsterAppear);
 
         Vector3 lookAt = lookTarget != null ? lookTarget.position : spawnPoint.position + spawnPoint.forward;
         if (hasApproach) CurrentEnemy.BeginApproach(waypoints, lookAt, approachSpeedMultiplier);

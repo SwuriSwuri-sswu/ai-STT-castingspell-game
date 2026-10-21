@@ -259,6 +259,10 @@ public class IntroSequence : MonoBehaviour
                     audioSource.pitch = Random.Range(0.92f, 1.08f);
                     audioSource.PlayOneShot(typeSound, typeSoundVolume);
                 }
+                else if (typeSound == null && !char.IsWhiteSpace(c))
+                {
+                    SoundManager.Typing();   // Type Sound가 비어 있으면 SoundLibrary의 타이핑 소리 (겹치지 않고, 쉬는 곳에서 멈춤)
+                }
 
                 timer += interval;
                 if (c == '.' || c == '!' || c == '?' || c == ',' || c == '\n') timer += punctuationPause;

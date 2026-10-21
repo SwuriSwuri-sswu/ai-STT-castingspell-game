@@ -84,6 +84,7 @@ public class BossSpell : MonoBehaviour
         Done = true;
         if (PlayerHealth.Instance != null) PlayerHealth.Instance.TakeDamage(damage, reason);
         if (impactPrefab != null) EffectUtil.SpawnCapped(impactPrefab, transform.position, Quaternion.identity, impactScale, ImpactMaxTime, ImpactTail);
+        SoundManager.PlayAny(L => L.bossExplosions);
         Vanish();
     }
 

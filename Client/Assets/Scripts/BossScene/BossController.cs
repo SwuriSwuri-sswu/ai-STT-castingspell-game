@@ -643,6 +643,7 @@ public class BossController : MonoBehaviour
         CancelCharge();
         yield return WaitHitSettled();   // 맞고 휘청이는 중이면 자세가 돌아온 뒤 시작 (마법진·아우라가 어긋나지 않게)
         bool hadCircle = circleAllowed;
+        SoundManager.Play(L => L.bossPowerUp, 1f, 1f, false);
         if (hideCircleDuringPowerUp) ShowCircle(false);   // 예전 속성 마법진은 서서히 꺼짐
         float length = PlayLength(powerUpClip, 1.6f);
         yield return new WaitForSeconds(Mathf.Min(length * 0.5f, 1.2f));
@@ -819,6 +820,7 @@ public class BossController : MonoBehaviour
     // 투사체: 지팡이 끝 → 카메라 앞에서 폭발 (투사체·폭발 모두 목록에서 랜덤)
     private BossSpell FireProjectile(float damage, float visualScale, float impactScale, float arc = 0.8f)
     {
+        SoundManager.Play(L => L.bossShoot);
         return BossSpell.Launch(PickRandom(projectilePrefabs), CastPosition, CurrentColor, visualScale, spellSpeed, damage,
                                 AttackReason, PickRandom(explosionPrefabs), impactScale, arc, impactDistance);
     }
@@ -842,6 +844,7 @@ public class BossController : MonoBehaviour
             area = Instantiate(prefab, ground, rot);
             EffectUtil.Scale(area, groundScale * scale);
         }
+        SoundManager.Play(L => L.bossGround);
         float shown = 0f;
         yield return new WaitForSeconds(groundHitDelay);
         shown += groundHitDelay;
@@ -850,6 +853,7 @@ public class BossController : MonoBehaviour
         {
             GameObject boom = PickRandom(explosionPrefabs);
             if (boom != null) EffectUtil.SpawnScaled(boom, ground + Vector3.up * groundExplosionHeight, Quaternion.identity, groundScale * scale);
+            SoundManager.PlayAny(L => L.bossExplosions);
         }
         if (PlayerHealth.Instance != null) PlayerHealth.Instance.TakeDamage(damage, AttackReason);
 
@@ -917,6 +921,7 @@ public class BossController : MonoBehaviour
         IsCharging = true;
         chargeHeld = false;
         Play(chargeClip);
+        SoundManager.Play(L => L.bossCharge);
         Vector3 at = CastPosition;
         if (chargePrefab != null)
         {
@@ -1061,6 +1066,7 @@ public class BossController : MonoBehaviour
     private IEnumerator StunRoutine()
     {
         ShowStars(true);
+        SoundManager.Play(L => L.bossStun);
         if (hitBigClip != null)
         {
             // 상성 피격으로 이미 Hit_Big이 나오고 있으면 이어서, 아니면 새로 재생
@@ -1323,6 +1329,7 @@ public class BossController : MonoBehaviour
         IsCharging = false;
         if (auraLight != null) StartCoroutine(FadeAura());
         ShowCircle(false);
+        SoundManager.Play(L => L.bossDie, 1f, 1f, false);
         if (deathClip != null)
         {
             Play(deathClip, 0.15f);

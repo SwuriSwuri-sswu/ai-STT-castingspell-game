@@ -34,6 +34,8 @@ public class BossBattleDirector : MonoBehaviour
     public float headNod = 0.5f;
     [Tooltip("1초에 걷는 걸음 수")]
     public float stepsPerSecond = 1.7f;
+    [Tooltip("걸을 때 발소리 크기 (소리는 SoundLibrary의 Footsteps)")]
+    [Range(0f, 1f)] public float footstepVolume = 0.6f;
     [Tooltip("Esc로 입장 연출 건너뛰기")]
     public bool allowSkipEntrance = true;
 
@@ -189,6 +191,18 @@ public class BossBattleDirector : MonoBehaviour
     public float phaseCamMoveTime = 0.5f;
     [Tooltip("파워업 동작이 끝난 뒤 그 자리에서 조금 더 보여 주는 시간 (실제 초)")]
     public float phaseHoldAfter = 0.4f;
+
+    [Header("마왕 쓰러짐 연출 (페이즈 전환과 같은 카메라 자리·도는 방향)")]
+    [Tooltip("마왕이 쓰러질 때 카메라가 옆으로 옮겨 가 슬로 모션으로 돌며 보여 줌")]
+    public bool deathCinematic = true;
+    [Tooltip("쓰러질 때 슬로 모션 속도 (0.35 = 35% 속도)")]
+    [Range(0.05f, 1f)] public float deathSlowMotion = 0.35f;
+    [Tooltip("슬로 모션을 유지하는 시간 (실제 초). 지나면 원래 속도로 마저 쓰러짐")]
+    public float deathSlowTime = 2.5f;
+    [Tooltip("카메라가 끝까지 도는 데 걸리는 시간 (실제 초)")]
+    public float deathOrbitTime = 5f;
+    [Tooltip("다 쓰러진 뒤 엔딩으로 넘어가기 전까지 보여 주는 시간 (실제 초)")]
+    public float deathHoldAfter = 1.5f;
     [Tooltip("연출 동안 UI 가리기 (Hide During Intro 목록 + 마왕 체력바). 알림 자막은 그대로 보임")]
     public bool hideUIDuringPhase = true;
 
@@ -416,6 +430,7 @@ public class BossBattleDirector : MonoBehaviour
             Transform ct = cam.transform;
             float stepPhase = 0f;    // 한 걸음 = π
             float walkBlend = 0f;    // 출발·정지 때 흔들림을 부드럽게 키우고 줄임
+            int lastStep = 0;        // 발소리용 걸음 수
             Quaternion baseRot = ct.rotation;
             Vector3 flatPos = ct.position;   // 흔들림을 뺀 실제 걷는 위치
             for (int i = 0; i < entrancePath.Length; i++)
@@ -429,6 +444,12 @@ public class BossBattleDirector : MonoBehaviour
                     flatPos = Vector3.MoveTowards(flatPos, target, walkSpeed * Time.deltaTime);
                     walkBlend = Mathf.MoveTowards(walkBlend, 1f, Time.deltaTime * 1.5f);
                     stepPhase += Time.deltaTime * stepsPerSecond * Mathf.PI;
+                    int step = Mathf.FloorToInt(stepPhase / Mathf.PI);
+                    if (step != lastStep)
+                    {
+                        lastStep = step;
+                        if (walkBlend > 0.3f) SoundManager.PlayAny(L => L.footsteps, footstepVolume);   // 한 걸음마다 발소리
+                    }
 
                     Vector3 dir = target - flatPos;
                     dir.y = 0f;
@@ -484,7 +505,7 @@ public class BossBattleDirector : MonoBehaviour
         }
 
         // 마왕이 일어나며 이름 + 체력바 등장 (지팡이를 치켜들며 전투 준비)
-        if (wand != null) { wand.SetWalk(0f, 0f); wand.SetLowered(false); wand.PlayReady(); }
+        if (wand != null) { wand.SetWalk(0f, 0f); wand.SetLowered(false); }
         yield return boss.DoStandUp();
         if (boss.HasBattlePoint) yield return DescendWithCamera();
         boss.ShowCircle(true);   // 발밑 마법진 (이미 켜져 있으면 그대로)
@@ -497,6 +518,7 @@ public class BossBattleDirector : MonoBehaviour
 
         // UI 등장 → 전투 시작 (지팡이 빛도 켜짐)
         if (wandLight != null) wandLight.SetOn(true, 0.6f);
+        SoundManager.PlayBgm(L => L.bgmBoss);   // 입장 BGM → 보스전 BGM
         yield return RestoreUI(uiFadeInTime);
     }
 
@@ -710,6 +732,7 @@ public class BossBattleDirector : MonoBehaviour
         if (hud != null)
         {
             hud.ShowBanner(playerTurnText, playerTurnColor);
+            SoundManager.Play(L => L.turnPlayer, 1f, 1f, false);
             hud.SetTimer(total, total);
         }
         if (turnBannerHold > 0f) yield return new WaitForSeconds(turnBannerHold);
@@ -813,6 +836,7 @@ public class BossBattleDirector : MonoBehaviour
             if (boss.IsCharging)
             {
                 boss.CancelCharge();
+                SoundManager.Play(L => L.bossChargeBreak);
                 Notice(chargeBreakNotice);
             }
             else if (stunOnWeaknessStreak && weaknessStreak >= stunStreak && !BossDown && !stunned)
@@ -836,6 +860,7 @@ public class BossBattleDirector : MonoBehaviour
     private IEnumerator BossTurn()
     {
         if (hud != null) hud.ShowBanner(bossTurnText, bossTurnColor);
+        SoundManager.Play(L => L.turnBoss, 1f, 1f, false);
         yield return new WaitForSeconds(bossTurnLead);
 
         int i = boss.Phase - 1;
@@ -879,6 +904,7 @@ public class BossBattleDirector : MonoBehaviour
         MagicElement next = boss.phaseElements != null && boss.phaseElements.Length >= newPhase ? boss.phaseElements[newPhase - 1] : boss.Element;
         string hex = ColorUtility.ToHtmlStringRGB(BossController.ElementColorOf(next));
         Notice($"The Demon Lord takes on the power of <color=#{hex}>{EnemyController.ElementName(next)}</color>!");
+        if (newPhase >= 3) SoundManager.PlayBgm(L => L.bgmBossPhase3 != null ? L.bgmBossPhase3 : L.bgmBoss, 2f);   // 마지막 페이즈 BGM
         if (phaseCinematic && Camera.main != null)
         {
             yield return PhaseCinematic(newPhase);
@@ -911,12 +937,80 @@ public class BossBattleDirector : MonoBehaviour
         SetZoomHidden(true);   // 지팡이 내리기 (줌인 때와 같은 처리)
         if (hideUIDuringPhase) StartCoroutine(FadeOutUI(phaseCamMoveTime, true));
 
+        OrbitSetup(savedPos, out Vector3 feet, out Vector3 startOffset, out float sign);
+
+        System.Func<Vector3> Look = () => boss.Enemy.AimPoint;
+        System.Func<float, Vector3> OrbitPos = k => feet + Quaternion.AngleAxis(sign * phaseOrbitAngle * k, Vector3.up) * startOffset;
+        yield return PhaseCinematicBody(cam, ct, savedPos, savedRot, savedFOV, newPhase, Look, OrbitPos);
+    }
+
+    // 마왕 쓰러짐: 페이즈 전환과 같은 자리로 카메라 이동 → 슬로 모션으로 쓰러지는 동안 천천히 돎 → (그대로 엔딩으로 페이드)
+    private IEnumerator DeathCinematic()
+    {
+        Camera cam = Camera.main;
+        Transform ct = cam.transform;
+        Vector3 savedPos = ct.position;
+        Quaternion savedRot = ct.rotation;
+        float savedFOV = cam.fieldOfView;
+        SetZoomHidden(true);
+        StartCoroutine(FadeOutUI(phaseCamMoveTime, true));   // 체력바·영창 자막 등 가리기 (알림 자막은 그대로)
+
+        OrbitSetup(savedPos, out Vector3 feet, out Vector3 startOffset, out float sign);
+        // 바라보는 곳: 처음엔 몸 가운데 → 쓰러지면서 바닥 쪽으로 천천히 내려감
+        Vector3 aimStart = boss.Enemy.AimPoint;
+        Vector3 aimEnd = feet + Vector3.up * boss.BodyHeight * 0.25f;
+        float progress = 0f;
+        System.Func<Vector3> Look = () => Vector3.Lerp(aimStart, aimEnd, progress);
+        System.Func<float, Vector3> OrbitPos = k => feet + Quaternion.AngleAxis(sign * phaseOrbitAngle * k, Vector3.up) * startOffset;
+
+        // 1. 옆으로 이동 (이동하는 동안 이미 슬로 모션)
+        Time.timeScale = deathSlowMotion;
+        slowMoActive = true;
+        bool done = false;
+        StartCoroutine(RunThen(boss.DoDeath(), () => done = true));
+        float elapsed = 0f;
+        for (float t = 0f; t < phaseCamMoveTime; t += Time.unscaledDeltaTime)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float k = Mathf.SmoothStep(0f, 1f, t / phaseCamMoveTime);
+            ct.position = Vector3.Lerp(savedPos, OrbitPos(0f), k);
+            ct.rotation = Quaternion.Slerp(savedRot, Quaternion.LookRotation(Look() - ct.position), k);
+            cam.fieldOfView = Mathf.Lerp(savedFOV, phaseFOV, k);
+            yield return null;
+        }
+
+        // 2. 쓰러지는 동안 천천히 돎 (Death Slow Time이 지나면 원래 속도)
+        float orbit = 0f;
+        float holdLeft = deathHoldAfter;
+        while ((!done || holdLeft > 0f) && orbit < 30f)
+        {
+            float dt = Time.unscaledDeltaTime;
+            elapsed += dt;
+            orbit += dt;
+            if (slowMoActive && elapsed >= deathSlowTime)
+            {
+                Time.timeScale = 1f;
+                slowMoActive = false;
+            }
+            if (done) holdLeft -= dt;
+            float k = Mathf.Clamp01(orbit / Mathf.Max(0.5f, deathOrbitTime));
+            progress = Mathf.SmoothStep(0f, 1f, k);
+            ct.position = OrbitPos(progress);
+            ct.rotation = Quaternion.LookRotation(Look() - ct.position);
+            yield return null;
+        }
+        Time.timeScale = 1f;
+        slowMoActive = false;
+    }
+
+    // 페이즈 전환·마왕 쓰러짐 연출이 같이 쓰는 카메라 자리 (Phase Cam Start 또는 Phase Cam Offset 기준)
+    private void OrbitSetup(Vector3 savedPos, out Vector3 feet, out Vector3 startOffset, out float sign)
+    {
         // 기준 방향: 원래 카메라의 오른쪽 / 마왕 → 플레이어 방향
-        Vector3 feet = boss.transform.position;
+        feet = boss.transform.position;
         Vector3 toPlayer = savedPos - feet; toPlayer.y = 0f;
         toPlayer = toPlayer.sqrMagnitude > 0.01f ? toPlayer.normalized : boss.transform.forward;
         Vector3 right = Vector3.Cross(toPlayer, Vector3.up);   // 플레이어가 마왕을 볼 때의 오른쪽
-        Vector3 startOffset;
         if (phaseCamStart != null)
         {
             startOffset = phaseCamStart.position - feet;   // Scene 뷰에서 잡아 둔 자리 그대로
@@ -931,11 +1025,13 @@ public class BossBattleDirector : MonoBehaviour
         Vector3 look = boss.Enemy.AimPoint - startPos; look.y = 0f;
         Vector3 camRight = look.sqrMagnitude > 0.001f ? Vector3.Cross(Vector3.up, look.normalized) : right;
         Vector3 testA = Quaternion.AngleAxis(10f, Vector3.up) * startOffset;
-        float sign = Vector3.Dot(testA - startOffset, camRight) < 0f ? 1f : -1f;
+        sign = Vector3.Dot(testA - startOffset, camRight) < 0f ? 1f : -1f;
         if (phaseOrbitToRight) sign = -sign;
+    }
 
-        System.Func<Vector3> Look = () => boss.Enemy.AimPoint;
-        System.Func<float, Vector3> OrbitPos = k => feet + Quaternion.AngleAxis(sign * phaseOrbitAngle * k, Vector3.up) * startOffset;
+    private IEnumerator PhaseCinematicBody(Camera cam, Transform ct, Vector3 savedPos, Quaternion savedRot, float savedFOV, int newPhase,
+                                           System.Func<Vector3> Look, System.Func<float, Vector3> OrbitPos)
+    {
 
         // 1. 옆으로 이동
         for (float t = 0f; t < phaseCamMoveTime; t += Time.unscaledDeltaTime)
@@ -1047,6 +1143,13 @@ public class BossBattleDirector : MonoBehaviour
         StartCoroutine(PhaseCinematic(Mathf.Min(3, boss.Phase + 1)));
     }
 
+    [ContextMenu("테스트: 마왕 쓰러짐 연출 → 엔딩 (플레이 중)")]
+    private void TestDeath()
+    {
+        if (!Application.isPlaying || boss == null) return;
+        HandleBossDied(boss.Enemy);   // 쓰러짐 연출 → 결과 기록 → EndingScene
+    }
+
     private IEnumerator SummonMinion()
     {
         yield return boss.DoSummon();
@@ -1075,6 +1178,7 @@ public class BossBattleDirector : MonoBehaviour
         {
             Quaternion portalRot = Quaternion.LookRotation(-back) * Quaternion.Euler(portalRotation);
             portal = Instantiate(portalPrefab, portalPos, portalRot);
+            SoundManager.Play(L => L.minionPortal, 1f, 1f, true, 0.5f);   // 여러 마리를 한꺼번에 불러도 한 번만
             // 파티클도 오브젝트 크기를 따라 작아지게
             foreach (ParticleSystem ps in portal.GetComponentsInChildren<ParticleSystem>())
             {
@@ -1288,13 +1392,20 @@ public class BossBattleDirector : MonoBehaviour
         foreach (BossSpell sp in FindObjectsByType<BossSpell>(FindObjectsSortMode.None)) sp.Cancel();   // 날아오던 마왕 마법 지우기
         ClearMinions();
         Notice(victoryNotice);
-        StartCoroutine(boss.DoDeath());
+        SoundManager.StopBgm(2.5f);   // 엔딩씬에서 Victory 팡파레 → 엔딩 BGM
 
-        // 슬로모션
-        Time.timeScale = 0.35f;
-        yield return new WaitForSecondsRealtime(1.4f);
-        Time.timeScale = 1f;
-        yield return new WaitForSeconds(2f);
+        if (deathCinematic && Camera.main != null)
+        {
+            yield return DeathCinematic();   // 페이즈 전환과 같은 구도 + 슬로 모션으로 쓰러짐
+        }
+        else
+        {
+            StartCoroutine(boss.DoDeath());
+            Time.timeScale = 0.35f;
+            yield return new WaitForSecondsRealtime(1.4f);
+            Time.timeScale = 1f;
+            yield return new WaitForSeconds(2f);
+        }
 
         StageProgress.MarkBossCleared();
         RecordResult(true);
@@ -1311,6 +1422,7 @@ public class BossBattleDirector : MonoBehaviour
         Block("");
         ClearMinions();
         Notice(turnOutNotice);
+        SoundManager.StopBgm(2f);
         yield return new WaitForSeconds(2.5f);
         RecordResult(false);
         if (GameOverSequence.Instance != null)

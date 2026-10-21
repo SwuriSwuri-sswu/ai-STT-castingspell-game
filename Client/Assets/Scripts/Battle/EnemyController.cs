@@ -643,6 +643,7 @@ public class EnemyController : MonoBehaviour
         {
             BattleUIManager.Instance.ShowEffectiveness(multiplier);
         }
+        SoundManager.PlayEffectiveness(multiplier);   // 효과가 굉장했다 / 별로였다
 
         // ※ 투사체·차지·빔의 폭발은 ProjectileController / SkillManager에서 생성.
         //   주문마다 지정한 '적중 폭발'(SpellData.Impact Prefab)은 여기서 데미지가 들어가는 순간 터뜨림
@@ -652,6 +653,9 @@ public class EnemyController : MonoBehaviour
         attackTimer = Mathf.Max(0f, attackTimer - hitStagger);
 
         // 4. 사망 판정
+        bool isBoss = GetComponent<BossController>() != null;
+        if (CurrentHP > 0f || isBoss)
+            SoundManager.Play(L => L.monsterHit, 1f, isBoss && SoundManager.Lib != null ? SoundManager.Lib.bossHitPitch : 1f);
         if (CurrentHP <= 0f)
         {
             Die();
@@ -714,6 +718,7 @@ public class EnemyController : MonoBehaviour
         }
 
         CancelAttack(); // 공격 중이었다면 제자리로
+        if (GetComponent<BossController>() == null) SoundManager.Play(L => L.monsterDie);   // 마왕은 BossController가 따로
 
         // 남아 있는 피격 트리거가 사망 애니메이션을 방해하지 않도록 초기화
         if (anim != null && !string.IsNullOrEmpty(hitTrigger))

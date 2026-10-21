@@ -79,9 +79,23 @@ public class ProjectileController : MonoBehaviour
         if (spell != null)
         {
             // 1. 투사체가 사라진 자리에 폭발 이펙트 (여기 한 곳에서만 생성)
-            float effectLength = EffectUtil.SpawnScaled(spell.explosionPrefab, transform.position + spell.explosionOffset,
-                                                        Quaternion.identity, SkillManager.EffectScale * spell.explosionScale,
-                                                        spell.effectDuration, SkillManager.Instance);
+            float effectLength;
+            Vector3 at = transform.position + spell.explosionOffset;
+            float scale = SkillManager.EffectScale * spell.explosionScale;
+            if (spell.effectDuration <= 0f && IsLooping(spell.explosionPrefab))
+            {
+                // 장판처럼 계속 반복되는 이펙트 (예: 건강하세요): 다른 장판 마법과 같은 시간(Area Effect Time)만 보여 주고 정리
+                SkillManager sm = SkillManager.Instance;
+                effectLength = sm != null ? sm.areaEffectTime : 1.2f;
+                GameObject fx = Instantiate(spell.explosionPrefab, at, Quaternion.identity);
+                EffectUtil.Scale(fx, scale);
+                fx.AddComponent<EffectAutoStop>().Begin(effectLength, sm != null ? sm.areaEffectTail : 0.3f);
+            }
+            else
+            {
+                effectLength = EffectUtil.SpawnScaled(spell.explosionPrefab, at, Quaternion.identity, scale,
+                                                      spell.effectDuration, SkillManager.Instance);
+            }
 
             // 2. 데미지 → (HP 0이면) 폭발과 함께 death 애니메이션
             enemy.ReceiveSpell(spell, spell.ResolveDamageDelay(effectLength), power);
@@ -89,5 +103,13 @@ public class ProjectileController : MonoBehaviour
 
         // 3. 투사체 삭제
         Destroy(gameObject);
+    }
+
+    private static bool IsLooping(GameObject prefab)
+    {
+        if (prefab == null) return false;
+        foreach (ParticleSystem ps in prefab.GetComponentsInChildren<ParticleSystem>(true))
+            if (ps.main.loop) return true;
+        return false;
     }
 }

@@ -73,6 +73,12 @@ public class SpellData : ScriptableObject
     [Tooltip("적중 폭발 위치 보정 (m). 몹 몸 중앙 기준, 아래로 내리려면 Y를 음수로")]
     public Vector3 impactOffset = Vector3.zero;
 
+    [Header("Sound (비우면 SoundLibrary의 속성 기본 소리)")]
+    [Tooltip("시전하는 순간 소리 (지팡이에서 마법이 나갈 때)")]
+    public AudioClip castSound;
+    [Tooltip("데미지가 들어가는 순간 소리 (적중 폭발)")]
+    public AudioClip hitSound;
+
     [Header("Beam (빔·불기둥)")]
     [Tooltip("Beam 타입일 때 지팡이 끝에서 뿜어질 이펙트. 루프 이펙트면 Effect Duration 동안 뿜음 (0이면 1.5초)")]
     public GameObject beamPrefab;

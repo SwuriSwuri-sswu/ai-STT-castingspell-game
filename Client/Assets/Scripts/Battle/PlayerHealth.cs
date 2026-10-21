@@ -78,6 +78,7 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log($"[플레이어] {reason} -{amount} → 체력 {CurrentHP}/{maxHP}");
         OnDamaged?.Invoke(amount, reason);
         OnHealthChanged?.Invoke(CurrentHP, maxHP);
+        SoundManager.Play(L => L.playerHit);
         if (hitShake > 0f) CameraKick.Shake(hitShake * Mathf.Clamp(amount / 10f, 0.6f, 2f), hitShakeTime);
 
         if (CurrentHP <= 0f) Die();

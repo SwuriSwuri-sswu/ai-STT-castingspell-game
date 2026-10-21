@@ -138,13 +138,16 @@ public class EndingSceneController : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         ShowSkipHint(true);
 
-        // 1. Victory!
+        // 1. Victory! (팡파레 → 잠시 뒤 엔딩 BGM)
+        SoundManager.Play(L => L.victory, 1f, 1f, false);
         if (victoryText != null) yield return Pop(victoryText);
         if (resultText != null && !string.IsNullOrEmpty(resultText.text))
         {
             if (typeResult) yield return TypeText(resultText);
             else yield return Fade(resultText, 0f, 1f);
         }
+        // 점수가 다 나온 뒤에 엔딩 BGM (그전까지는 팡파레 + 타이핑 소리만)
+        SoundManager.PlayBgmAfter(SoundManager.Lib != null ? SoundManager.Lib.endingBgmDelay : 0.5f, L => L.bgmEnding, 2f);
         yield return Wait(victoryHold);
         StartCoroutine(Fade(victoryText, 1f, 0f));
         StartCoroutine(Fade(resultText, 1f, 0f));
@@ -224,6 +227,7 @@ public class EndingSceneController : MonoBehaviour
     private IEnumerator RunGameOver()
     {
         yield return new WaitForSeconds(0.5f);
+        SoundManager.PlayBgm(L => L.bgmGameOver, 0.3f, SoundManager.Lib != null && SoundManager.Lib.gameOverBgmLoop);
         if (victoryText != null) yield return Pop(victoryText);
         yield return ShowButton();
     }
@@ -281,6 +285,7 @@ public class EndingSceneController : MonoBehaviour
         {
             text.maxVisibleCharacters = i + 1;
             char c = text.textInfo.characterInfo[i].character;
+            if (!char.IsWhiteSpace(c)) SoundManager.Typing();
             float wait = c == '\n' ? typeLinePause : (c == ' ' ? typeInterval * 0.5f : typeInterval);
             for (float t = 0f; t < wait && !skip; t += Time.deltaTime) yield return null;
         }

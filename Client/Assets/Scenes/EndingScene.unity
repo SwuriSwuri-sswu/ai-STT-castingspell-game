@@ -671,14 +671,18 @@ MonoBehaviour:
 
 
 
+
+
     <size=110%>Team
     SwuriSwuri</size>
+
 
 
     <size=80%>Team Lead | Game Design & Unity Client</size>
 
     Sieun
     Hwang
+
 
 
     <size=80%>Speech Recognition (AI)</size>
@@ -689,15 +693,18 @@ MonoBehaviour:
     Chaeun
 
 
+
     <size=80%>Server & Database</size>
 
     Yoon Jiwon
+
 
 
     <size=80%>Art
     & Assets</size>
 
     Sieun Hwang
+
 
 
     <size=80%>Planning & QA</size>
@@ -707,7 +714,10 @@ MonoBehaviour:
 
 
 
+
+
     <size=110%>Built With</size>
+
 
 
     Unity 6   |   FastAPI  
@@ -715,10 +725,13 @@ MonoBehaviour:
 
 
 
+
+
     <size=110%>3D Models</size>
 
     <size=75%>via
     Poly Pizza</size>
+
 
 
     <size=85%>Castle, Arch Door, Demon, Yeti, Zombie - Quaternius
@@ -756,15 +769,21 @@ MonoBehaviour:
 
 
 
+
+
     <size=110%>Animations</size>
+
 
 
     <size=85%>Mixamo</size>
 
 
 
+
+
     <size=110%>Visual
     Effects</size>
+
 
 
     <size=85%>Cartoon FX Remaster Free - Jean Moreno (JMO)
@@ -799,20 +818,41 @@ MonoBehaviour:
 
 
 
+
+
+    <size=110%>Music & Sound Effects</size>
+
+    <size=75%>via
+    Pixabay</size>
+
+
+
+    <size=85%>All music and sound effects from Pixabay creators
+
+    pixabay.com</size>
+
+
+
+
+
     <size=110%>UI</size>
 
 
-    <size=85%>Complete UI Book
-    Styles Pack
+
+    <size=85%>Complete
+    UI Book Styles Pack
 
     Tiny RPG Mana Soul GUI
 
-    Medieval / Fantasy UI elements -
-    toffeecraft</size>
+    Medieval / Fantasy UI elements
+    - toffeecraft</size>
+
+
 
 
 
     <size=110%>Fonts</size>
+
 
 
     <size=85%>ONE Mobile
@@ -822,7 +862,10 @@ MonoBehaviour:
 
 
 
+
+
     <size=110%>Special Thanks</size>
+
 
 
     Our
@@ -830,7 +873,12 @@ MonoBehaviour:
 
 
 
-    2026 Convergence Capstone Design'
+
+
+    <size=110%>Sungshin Women''s University</size>
+
+    2026
+    Convergence Capstone Design'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 718aeaef5b502f74e98f5b223957e689, type: 2}
   m_sharedMaterial: {fileID: -1092199386416968753, guid: 718aeaef5b502f74e98f5b223957e689, type: 2}
@@ -1911,7 +1959,7 @@ MonoBehaviour:
   typeResult: 1
   typeInterval: 0.035
   typeLinePause: 0.25
-  victoryHold: 2.5
+  victoryHold: 4
   titleStartScale: 1.6
   storyText: {fileID: 1105966237}
   story: 'The Demon Lord of Silence has fallen.
@@ -1943,14 +1991,18 @@ MonoBehaviour:
 
 
 
+
+
     <size=110%>Team
     SwuriSwuri</size>
+
 
 
     <size=80%>Team Lead | Game Design & Unity Client</size>
 
     Sieun
     Hwang
+
 
 
     <size=80%>Speech Recognition (AI)</size>
@@ -1961,15 +2013,18 @@ MonoBehaviour:
     Chaeun
 
 
+
     <size=80%>Server & Database</size>
 
     Yoon Jiwon
+
 
 
     <size=80%>Art
     & Assets</size>
 
     Sieun Hwang
+
 
 
     <size=80%>Planning & QA</size>
@@ -1979,7 +2034,10 @@ MonoBehaviour:
 
 
 
+
+
     <size=110%>Built With</size>
+
 
 
     Unity 6   |   FastAPI  
@@ -1987,10 +2045,13 @@ MonoBehaviour:
 
 
 
+
+
     <size=110%>3D Models</size>
 
     <size=75%>via
     Poly Pizza</size>
+
 
 
     <size=85%>Castle, Arch Door, Demon, Yeti, Zombie - Quaternius
@@ -2028,15 +2089,21 @@ MonoBehaviour:
 
 
 
+
+
     <size=110%>Animations</size>
+
 
 
     <size=85%>Mixamo</size>
 
 
 
+
+
     <size=110%>Visual
     Effects</size>
+
 
 
     <size=85%>Cartoon FX Remaster Free - Jean Moreno (JMO)
@@ -2071,20 +2138,41 @@ MonoBehaviour:
 
 
 
+
+
+    <size=110%>Music & Sound Effects</size>
+
+    <size=75%>via
+    Pixabay</size>
+
+
+
+    <size=85%>All music and sound effects from Pixabay creators
+
+    pixabay.com</size>
+
+
+
+
+
     <size=110%>UI</size>
 
 
-    <size=85%>Complete UI Book
-    Styles Pack
+
+    <size=85%>Complete
+    UI Book Styles Pack
 
     Tiny RPG Mana Soul GUI
 
-    Medieval / Fantasy UI elements -
-    toffeecraft</size>
+    Medieval / Fantasy UI elements
+    - toffeecraft</size>
+
+
 
 
 
     <size=110%>Fonts</size>
+
 
 
     <size=85%>ONE Mobile
@@ -2094,7 +2182,10 @@ MonoBehaviour:
 
 
 
+
+
     <size=110%>Special Thanks</size>
+
 
 
     Our
@@ -2102,7 +2193,12 @@ MonoBehaviour:
 
 
 
-    2026 Convergence Capstone Design'
+
+
+    <size=110%>Sungshin Women''s University</size>
+
+    2026
+    Convergence Capstone Design'
   creditsSpeed: 90
   skipHint: {fileID: 616965026}
   skipHintText: Press ESC to skip

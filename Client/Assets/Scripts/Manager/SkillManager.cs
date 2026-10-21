@@ -29,6 +29,7 @@ public class SkillManager : MonoBehaviour
     //   주문마다 SpellData의 Impact Prefab을 몹 몸 중앙에 터뜨림 (비어 있으면 아무것도 안 함)
     public static void SpawnHitEffect(SpellData spell, Vector3 position)
     {
+        SoundManager.PlayHit(spell);   // 적중 소리 (SpellData의 Hit Sound → 없으면 속성 기본)
         if (spell == null || spell.impactPrefab == null) return;
         EffectUtil.SpawnScaled(spell.impactPrefab, position + spell.impactOffset, Quaternion.identity, EffectScale * spell.impactScale);
     }
@@ -144,6 +145,7 @@ public class SkillManager : MonoBehaviour
         // 데미지 예약: 이 마법으로 몹이 쓰러질 예정이면 그 즉시 영창이 막힌다 (이펙트 연출과 별개)
         if (target != null) target.ReserveDamage(spell, power);
         OnSpellCast?.Invoke(spell, target, power);
+        SoundManager.PlayCast(spell);   // 시전 소리 (SpellData의 Cast Sound → 없으면 속성 기본)
         if (castKick > 0f) CameraKick.Kick(castKick * Mathf.Max(1f, power), castKickTime);   // 시전 순간 카메라 움찔 (강한 영창일수록 크게)
 
         // 점수 처리 (GameManager가 씬에 없을 수도 있으므로 null 체크)

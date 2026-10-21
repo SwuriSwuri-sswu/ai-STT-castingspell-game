@@ -275,6 +275,10 @@ public class DropItem : MonoBehaviour
         {
             AudioSource.PlayClipAtPoint(collectSound, TargetPosition, collectVolume);
         }
+        else
+        {
+            SoundManager.Play(L => L.spellGet, 1f, 1f, false);   // Collect Sound가 비어 있으면 SoundLibrary의 Spell Get
+        }
 
         if (spell != null)
         {

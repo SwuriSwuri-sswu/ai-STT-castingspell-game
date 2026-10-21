@@ -168,6 +168,7 @@ public class GameOverSequence : MonoBehaviour
         SkillManager.CastBlocked = true;
         SkillManager.BlockedHint = "";
         BattleUIManager.Instance?.ClearNotices();
+        SoundManager.StopBgm(1f);   // 전투 BGM 끄기 → 제목이 뜰 때 게임 오버 BGM
         Camera cam = Camera.main;
 
         // 1. 슬로 모션
@@ -202,6 +203,7 @@ public class GameOverSequence : MonoBehaviour
             titleText.text = kind == Kind.BossDefeat ? bossDefeatTitle : kind == Kind.TimeOver ? timeOverTitle : gameOverTitle;
             titleText.color = titleColor;
             titleText.gameObject.SetActive(true);
+            SoundManager.PlayBgm(L => L.bgmGameOver, 0.3f, SoundManager.Lib != null && SoundManager.Lib.gameOverBgmLoop);
             yield return TitlePop(titleText.transform);
         }
         yield return new WaitForSecondsRealtime(panelDelay);
@@ -245,6 +247,7 @@ public class GameOverSequence : MonoBehaviour
         {
             text.maxVisibleCharacters = i + 1;
             char c = info.characterInfo[i].character;
+            if (!char.IsWhiteSpace(c)) SoundManager.Typing();
             wait = c == '\n' ? typeLinePause : (c == ' ' ? typeInterval * 0.5f : typeInterval);
             for (float t = 0f; t < wait; t += Time.unscaledDeltaTime)
             {
@@ -340,6 +343,7 @@ public class GameOverSequence : MonoBehaviour
         if (clip) PlayFallClip(model, true);
         if (fallStartDelay > 0f) yield return new WaitForSecondsRealtime(fallStartDelay);
         if (model == null) yield break;
+        SoundManager.Play(L => L.gameOverFall, 1f, 1f, false);
         if (clip && graph.IsValid()) graph.Play();
         if (comicFall) StartCoroutine(ComicTumble(model.transform));
     }
