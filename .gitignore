@@ -126,4 +126,7 @@ __pycache__/
 # 녹음 파일
 *.wav
 *.wav.meta
+!Client/Assets/Sounds/*.wav
+!Client/Assets/Sounds/*.wav.meta
+
 Server/game.db
