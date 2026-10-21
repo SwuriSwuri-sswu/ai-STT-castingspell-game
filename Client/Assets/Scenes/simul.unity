@@ -939,6 +939,16 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 615b66af3165de84c8557331c467394a, type: 2}
   - {fileID: 11400000, guid: 93ad9741443dee247bd07a08989fa790, type: 2}
   - {fileID: 11400000, guid: ff251c8455a938e48925a4189ec0b80e, type: 2}
+  effectScale: 1
+  projectileScale: 1
+  projectileSpeedScale: 1
+  castKick: 1
+  castKickTime: 0.18
+  areaEffectTime: 1.2
+  areaEffectTail: 0.3
+  snapAreaToFloor: 1
+  areaFloorLift: 0.03
+  floorProbeHeight: 1
   instantSpawnHeightOffset: 0
   carryOverLearnedSpells: 1
 --- !u!1 &72393938
@@ -1028,6 +1038,9 @@ MonoBehaviour:
   castTestKey: 99
   unlockKey: 117
   resetKey: 114
+  dropItemPrefab: {fileID: 0}
+  dropOffset: {x: 0, y: 1, z: 0}
+  cameraDropDistance: 4
   show: 1
   screenPosition: {x: 10, y: 260}
   width: 480
@@ -1087,6 +1100,7 @@ MonoBehaviour:
     noiseAdaptRate: 0.02
   resultTimeoutSec: 6
   keepTrailingSilenceSec: 0.1
+  silentPeak: 0.01
 --- !u!114 &72393944
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28696,6 +28710,19 @@ MonoBehaviour:
   recoverTime: 0.4
   aimAtTarget: 0.3
   strongCastScale: 1.4
+  walkSwing: 0.07
+  walkSwingAngle: 10
+  walkSwingLift: 0.015
+  walkBob: 0.005
+  walkSway: 0.008
+  walkRoll: 1.5
+  walkPitch: 0
+  walkLower: 0.03
+  lowerDistance: 0.5
+  lowerSpeed: 2.5
+  readyTime: 1.1
+  readyRaise: 0.06
+  readyTilt: 18
 --- !u!1 &571523523
 GameObject:
   m_ObjectHideFlags: 0
@@ -40633,6 +40660,8 @@ MonoBehaviour:
   hitFlash: {fileID: 1756625359}
   flashAlpha: 0.35
   flashFadeTime: 0.45
+  deathRedFadeTime: 0
+  deathRedAlpha: 0.18
   lowHpThreshold: 0.3
   lowHpPulseAlpha: 0.15
   lowHpPulseSpeed: 3
@@ -42559,6 +42588,9 @@ MonoBehaviour:
   effectivenessDuration: 2
   killDuration: 2.5
   noticeDuration: 2
+  noticeTimePerChar: 0.05
+  noticeMaxDuration: 5
+  noticeMinTime: 1.6
   noticeFadeDuration: 0.5
 --- !u!1 &1821994237
 GameObject:
@@ -45340,13 +45372,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
   maxHP: 100
   invulnerableTime: 0.5
-  failPenalty: 1
-  failDamage: 4
-  penaltyRejectReasons:
-  - NO_MATCH
-  - AMBIGUOUS
-  penalizeUnlearnedSpell: 1
-  voiceSocket: {fileID: 0}
+  hitShake: 1.5
+  hitShakeTime: 0.3
   endingSceneName: EndingScene
   slowMotionTime: 1.2
   slowMotionScale: 0.3

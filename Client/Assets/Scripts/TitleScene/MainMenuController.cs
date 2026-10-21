@@ -35,9 +35,7 @@ public class MainMenuController : MonoBehaviour
     private void Start()
     {
         // 초기 UI 상태 설정 (모든 패널 닫기)
-        if (settingsPanel != null) settingsPanel.SetActive(false);
-        if (bookPanel != null) bookPanel.SetActive(false);
-        if (wandPanel != null) wandPanel.SetActive(false);
+        OpenOnly(null);
 
         if (musicToggleButton != null)
         {
@@ -57,23 +55,22 @@ public class MainMenuController : MonoBehaviour
     // =====================
     // --- 패널 열기 버튼용 ---
     // =====================
-    public void OnClickSettings()
+    // target 패널만 켜고 나머지 패널은 모두 끔 (항상 한 패널만 열림). null이면 전부 닫기
+    private void OpenOnly(GameObject target)
     {
-        if (settingsPanel != null) settingsPanel.SetActive(true);
+        if (settingsPanel != null) settingsPanel.SetActive(settingsPanel == target);
+        if (bookPanel != null) bookPanel.SetActive(bookPanel == target);
+        if (wandPanel != null) wandPanel.SetActive(wandPanel == target);
     }
 
-    public void OnClickBook()
-    {
-        if (bookPanel != null) bookPanel.SetActive(true);
-    }
+    public void OnClickSettings() => OpenOnly(settingsPanel);
+
+    public void OnClickBook() => OpenOnly(bookPanel);
 
     // 예전 버튼 연결 호환용 (스펠 버튼 OnClick에 연결돼 있던 함수)
     public void OnClickSpell() => OnClickBook();
 
-    public void OnClickWand()
-    {
-        if (wandPanel != null) wandPanel.SetActive(true);
-    }
+    public void OnClickWand() => OpenOnly(wandPanel);
 
     // =====================
     // --- 음악 On/Off ---
