@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// ºñ»ó ½ÃÀü Å° (½Ã¿¬ ¸ğµå¿¡¼­¸¸ »ı±è, È­¸é¿¡ Ç¥½Ã ¾øÀ½)
+// ë¹„ìƒ ì‹œì „ í‚¤ (ì‹œì—° ëª¨ë“œì—ì„œë§Œ ìƒê¹€, í™”ë©´ì— í‘œì‹œ ì—†ìŒ)
 public class DemoRuntime : MonoBehaviour
 {
     private void Update()
@@ -27,7 +27,7 @@ public class DemoRuntime : MonoBehaviour
         SpellData pick = null;
         if (best)
         {
-            // »ó¼ºÀÌ ÁÁÀº °Í Áß ´Ü°è°¡ ³ôÀº °Í (°°À¸¸é ¹«ÀÛÀ§)
+            // ìƒì„±ì´ ì¢‹ì€ ê²ƒ ì¤‘ ë‹¨ê³„ê°€ ë†’ì€ ê²ƒ (ê°™ìœ¼ë©´ ë¬´ì‘ìœ„)
             List<SpellData> strong = pool.FindAll(s => EnemyController.GetTypeMultiplier(s.elementType, target.enemyType) > 1f);
             if (strong.Count == 0) strong = pool.FindAll(s => EnemyController.GetTypeMultiplier(s.elementType, target.enemyType) >= 1f);
             if (strong.Count > 0)
@@ -43,6 +43,6 @@ public class DemoRuntime : MonoBehaviour
         string name = string.IsNullOrEmpty(pick.spellName) ? pick.name : pick.spellName;
         SoundManager.Play(L => L.castSuccess, 1f, 1f, false);
         string fail = sm.TryCastByVoice(name, 1.2f);
-        Debug.Log(fail == null ? $"[Demo] ºñ»ó ½ÃÀü: {name}" : $"[Demo] ºñ»ó ½ÃÀü ½ÇÆĞ: {name} ({fail})");
+        Debug.Log(fail == null ? $"[Demo] ë¹„ìƒ ì‹œì „: {name}" : $"[Demo] ë¹„ìƒ ì‹œì „ ì‹¤íŒ¨: {name} ({fail})");
     }
 }

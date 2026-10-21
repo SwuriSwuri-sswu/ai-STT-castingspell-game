@@ -1,13 +1,13 @@
 using UnityEngine;
 
-// ÆĞ³ÎÀÌ ÄÑÁú ¶§ / ²¨Áú ¶§ ¼Ò¸® (BookPanel¿¡ ºÙÀÌ±â)
-//   ºñ¿ö µÎ¸é SoundLibraryÀÇ Book Open / Book Close ¼Ò¸®
-//   ¾ÀÀÌ ½ÃÀÛµÇ°Å³ª ¹Ù²ğ ¶§´Â ¼Ò¸®¸¦ ³»Áö ¾ÊÀ½
+// íŒ¨ë„ì´ ì¼œì§ˆ ë•Œ / êº¼ì§ˆ ë•Œ ì†Œë¦¬ (BookPanelì— ë¶™ì´ê¸°)
+//   ë¹„ì›Œ ë‘ë©´ SoundLibraryì˜ Book Open / Book Close ì†Œë¦¬
+//   ì”¬ì´ ì‹œì‘ë˜ê±°ë‚˜ ë°”ë€” ë•ŒëŠ” ì†Œë¦¬ë¥¼ ë‚´ì§€ ì•ŠìŒ
 public class UIPanelSound : MonoBehaviour
 {
-    [Tooltip("ÄÑÁú ¶§ ¼Ò¸® (ºñ¿ì¸é SoundLibraryÀÇ Book Open)")]
+    [Tooltip("ì¼œì§ˆ ë•Œ ì†Œë¦¬ (ë¹„ìš°ë©´ SoundLibraryì˜ Book Open)")]
     public AudioClip openSound;
-    [Tooltip("²¨Áú ¶§ ¼Ò¸® (ºñ¿ì¸é SoundLibraryÀÇ Book Close ¡æ ±×°Íµµ ¾øÀ¸¸é Book Open)")]
+    [Tooltip("êº¼ì§ˆ ë•Œ ì†Œë¦¬ (ë¹„ìš°ë©´ SoundLibraryì˜ Book Close â†’ ê·¸ê²ƒë„ ì—†ìœ¼ë©´ Book Open)")]
     public AudioClip closeSound;
     public bool playOnOpen = true;
     public bool playOnClose = true;
@@ -23,14 +23,14 @@ public class UIPanelSound : MonoBehaviour
 
     private void OnEnable()
     {
-        if (!playOnOpen || Time.timeSinceLevelLoad < 0.3f) return;   // ¾À ½ÃÀÛÇÒ ¶§ ÄÑÁ® ÀÖ´ø °æ¿ì´Â Á¶¿ëÈ÷
+        if (!playOnOpen || Time.timeSinceLevelLoad < 0.3f) return;   // ì”¬ ì‹œì‘í•  ë•Œ ì¼œì ¸ ìˆë˜ ê²½ìš°ëŠ” ì¡°ìš©íˆ
         SoundLibrary lib = SoundManager.Lib;
         SoundManager.PlayUI(openSound != null ? openSound : lib != null ? lib.bookOpen : null);
     }
 
     private void OnDisable()
     {
-        if (!playOnClose || quitting || !gameObject.scene.isLoaded) return;   // ¾ÀÀÌ ¹Ù²î¸ç ²¨Áö´Â °æ¿ì´Â Á¶¿ëÈ÷
+        if (!playOnClose || quitting || !gameObject.scene.isLoaded) return;   // ì”¬ì´ ë°”ë€Œë©° êº¼ì§€ëŠ” ê²½ìš°ëŠ” ì¡°ìš©íˆ
         SoundLibrary lib = SoundManager.Lib;
         AudioClip clip = closeSound;
         if (clip == null && lib != null) clip = lib.bookClose != null ? lib.bookClose : lib.bookOpen;
