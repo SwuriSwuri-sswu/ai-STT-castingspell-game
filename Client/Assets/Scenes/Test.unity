@@ -492,8 +492,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 576534342}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.062668435, y: -0.09566246, z: 0.0060347198, w: 0.99342084}
-  m_LocalPosition: {x: 4.503713, y: 3.9896367, z: -9.377714}
+  m_LocalRotation: {x: -0.008999689, y: 0.010499339, z: 0.00009455235, w: 0.9999044}
+  m_LocalPosition: {x: -0.13120344, y: 1.1226562, z: -9.916586}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -786,6 +786,16 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2436d79f6af005e47b3d4dab5713888d, type: 2}
   - {fileID: 11400000, guid: 49ca885db66444642b04893f36173755, type: 2}
   - {fileID: 11400000, guid: 9308a840e331ca9439118b8f9270c229, type: 2}
+  effectScale: 1
+  projectileScale: 1
+  projectileSpeedScale: 1
+  castKick: 1
+  castKickTime: 0.18
+  areaEffectTime: 1.2
+  areaEffectTail: 0.3
+  snapAreaToFloor: 1
+  areaFloorLift: 0.03
+  floorProbeHeight: 1
   instantSpawnHeightOffset: 0
   carryOverLearnedSpells: 0
 --- !u!4 &1092216012
@@ -989,6 +999,19 @@ MonoBehaviour:
   recoverTime: 0.4
   aimAtTarget: 0.3
   strongCastScale: 1.4
+  walkSwing: 0.07
+  walkSwingAngle: 10
+  walkSwingLift: 0.015
+  walkBob: 0.005
+  walkSway: 0.008
+  walkRoll: 1.5
+  walkPitch: 0
+  walkLower: 0.03
+  lowerDistance: 0.5
+  lowerSpeed: 2.5
+  readyTime: 1.1
+  readyRaise: 0.06
+  readyTilt: 18
 --- !u!1 &1265771640
 GameObject:
   m_ObjectHideFlags: 0
