@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // 스펠 도감 (SpellPanel에 붙이기)
@@ -56,6 +57,10 @@ public class SpellBookUI : MonoBehaviour
     public string unknownText = "???";
     [Tooltip("그 단계에 스펠이 2개뿐이면 3번째 칸은 숨김 → 칸 개수 = 실제 스펠 개수")]
     public bool hideUnusedSlots = true;
+    [Tooltip("배운 스펠 칸에 마우스를 올리면 칸을 살짝 키우고 글자를 발음 로마자(SpellData의 Pronunciation)로 바꿈")]
+    public bool showPronunciation = true;
+    [Tooltip("배운 스펠 칸에 마우스를 올렸을 때 칸 크기 배율")]
+    [Range(1f, 1.3f)] public float hoverScale = 1.1f;
 
     [Header("색")]
     [Tooltip("배운 스펠 이름 (양피지 위에서 잘 보이는 진한 갈색 추천)")]
@@ -85,6 +90,16 @@ public class SpellBookUI : MonoBehaviour
     private Vector3 templateScale;    // 칸 안에서 견본과 똑같이 보이게 할 배율
     private readonly Dictionary<Transform, Vector3> baseScales = new Dictionary<Transform, Vector3>();
 
+    // 마우스 올림 표시: 칸별 평소 글자 / 올렸을 때 글자(로마자). 로마자가 비어 있으면 아무 변화 없음
+    private class HoverInfo
+    {
+        public TMP_Text label;
+        public string normalText;
+        public string hoverText;
+    }
+    private readonly Dictionary<Image, HoverInfo> hoverInfos = new Dictionary<Image, HoverInfo>();
+    private Image hoveredSlot;   // 지금 마우스가 올라가 있어 커져 있는 칸
+
     private void OnEnable()
     {
         if (!initialized) Initialize();
@@ -98,6 +113,9 @@ public class SpellBookUI : MonoBehaviour
     {
         SkillManager sm = SkillManager.Instance;
         if (sm != null) sm.SpellsChanged -= Refresh;
+
+        // 마우스를 올린 채로 닫혀도 글자·크기가 원래대로 돌아오게
+        EndHover();
 
         // 튀는 연출 도중에 닫혀도 칸 크기가 원래대로 돌아오게
         StopAllCoroutines();
@@ -250,6 +268,8 @@ public class SpellBookUI : MonoBehaviour
         List<SpellData> allList = AllSpells();
         List<SpellData> learnedList = LearnedInOrder(allList);
 
+        EndHover();   // 글자를 새로 쓰기 전에 마우스 올림 상태를 원래대로
+
         foreach (ElementSection section in sections)
         {
             if (section.slots == null) continue;
@@ -295,6 +315,7 @@ public class SpellBookUI : MonoBehaviour
                             label.text = spell.spellName;
                             label.color = isNew ? newColor : learnedColor;
                         }
+                        SetHover(slot, label, spell.spellName, showPronunciation ? spell.pronunciation : "");
                         if (isNew && !newlyShown.Contains(spell))
                         {
                             newlyShown.Add(spell);
@@ -309,6 +330,7 @@ public class SpellBookUI : MonoBehaviour
                             label.text = (showLockedAsUnknown && i < all.Count) ? unknownText : "";
                             label.color = lockedColor;
                         }
+                        SetHover(slot, label, label != null ? label.text : "", "");   // 못 배운 스펠은 발음을 보여 주지 않음
                     }
                 }
             }
@@ -319,6 +341,56 @@ public class SpellBookUI : MonoBehaviour
             }
         }
     }
+
+    // =====================
+    // --- 마우스 올림: 칸을 살짝 키우고 발음 로마자로 바꾸기 ---
+    // =====================
+    // 칸마다 평소 글자 / 올렸을 때 글자를 기록하고, 처음 한 번만 EventTrigger(마우스 들어옴·나감)를 붙인다
+    private void SetHover(Image slot, TMP_Text label, string normalText, string hoverText)
+    {
+        if (!hoverInfos.TryGetValue(slot, out HoverInfo info))
+        {
+            info = new HoverInfo();
+            hoverInfos[slot] = info;
+
+            EventTrigger trigger = slot.GetComponent<EventTrigger>();
+            if (trigger == null) trigger = slot.gameObject.AddComponent<EventTrigger>();
+
+            EventTrigger.Entry enter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+            enter.callback.AddListener(_ => BeginHover(slot));
+            trigger.triggers.Add(enter);
+
+            EventTrigger.Entry exit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+            exit.callback.AddListener(_ => { if (hoveredSlot == slot) EndHover(); });
+            trigger.triggers.Add(exit);
+        }
+
+        info.label = label;
+        info.normalText = normalText ?? "";
+        info.hoverText = string.IsNullOrWhiteSpace(hoverText) ? "" : hoverText.Trim();
+    }
+
+    private void BeginHover(Image slot)
+    {
+        if (!hoverInfos.TryGetValue(slot, out HoverInfo info) || string.IsNullOrEmpty(info.hoverText)) return;
+
+        EndHover();   // 다른 칸이 커져 있으면 먼저 되돌림
+        hoveredSlot = slot;
+        slot.transform.localScale = BaseScale(slot.transform) * hoverScale;
+        if (info.label != null) info.label.text = info.hoverText;
+    }
+
+    private void EndHover()
+    {
+        if (hoveredSlot == null) return;
+        Image slot = hoveredSlot;
+        hoveredSlot = null;
+
+        slot.transform.localScale = BaseScale(slot.transform);
+        if (hoverInfos.TryGetValue(slot, out HoverInfo info) && info.label != null) info.label.text = info.normalText;
+    }
+
+    private Vector3 BaseScale(Transform t) => baseScales.TryGetValue(t, out Vector3 s) ? s : Vector3.one;
 
     // 노말 기본 스펠처럼 단계가 0인 것은 1단계 칸에 넣음
     private static int TierOf(SpellData s) => Mathf.Clamp(s.tier, 1, 3);

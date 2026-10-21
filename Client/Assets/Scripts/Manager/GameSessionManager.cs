@@ -14,7 +14,7 @@ public class GameSessionManager : MonoBehaviour
     public int maxStage1Kills = 50;
 
     [Header("스펠 드랍 규칙")]
-    [Tooltip("같은 속성 몹을 몇 마리 잡을 때마다 드랍 판정을 할지")]
+    [Tooltip("노말을 제외한 몹을 (속성 상관없이) 몇 마리 잡을 때마다 드랍 판정을 할지")]
     [Min(1)] public int killsPerDropRoll = 3;
     [Tooltip("드랍 판정 시 실제로 드랍될 확률 (1 = 100%)")]
     [Range(0f, 1f)] public float dropChance = 1f;
@@ -36,7 +36,7 @@ public class GameSessionManager : MonoBehaviour
     private const int RankCount = 3;    // Low, Mid, High
 
     private int[,] killTable = new int[ElementCount, RankCount];
-    private int[] killsSinceLastRoll = new int[ElementCount];
+    private int killsSinceLastRoll = 0; // 노말 제외 전체 통합 카운트
 
     private void Awake()
     {
@@ -93,11 +93,11 @@ public class GameSessionManager : MonoBehaviour
 
         if (element == MagicElement.Normal) return null;
 
-        int e = (int)element;
-        killsSinceLastRoll[e]++;
-        if (killsSinceLastRoll[e] < killsPerDropRoll) return null;
+        // 속성 상관없이 통합 카운트 (노말은 위에서 이미 제외)
+        killsSinceLastRoll++;
+        if (killsSinceLastRoll < killsPerDropRoll) return null;
 
-        killsSinceLastRoll[e] = 0;
+        killsSinceLastRoll = 0;
         if (UnityEngine.Random.value > dropChance) return null;
 
         return SkillManager.Instance != null ? SkillManager.Instance.PickDropSpell(element) : null;
@@ -128,7 +128,7 @@ public class GameSessionManager : MonoBehaviour
     {
         TotalKills = 0;
         killTable = new int[ElementCount, RankCount];
-        killsSinceLastRoll = new int[ElementCount];
+        killsSinceLastRoll = 0;
         OnKillCountChanged?.Invoke(TotalKills, maxStage1Kills);
     }
 }

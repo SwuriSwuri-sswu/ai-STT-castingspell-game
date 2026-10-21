@@ -30072,12 +30072,10 @@ MonoBehaviour:
     {Book}: Your collection
     of spells and monsters.
 
-    {Wand}: Check the wand you are using.
+    {Settings}: Open the settings.
 
-    {Settings}:
-    Open the settings.
-
-    {Music}: Turn the background music on or off.'
+    {Music}: Turn
+    the background music on or off.'
   guideIcons:
   - key: Book
     sprite: {fileID: 21300000, guid: 39cf4853b9d403f45bc0cdf0c89af9f1, type: 3}
