@@ -13,8 +13,8 @@ public class EnemySpawnEntry
     [Min(0)] public int minKillsToAppear = 0;
 }
 
-// 스테이지 1 몹 스폰 담당 (1:1 구조)
-// 몹 한 마리 등장 → 처치 → Death 애니메이션·드랍이 끝나고 사라짐 → 잠시 대기 → 다음 몹 등장
+// 스테이지 1 몹 스폰 담당 (다수 동시 등장 구조)
+// 스폰포인트(Spawn Points) 개수만큼 몹이 동시에 등장 → 한 마리가 처치되어 사라지면 그 자리에 다음 몹 등장
 // 스테이지 1 최대 처치 수(50)에 도달하면 더 이상 스폰하지 않음
 public class EnemyManager : MonoBehaviour
 {
@@ -47,10 +47,14 @@ public class EnemyManager : MonoBehaviour
     private readonly List<EnemySpawnEntry> spawnPool = new List<EnemySpawnEntry>();
 
     [Header("스폰 위치")]
-    [Tooltip("몹이 최종적으로 멈춰 서서 싸우는 위치 (빈 오브젝트)")]
+    // [변경] 스폰포인트를 여러 개 받음. 개수 = 동시에 나오는 몹 수 (5개 넣으면 5마리)
+    [Tooltip("몹이 최종적으로 멈춰 서서 싸우는 위치들 (빈 오브젝트).\n" +
+             "넣은 개수만큼 몹이 동시에 등장합니다 (5개 = 5마리)")]
+    public Transform[] spawnPoints;
+    [Tooltip("(예전 설정 호환) Spawn Points가 비어 있으면 이 한 곳만 사용 = 1마리씩")]
     public Transform spawnPoint;
     [Tooltip("등장 경로. 첫 번째 = 몹이 생성될 곳 (성 밖, 문에 가려진 곳), 이후 = 거쳐갈 지점 (예: 성문).\n" +
-             "마지막엔 자동으로 Spawn Point까지 이동합니다. 비워두면 Spawn Point에 바로 생성")]
+             "마지막엔 자동으로 각자의 Spawn Point까지 이동합니다. 비워두면 Spawn Point에 바로 생성")]
     public Transform[] approachPath;
     [Tooltip("몹이 바라볼 대상 (왕좌/플레이어). 비우면 메인 카메라")]
     public Transform lookTarget;
@@ -68,22 +72,68 @@ public class EnemyManager : MonoBehaviour
     public bool spawnOnStart = true;
     [Tooltip("게임 시작 후 첫 몹이 등장하기까지")]
     public float firstSpawnDelay = 2f;
-    [Tooltip("몹이 사라진 뒤 다음 몹이 등장하기까지")]
+    [Tooltip("몹이 사라진 뒤 그 자리에 다음 몹이 등장하기까지 (최소)")]
     public float nextSpawnDelay = 1.5f;
+    // [추가] 자리마다 등장 시간을 랜덤으로 → 일렬로 한꺼번에 들어오지 않게
+    [Tooltip("게임 시작 때 자리마다 First Spawn Delay에 0 ~ 이 값(초) 사이 랜덤 시간을 더함")]
+    [Min(0f)] public float initialSpawnSpread = 8f;
+    [Tooltip("몹이 사라진 뒤 다음 몹이 나올 때 Next Spawn Delay에 0 ~ 이 값(초) 사이 랜덤 시간을 더함")]
+    [Min(0f)] public float respawnRandomExtra = 4f;
 
     [Header("등장 규칙")]
     [Tooltip("같은 프리팹이 연속으로 나오지 않게 (후보가 2개 이상일 때)")]
     public bool avoidSameTwiceInARow = true;
+
+    // [추가] 초반 난이도: 처음 N마리는 공격력을 조금 낮춤
+    [Header("초반 난이도")]
+    [Tooltip("게임 시작부터 이 마리 수까지 등장한 몹은 공격력이 낮아짐 (0이면 끔)")]
+    [Min(0)] public int easyMonsterCount = 10;
+    [Tooltip("초반 하급 몹 공격력 감소량")]
+    [Min(0f)] public float easyLowDamageCut = 1f;
+    [Tooltip("초반 중급·상급 몹 공격력 감소량")]
+    [Min(0f)] public float easyMidHighDamageCut = 2f;
+
+    // 지금까지 등장한 몹 수 (재시작 시 0)
+    public int SpawnedCount { get; private set; }
 
     // 새 몹이 생성됐을 때 (이동 시작 전)
     public event Action<EnemyController> OnEnemySpawned;
     // 몹이 스폰포인트에 도착해 마법 시전이 가능해졌을 때 (UI 안내 등에 사용)
     public event Action<EnemyController> OnEnemyReady;
 
-    public EnemyController CurrentEnemy { get; private set; }
+    // [변경] 자리(스폰포인트)마다 한 마리씩
+    private EnemyController[] slots;
+    private Coroutine[] slotRoutines;
+
+    // 지금 맵에 있는 몹들 (빈 자리는 null)
+    public IReadOnlyList<EnemyController> CurrentEnemies => slots;
+
+    // [호환] 예전 코드가 CurrentEnemy를 쓰고 있어도 깨지지 않게: 살아 있는 몹 중 하나를 돌려줌
+    public EnemyController CurrentEnemy
+    {
+        get
+        {
+            if (slots == null) return null;
+            foreach (EnemyController e in slots)
+                if (e != null && !e.IsDying) return e;
+            foreach (EnemyController e in slots)
+                if (e != null) return e;
+            return null;
+        }
+    }
+
+    public int AliveCount
+    {
+        get
+        {
+            int n = 0;
+            if (slots != null) foreach (EnemyController e in slots) if (e != null) n++;
+            return n;
+        }
+    }
+
     public bool IsRunning { get; private set; }
 
-    private Coroutine spawnRoutine;
     private EnemyController lastPrefab;
     private bool firstSpawned;
 
@@ -95,12 +145,23 @@ public class EnemyManager : MonoBehaviour
             return;
         }
         Instance = this;
+        InitSlots();
+    }
+
+    // 스폰포인트 개수만큼 자리 만들기
+    private void InitSlots()
+    {
+        if (spawnPoints == null || spawnPoints.Length == 0)
+        {
+            spawnPoints = new[] { spawnPoint != null ? spawnPoint : transform };
+        }
+        slots = new EnemyController[spawnPoints.Length];
+        slotRoutines = new Coroutine[spawnPoints.Length];
     }
 
     private void Start()
     {
         if (lookTarget == null && Camera.main != null) lookTarget = Camera.main.transform;
-        if (spawnPoint == null) spawnPoint = transform;
         BuildSpawnPool();
 
         if (spawnOnStart) StartSpawning();
@@ -111,34 +172,49 @@ public class EnemyManager : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    // 스폰 시작 (첫 몹은 firstSpawnDelay 후 등장)
+    // 스폰 시작 (빈 자리마다 차례로 등장)
     public void StartSpawning()
     {
         if (IsRunning) return;
         IsRunning = true;
-        if (CurrentEnemy == null) ScheduleSpawn(firstSpawnDelay);
-    }
 
-    // 다음 몹이 더 이상 나오지 않게 (현재 몹은 그대로)
-    public void StopSpawning()
-    {
-        IsRunning = false;
-        if (spawnRoutine != null)
+        // 자리마다 랜덤한 시간에 등장 (첫 자리 하나는 바로 나오게 해서 시작이 심심하지 않게)
+        int firstSlot = UnityEngine.Random.Range(0, slots.Length);
+        for (int i = 0; i < slots.Length; i++)
         {
-            StopCoroutine(spawnRoutine);
-            spawnRoutine = null;
+            if (slots[i] != null) continue;
+            float extra = (i == firstSlot) ? 0f : UnityEngine.Random.Range(0f, initialSpawnSpread);
+            ScheduleSpawn(i, firstSpawnDelay + extra);
         }
     }
 
-    // 스테이지 전환/재시작 시 현재 몹 제거
+    // 다음 몹이 더 이상 나오지 않게 (현재 몹들은 그대로)
+    public void StopSpawning()
+    {
+        IsRunning = false;
+        if (slotRoutines == null) return;
+        for (int i = 0; i < slotRoutines.Length; i++)
+        {
+            if (slotRoutines[i] != null)
+            {
+                StopCoroutine(slotRoutines[i]);
+                slotRoutines[i] = null;
+            }
+        }
+    }
+
+    // 스테이지 전환/재시작 시 현재 몹 전부 제거
     public void ClearCurrentEnemy()
     {
-        if (CurrentEnemy != null)
+        if (slots == null) return;
+        for (int i = 0; i < slots.Length; i++)
         {
-            CurrentEnemy.OnDespawned -= HandleEnemyDespawned;
-            CurrentEnemy.OnReady -= HandleEnemyReady;
-            Destroy(CurrentEnemy.gameObject);
-            CurrentEnemy = null;
+            EnemyController e = slots[i];
+            if (e == null) continue;
+            e.OnDespawned -= HandleEnemyDespawned;
+            e.OnReady -= HandleEnemyReady;
+            Destroy(e.gameObject);
+            slots[i] = null;
         }
     }
 
@@ -149,20 +225,21 @@ public class EnemyManager : MonoBehaviour
         ClearCurrentEnemy();
         firstSpawned = false;
         lastPrefab = null;
+        SpawnedCount = 0;
     }
 
-    private void ScheduleSpawn(float delay)
+    private void ScheduleSpawn(int slot, float delay)
     {
-        if (spawnRoutine != null) StopCoroutine(spawnRoutine);
-        spawnRoutine = StartCoroutine(SpawnAfter(delay));
+        if (slotRoutines[slot] != null) StopCoroutine(slotRoutines[slot]);
+        slotRoutines[slot] = StartCoroutine(SpawnAfter(slot, delay));
     }
 
-    private IEnumerator SpawnAfter(float delay)
+    private IEnumerator SpawnAfter(int slot, float delay)
     {
         yield return new WaitForSeconds(delay);
-        spawnRoutine = null;
+        slotRoutines[slot] = null;
 
-        if (!IsRunning || CurrentEnemy != null) yield break;
+        if (!IsRunning || slots[slot] != null) yield break;
 
         GameSessionManager session = GameSessionManager.Instance;
         if (session != null && session.IsStage1LimitReached)
@@ -172,11 +249,13 @@ public class EnemyManager : MonoBehaviour
             yield break;
         }
 
-        SpawnOne();
+        SpawnOne(slot);
     }
 
-    private void SpawnOne()
+    private void SpawnOne(int slot)
     {
+        Transform point = spawnPoints[slot] != null ? spawnPoints[slot] : transform;
+
         EnemyController prefab;
         if (DemoMode.On)
         {
@@ -203,7 +282,7 @@ public class EnemyManager : MonoBehaviour
             return;
         }
 
-        // 이동 경로 구성: [생성 위치] → (중간 지점들) → 스폰포인트
+        // 이동 경로 구성: [생성 위치] → (중간 지점들) → 이 자리의 스폰포인트
         List<Vector3> waypoints = new List<Vector3>();
         if (approachPath != null)
         {
@@ -214,40 +293,49 @@ public class EnemyManager : MonoBehaviour
         }
         bool hasApproach = waypoints.Count > 0;
 
-        Vector3 position = hasApproach ? waypoints[0] : spawnPoint.position;
+        Vector3 position = hasApproach ? waypoints[0] : point.position;
         if (hasApproach)
         {
-            waypoints.RemoveAt(0);              // 첫 지점은 생성 위치
-            waypoints.Add(spawnPoint.position); // 마지막은 스폰포인트
+            waypoints.RemoveAt(0);         // 첫 지점은 생성 위치
+            waypoints.Add(point.position); // 마지막은 이 자리의 스폰포인트
         }
 
         // 처음 바라볼 방향: 이동이 있으면 다음 지점, 없으면 플레이어
         Vector3 faceTarget = hasApproach ? waypoints[0]
-                           : (lookTarget != null ? lookTarget.position : position + spawnPoint.forward);
-        Quaternion rotation = spawnPoint.rotation;
+                           : (lookTarget != null ? lookTarget.position : position + point.forward);
+        Quaternion rotation = point.rotation;
         Vector3 dir = faceTarget - position;
         dir.y = 0f; // 위아래로 기울지 않게
         if (dir.sqrMagnitude > 0.0001f) rotation = Quaternion.LookRotation(dir);
 
-        CurrentEnemy = Instantiate(prefab, position, rotation);
-        CurrentEnemy.OnDespawned += HandleEnemyDespawned;
-        CurrentEnemy.OnReady += HandleEnemyReady;
+        EnemyController enemy = Instantiate(prefab, position, rotation);
+        slots[slot] = enemy;
+
+        // [추가] 초반 N마리는 공격력 감소 (최소 1)
+        SpawnedCount++;
+        if (SpawnedCount <= easyMonsterCount)
+        {
+            float cut = enemy.rank == MonsterRank.Low ? easyLowDamageCut : easyMidHighDamageCut;
+            enemy.attackDamage = Mathf.Max(1f, enemy.attackDamage - cut);
+        }
+        enemy.OnDespawned += HandleEnemyDespawned;
+        enemy.OnReady += HandleEnemyReady;
         lastPrefab = prefab;
 
-        Debug.Log($"[EnemyManager] {EnemyController.RankName(CurrentEnemy.rank)} " +
-                  $"{EnemyController.ElementName(CurrentEnemy.enemyType)} 속성 몬스터 등장!");
+        Debug.Log($"[EnemyManager] {slot}번 자리: {EnemyController.RankName(enemy.rank)} " +
+                  $"{EnemyController.ElementName(enemy.enemyType)} 속성 몬스터 등장!");
         // 몹 도감 기록 + 등장 자막
         bool isNew = MonsterCollection.Encounter(prefab.gameObject.name);
         if (showAppearText && BattleUIManager.Instance != null)
         {
-            BattleUIManager.Instance.ShowKill(BuildAppearText(CurrentEnemy, isNew));
+            BattleUIManager.Instance.ShowKill(BuildAppearText(enemy, isNew));
         }
-        OnEnemySpawned?.Invoke(CurrentEnemy);
+        OnEnemySpawned?.Invoke(enemy);
         SoundManager.Play(L => L.monsterAppear);
 
-        Vector3 lookAt = lookTarget != null ? lookTarget.position : spawnPoint.position + spawnPoint.forward;
-        if (hasApproach) CurrentEnemy.BeginApproach(waypoints, lookAt, approachSpeedMultiplier);
-        else HandleEnemyReady(CurrentEnemy); // 이동 없이 바로 전투 가능
+        Vector3 lookAt = lookTarget != null ? lookTarget.position : point.position + point.forward;
+        if (hasApproach) enemy.BeginApproach(waypoints, lookAt, approachSpeedMultiplier);
+        else HandleEnemyReady(enemy); // 이동 없이 바로 전투 가능
     }
 
     // "Demon이 나타났습니다!" (이름은 속성 색) + 처음이면 작은 New!
@@ -286,13 +374,16 @@ public class EnemyManager : MonoBehaviour
         OnEnemyReady?.Invoke(enemy);
     }
 
-    // 몹이 Death 애니메이션·드랍까지 끝내고 사라지면 다음 몹 예약
+    // 몹이 Death 애니메이션·드랍까지 끝내고 사라지면 그 자리에 다음 몹 예약
     private void HandleEnemyDespawned(EnemyController enemy)
     {
         enemy.OnDespawned -= HandleEnemyDespawned;
-        if (CurrentEnemy == enemy) CurrentEnemy = null;
 
-        if (IsRunning) ScheduleSpawn(nextSpawnDelay);
+        int slot = Array.IndexOf(slots, enemy);
+        if (slot < 0) return;
+        slots[slot] = null;
+
+        if (IsRunning) ScheduleSpawn(slot, nextSpawnDelay + UnityEngine.Random.Range(0f, respawnRandomExtra));
     }
 
     // 개별 설정을 먼저 넣고, Quick Prefabs는 등급별 자동 값으로 추가 (중복은 개별 설정 우선)

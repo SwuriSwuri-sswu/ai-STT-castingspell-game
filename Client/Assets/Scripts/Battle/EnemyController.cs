@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,17 +15,24 @@ public class EnemyController : MonoBehaviour
     private static readonly List<EnemyController> aliveEnemies = new List<EnemyController>();
     public static IReadOnlyList<EnemyController> AliveEnemies => aliveEnemies;
 
+    // 마법이 노릴 몹: 클릭한 몹. 클릭 필수 모드에서 선택이 없으면 null (= 시전 안 됨)
     public static EnemyController GetNearest(Vector3 from)
+    {
+        EnemyController selected = TargetSelector.Selected;
+        if (selected != null && selected.IsTargetable) return selected;
+        if (TargetSelector.RequireClick) return null;
+        return FindNearestAuto(from);
+    }
+
+    // 클릭과 상관없이 가장 가까운 몹 (원래 GetNearest 내용 그대로)
+    public static EnemyController FindNearestAuto(Vector3 from)
     {
         EnemyController nearest = null;
         float best = float.MaxValue;
         int bestPriority = int.MinValue;
         foreach (EnemyController enemy in aliveEnemies)
         {
-            // 스폰포인트에 도착하지 않았거나, 쓰러지는 중이거나,
-            // 이미 날아가는 마법만으로 쓰러질 몹은 새 타겟이 될 수 없음
             if (enemy == null || !enemy.IsTargetable) continue;
-            // 우선순위가 높은 몹부터 (보스전 하수인 등), 같으면 가까운 몹
             float d = (enemy.AimPoint - from).sqrMagnitude;
             if (enemy.targetPriority > bestPriority || (enemy.targetPriority == bestPriority && d < best))
             {
@@ -42,6 +49,10 @@ public class EnemyController : MonoBehaviour
     {
         get
         {
+            // [추가] 클릭 필수 모드면 선택한 몹이 있어야 시전 가능
+            if (TargetSelector.RequireClick)
+                return TargetSelector.Selected != null && TargetSelector.Selected.IsTargetable;
+
             foreach (EnemyController enemy in aliveEnemies)
             {
                 if (enemy != null && enemy.IsTargetable) return true;
@@ -92,6 +103,10 @@ public class EnemyController : MonoBehaviour
     [Tooltip("움찔하는 크기 (0.15 = 15% 커졌다 돌아옴)")]
     public float punchScale = 0.15f;
 
+    [Header("클릭 판정")]
+    [Tooltip("콜라이더가 없는 몹이면 몸 크기에 맞춰 클릭용 박스를 자동으로 붙임")]
+    public bool autoClickCollider = true;
+
     [Header("사망 이펙트 (선택)")]
     [Tooltip("사망 순간 몸 중앙에 생성될 이펙트 (연기·빛 등). 모든 몹에 사용 가능, 비워도 됨")]
     public GameObject deathEffectPrefab;
@@ -135,6 +150,10 @@ public class EnemyController : MonoBehaviour
     public bool waitForFirstTalk = true;
     [Tooltip("플레이어가 녹음하는 동안은 공격하지 않음 (공격 타이머 멈춤, 예고·돌진 중이면 취소)")]
     public bool holdWhileRecording = true;
+    [Tooltip("켜면 선택한(싸우는) 몹만 공격, 끄면 모든 몹이 각자 공격")]
+    public bool onlyEngagedAttacks = false;
+    [Tooltip("자리에 도착했을 때 공격 게이지가 0 ~ 이 비율만큼 랜덤으로 차 있음 (몹끼리 박자가 안 겹치게)")]
+    [Range(0f, 1f)] public float randomAttackStart = 0.6f;
 
     [Header("등장 이동 (성 밖 → 스폰포인트)")]
     [Tooltip("이동 속도 (초당 미터)")]
@@ -158,6 +177,17 @@ public class EnemyController : MonoBehaviour
     public bool IsDoomed => !IsDying && CurrentHP - PendingDamage <= 0f;
     // 새 마법의 타겟이 될 수 있는 상태
     public bool IsTargetable => IsReady && !IsDying && !IsDoomed;
+
+    public bool IsEngaged
+    {
+        get
+        {
+            EnemyController sel = TargetSelector.Selected;
+            if (sel != null && sel.IsTargetable) return sel == this;
+            Vector3 from = Camera.main != null ? Camera.main.transform.position : Vector3.zero;
+            return FindNearestAuto(from) == this;
+        }
+    }
 
     [Tooltip("예약된 마법이 이 시간(초) 안에 맞지 않으면 예약을 풀어 다시 영창할 수 있게 함 (안전장치)")]
     public float pendingDamageTimeout = 8f;
@@ -374,6 +404,7 @@ public class EnemyController : MonoBehaviour
     private void Awake()
     {
         if (anim == null) anim = GetComponentInChildren<Animator>();
+        if (autoClickCollider && GetComponentInChildren<Collider>() == null) AddClickCollider();
         colliders = GetComponentsInChildren<Collider>();
         renderers = GetComponentsInChildren<Renderer>();
         originalScale = transform.localScale;
@@ -386,6 +417,29 @@ public class EnemyController : MonoBehaviour
         if (useRankDefaultHP) maxHP = DefaultHP(rank);
         if (useRankDefaultAttack) GetAttackStats(out attackInterval, out attackDamage);
         CurrentHP = maxHP;
+    }
+
+    private void AddClickCollider()
+    {
+        Renderer[] rs = GetComponentsInChildren<Renderer>();
+        bool has = false;
+        Bounds b = new Bounds(transform.position, Vector3.one);
+        foreach (Renderer r in rs)
+        {
+            if (r == null || r is ParticleSystemRenderer) continue;
+            if (!has) { b = r.bounds; has = true; }
+            else b.Encapsulate(r.bounds);
+        }
+
+        BoxCollider box = gameObject.AddComponent<BoxCollider>();
+        box.isTrigger = true;   // 클릭만 받고 다른 물체를 밀지 않음
+        box.center = transform.InverseTransformPoint(b.center);
+
+        Vector3 s = transform.lossyScale;
+        box.size = new Vector3(
+            b.size.x / Mathf.Max(0.0001f, Mathf.Abs(s.x)),
+            b.size.y / Mathf.Max(0.0001f, Mathf.Abs(s.y)),
+            b.size.z / Mathf.Max(0.0001f, Mathf.Abs(s.z)));
     }
 
     private void Update()
@@ -410,7 +464,8 @@ public class EnemyController : MonoBehaviour
         // 이미 날아가는 마법으로 쓰러질 예정이면 공격하지 않음 (억울하지 않게)
         if (IsDoomed) return;
         // 아직 스페이스바를 누르지 않았거나 녹음 중이면 공격 타이머를 멈춤
-        if (AttackBlockedByVoice()) return;
+        if (AttackBlockedByVoice()) return; 
+        if (onlyEngagedAttacks && !IsEngaged) return;
 
         attackTimer += Time.deltaTime;
         if (attackTimer >= attackInterval - attackTelegraph)
@@ -430,6 +485,7 @@ public class EnemyController : MonoBehaviour
             if (IsDying || IsDoomed) { EndAttack(false); yield break; }
             // 예고 중에 녹음이 시작되면 공격 취소 (녹음이 끝나면 예고부터 다시)
             if (AttackBlockedByVoice()) { RewindAttackTimer(); EndAttack(false); yield break; }
+            if (onlyEngagedAttacks && !IsEngaged) { RewindAttackTimer(); EndAttack(false); yield break; }
             t += Time.deltaTime;
             attackTimer += Time.deltaTime;
             float k = t / Mathf.Max(0.01f, attackTelegraph);
@@ -590,6 +646,7 @@ public class EnemyController : MonoBehaviour
     private void MarkReady()
     {
         IsReady = true;
+        attackTimer = UnityEngine.Random.Range(0f, randomAttackStart) * Mathf.Max(0f, attackInterval - attackTelegraph);
         OnReady?.Invoke(this);
     }
 
