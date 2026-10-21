@@ -4906,11 +4906,7 @@ GameObject:
   - component: {fileID: 5180115428734980742}
   - component: {fileID: 8844990179053068957}
   m_Layer: 0
-<<<<<<<< HEAD:Client/Assets/Resources/3D/Effect/FreeQuickEffectsVol1/Prefabs/vfx_MeteorRain_02.prefab
-  m_Name: vfx_MeteorRain_02
-========
   m_Name: w_t2_rain2
->>>>>>>> test:Client/Assets/Resources/3D/Effect/FreeQuickEffectsVol1/Prefabs/w_t2_rain2.prefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

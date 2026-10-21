@@ -13,11 +13,7 @@ GameObject:
   - component: {fileID: 2386159082878823986}
   - component: {fileID: 1735599009273517734}
   m_Layer: 0
-<<<<<<<< HEAD:Client/Assets/Resources/3D/Effect/Hun0FX/FX/FireFX_vol1/Prefabs/Flame.prefab
-  m_Name: Flame
-========
   m_Name: f_t2_volcano
->>>>>>>> test:Client/Assets/Resources/3D/Effect/Hun0FX/FX/FireFX_vol1/Prefabs/f_t2_volcano.prefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

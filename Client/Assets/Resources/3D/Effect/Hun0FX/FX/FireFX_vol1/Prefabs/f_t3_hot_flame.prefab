@@ -2599,11 +2599,7 @@ GameObject:
   - component: {fileID: 2972392977303283610}
   - component: {fileID: 2580107768103172412}
   m_Layer: 0
-<<<<<<<< HEAD:Client/Assets/Resources/3D/Effect/Hun0FX/FX/FireFX_vol1/Prefabs/Fireball_projectile.prefab
-  m_Name: Fireball_projectile
-========
   m_Name: f_t3_hot_flame
->>>>>>>> test:Client/Assets/Resources/3D/Effect/Hun0FX/FX/FireFX_vol1/Prefabs/f_t3_hot_flame.prefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

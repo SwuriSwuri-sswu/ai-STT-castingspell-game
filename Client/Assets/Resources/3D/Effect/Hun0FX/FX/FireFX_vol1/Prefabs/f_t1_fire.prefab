@@ -7276,11 +7276,7 @@ GameObject:
   - component: {fileID: 6168184190451578029}
   - component: {fileID: 244752711315033584}
   m_Layer: 0
-<<<<<<<< HEAD:Client/Assets/Resources/3D/Effect/Hun0FX/FX/FireFX_vol1/Prefabs/Ground_Fire_Small.prefab
-  m_Name: Ground_Fire_Small
-========
   m_Name: f_t1_fire
->>>>>>>> test:Client/Assets/Resources/3D/Effect/Hun0FX/FX/FireFX_vol1/Prefabs/f_t1_fire.prefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

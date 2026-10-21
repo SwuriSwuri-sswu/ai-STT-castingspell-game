@@ -12,11 +12,7 @@ GameObject:
   - component: {fileID: 8287039741853492257}
   - component: {fileID: 8287039741853492256}
   m_Layer: 0
-<<<<<<<< HEAD:Client/Assets/Resources/3D/Effect/Hun0FX/FX/FireFX_vol1/Prefabs/Ground_Fire.prefab
-  m_Name: Ground_Fire
-========
   m_Name: Embers
->>>>>>>> test:Client/Assets/Resources/3D/Effect/Hun0FX/FX/FireFX_vol1/Prefabs/f_t3_1.prefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
