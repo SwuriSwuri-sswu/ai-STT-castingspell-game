@@ -341,7 +341,7 @@ MonoBehaviour:
     maxUtteranceSec: 4.8
     adaptNoiseFloor: 1
     noiseAdaptRate: 0.02
-  resultTimeoutSec: 6
+  resultTimeoutSec: 10
   keepTrailingSilenceSec: 0.1
   silentPeak: 0.01
 --- !u!114 &6707076
@@ -2787,6 +2787,7 @@ MonoBehaviour:
   headRoll: 0.8
   headNod: 0.5
   stepsPerSecond: 3
+  footstepVolume: 0.6
   allowSkipEntrance: 1
   wand: {fileID: 0}
   lowerWandDuringZoom: 1
@@ -2887,6 +2888,11 @@ MonoBehaviour:
   phaseSlowMotion: 0.35
   phaseCamMoveTime: 0.5
   phaseHoldAfter: 0.4
+  deathCinematic: 1
+  deathSlowMotion: 0.35
+  deathSlowTime: 2.5
+  deathOrbitTime: 5
+  deathHoldAfter: 1.5
   hideUIDuringPhase: 1
   wandLight: {fileID: 0}
   phaseHealRatio: 0.3
@@ -10147,6 +10153,7 @@ GameObject:
   m_Component:
   - component: {fileID: 601936404}
   - component: {fileID: 601936405}
+  - component: {fileID: 601936406}
   m_Layer: 5
   m_Name: BGM_Slider
   m_TagString: Untagged
@@ -10226,6 +10233,19 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &601936406
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 601936403}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07aac635aa805a4469eeb70c55ebbe1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VolumeSlider
+  kind: 0
 --- !u!1 &620687458
 GameObject:
   m_ObjectHideFlags: 0

@@ -281,6 +281,14 @@ public class BossBattleDirector : MonoBehaviour
             return;
         }
 
+        if (DemoMode.On)
+        {
+            // [시연 모드] 빠른 입장, 넉넉한 내 턴, 기절 없음
+            walkSpeed *= DemoMode.Cfg.bossWalkSpeed;
+            playerTurnTime = phase3TurnTime = DemoMode.Cfg.playerTurnTime;
+            stunOnWeaknessStreak = false;
+        }
+
         Block(waitHint);
         // 영창 자막을 숨겼다 켰다 할 CanvasGroup (입장 연출이 임시로 붙였다 지우는 것과 겹치지 않게 미리 붙여 둠)
         if (castPrompt != null)
@@ -358,6 +366,23 @@ public class BossBattleDirector : MonoBehaviour
 
             turnsUsed++;
             RefreshHUD();
+
+            if (DemoMode.On)
+            {
+                // [시연 모드] 내 턴·마왕 턴을 정해진 라운드만 → (마지막 라운드에 페이즈 전환) → 마왕 쓰러짐 → 엔딩
+                bool last = turnsUsed >= DemoMode.Cfg.bossRounds;
+                if (last && DemoMode.Cfg.showPhaseChange && boss.Phase < 3) yield return PhaseTransition(boss.Phase + 1);
+                if (PlayerDead) yield break;
+                yield return BossTurn();
+                if (PlayerDead) yield break;
+                if (last)
+                {
+                    yield return new WaitForSeconds(0.8f);
+                    yield return Victory();
+                    yield break;
+                }
+                continue;
+            }
             if (turnsUsed >= maxTurns) { yield return Defeat(); yield break; }
 
             int targetPhase = boss.PhaseForHP();
@@ -649,6 +674,7 @@ public class BossBattleDirector : MonoBehaviour
     private IEnumerator ShowTutorial()
     {
         if (tutorialPanel == null) yield break;
+        if (DemoMode.On && DemoMode.Cfg.skipBossTutorial) yield break;   // [시연 모드] 안내창 생략
         if (tutorialText != null && !string.IsNullOrWhiteSpace(tutorialContent))
         {
             tutorialText.text = tutorialContent.Replace("30 turns", maxTurns + " turns");
@@ -873,7 +899,7 @@ public class BossBattleDirector : MonoBehaviour
         {
             float r = Random.value;
             float pDouble = At(doubleChance, i);
-            float pCharge = At(chargeChance, i);
+            float pCharge = DemoMode.On ? 0f : At(chargeChance, i);   // [시연 모드] 힘 모으기 없음 (매 턴 바로 공격)
             if (r < pDouble)
             {
                 yield return boss.DoDoubleAttack();
@@ -1115,6 +1141,7 @@ public class BossBattleDirector : MonoBehaviour
     // =========================================================
     private IEnumerator MaybeSummon()
     {
+        if (DemoMode.On) yield break;   // [시연 모드] 하수인 없음
         int i = boss.Phase - 1;
         minions.RemoveAll(x => x.enemy == null || x.enemy.IsDying);
         if (minionPrefabs == null || minionPrefabs.Length == 0 || minionPoints == null || minionPoints.Length == 0) yield break;

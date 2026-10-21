@@ -455,6 +455,7 @@ public class SkillManager : MonoBehaviour
     {
         unlockedSpells.Clear();
         unlockOrder.Clear();
+        if (DemoMode.On) { DemoUnlocks(); return; }
         foreach (SpellData spell in spellDatabase)
         {
             if (spell != null && spell.unlockedByDefault && unlockedSpells.Add(spell))
@@ -477,6 +478,21 @@ public class SkillManager : MonoBehaviour
         }
 
         Debug.Log($"[SkillManager] 스펠 해금 상태 초기화 완료 (기본 {defaultCount}개 + 이전 회차 {unlockedSpells.Count - defaultCount}개)");
+        SpellsChanged?.Invoke();
+    }
+
+    // [시연 모드] 게임씬: 스펠 하나만 빼고 전부 해금 (그 하나는 첫 몹이 드랍) / 보스씬: 전부 해금
+    private void DemoUnlocks()
+    {
+        SpellData locked = DemoMode.IsGameScene(gameObject.scene.name) ? DemoMode.LockedSpell(spellDatabase) : null;
+        SpellCollection.Clear();
+        foreach (SpellData spell in spellDatabase)
+        {
+            if (spell == null || spell == locked || !unlockedSpells.Add(spell)) continue;
+            unlockOrder.Add(spell);
+            SpellCollection.Add(spell);
+        }
+        Debug.Log($"[Demo] 스펠 {unlockedSpells.Count}개 해금" + (locked != null ? $" (잠금: {locked.spellName} → 첫 몹이 드랍)" : ""));
         SpellsChanged?.Invoke();
     }
 

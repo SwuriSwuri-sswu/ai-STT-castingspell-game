@@ -46,6 +46,7 @@ public class GameSessionManager : MonoBehaviour
             return;
         }
         Instance = this;
+        if (DemoMode.On) maxStage1Kills = DemoMode.Cfg.stage1Kills;   // [시연 모드] 몇 마리만 잡고 보스로
     }
 
     private void OnDestroy()
@@ -82,6 +83,14 @@ public class GameSessionManager : MonoBehaviour
 
     private SpellData RollDrop(MagicElement element)
     {
+        // [시연 모드] 잠가 둔 스펠을 아직 안 배웠으면 반드시 드랍 (속성 상관없이)
+        if (DemoMode.On)
+        {
+            SkillManager sm = SkillManager.Instance;
+            SpellData locked = sm != null ? DemoMode.LockedSpell(sm.spellDatabase) : null;
+            return locked != null && !sm.IsUnlocked(locked) ? locked : null;
+        }
+
         if (element == MagicElement.Normal) return null;
 
         int e = (int)element;

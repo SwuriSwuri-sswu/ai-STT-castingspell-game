@@ -75,6 +75,7 @@ public class PlayerHealth : MonoBehaviour
         lastHitTime = Time.time;
 
         CurrentHP = Mathf.Max(0f, CurrentHP - amount);
+        if (DemoMode.On && DemoMode.Cfg.playerInvincible) CurrentHP = Mathf.Max(1f, CurrentHP);   // [시연 모드] 쓰러지지 않음
         Debug.Log($"[플레이어] {reason} -{amount} → 체력 {CurrentHP}/{maxHP}");
         OnDamaged?.Invoke(amount, reason);
         OnHealthChanged?.Invoke(CurrentHP, maxHP);

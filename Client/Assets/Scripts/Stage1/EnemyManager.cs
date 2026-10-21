@@ -178,7 +178,16 @@ public class EnemyManager : MonoBehaviour
     private void SpawnOne()
     {
         EnemyController prefab;
-        if (!firstSpawned && firstEnemy != null)
+        if (DemoMode.On)
+        {
+            // [시연 모드] 하급 → 중급 → 상급 순서대로
+            int kills = GameSessionManager.Instance != null ? GameSessionManager.Instance.TotalKills : 0;
+            List<EnemyController> pool = new List<EnemyController>();
+            foreach (EnemySpawnEntry e in spawnPool) if (e != null) pool.Add(e.prefab);
+            prefab = DemoMode.PickMob(kills, pool, lastPrefab);
+            if (prefab == null) prefab = PickPrefab();
+        }
+        else if (!firstSpawned && firstEnemy != null)
         {
             prefab = firstEnemy;
         }

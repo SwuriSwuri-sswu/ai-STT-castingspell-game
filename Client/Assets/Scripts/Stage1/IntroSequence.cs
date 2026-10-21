@@ -171,6 +171,12 @@ public class IntroSequence : MonoBehaviour
 
     private IEnumerator Start()
     {
+        // [시연 모드] 인트로 이야기 없이 바로 시작
+        if (DemoMode.On && DemoMode.Cfg.skipIntro)
+        {
+            yield return FinishRoutine(instant: true);
+            yield break;
+        }
         if (playOnlyFirstTime && PlayerPrefs.GetInt(SeenKey, 0) == 1)
         {
             yield return FinishRoutine(instant: true);

@@ -1238,7 +1238,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 72393938}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd65006f5338cf34a88aef639bed8469, type: 3}
   m_Name: 
@@ -31607,7 +31607,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Stage1Director
   enemyManager: {fileID: 0}
   session: {fileID: 0}
-  restEvery: 100
+  restEvery: 10
   restHealRatio: 0.5
   healDelay: 1
   restHoldTime: 2
@@ -31618,7 +31618,7 @@ MonoBehaviour:
   weaknessKillHeal: 5
   challengeButton: {fileID: 276863744}
   challengeButtonLabel: {fileID: 1434978001}
-  challengeUnlockKills: 1
+  challengeUnlockKills: 10
   challengeLabel: Challenge!
   skipLabel: Skip
   promptPanel: {fileID: 656387288}
@@ -38728,6 +38728,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1061046329}
   - component: {fileID: 1061046330}
+  - component: {fileID: 1061046331}
   m_Layer: 5
   m_Name: BGM_Slider
   m_TagString: Untagged
@@ -38807,6 +38808,19 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1061046331
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1061046328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07aac635aa805a4469eeb70c55ebbe1d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::VolumeSlider
+  kind: 0
 --- !u!1 &1062619792
 GameObject:
   m_ObjectHideFlags: 0
