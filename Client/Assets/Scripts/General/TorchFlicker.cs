@@ -7,7 +7,7 @@ public class TorchFlicker : MonoBehaviour
 {
     [Tooltip("밝기가 흔들리는 정도 (0.2 = ±20%)")]
     [Range(0f, 1f)] public float intensityAmount = 0.2f;
-    [Tooltip("불빛 위치가 흔들리는 거리 (그림자·명암이 같이 일렁임)")]
+    [Tooltip("불빛 위치가 흔들리는 거리 (m, 그림자·명암이 같이 일렁임)")]
     public float moveAmount = 0.03f;
     [Tooltip("일렁이는 속도")]
     public float speed = 6f;
@@ -32,9 +32,12 @@ public class TorchFlicker : MonoBehaviour
         float flick = Mathf.PerlinNoise(t * 3f, seed + 7f) * 2f - 1f;   // 빠른 잔떨림
         lightSource.intensity = baseIntensity * (1f + (n * 0.7f + flick * 0.3f) * intensityAmount);
 
-        transform.localPosition = baseLocalPos + new Vector3(
+        // 흔들림은 '월드 기준 m'로 (부모 오브젝트 크기가 커도 과하게 움직이지 않게)
+        Vector3 offset = new Vector3(
             Mathf.PerlinNoise(t, seed + 3f) - 0.5f,
             Mathf.PerlinNoise(t, seed + 5f) - 0.5f,
             Mathf.PerlinNoise(t, seed + 9f) - 0.5f) * 2f * moveAmount;
+        Vector3 home = transform.parent != null ? transform.parent.TransformPoint(baseLocalPos) : baseLocalPos;
+        transform.position = home + offset;
     }
 }

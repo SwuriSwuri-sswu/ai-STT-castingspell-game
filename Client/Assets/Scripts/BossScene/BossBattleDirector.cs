@@ -1313,6 +1313,11 @@ public class BossBattleDirector : MonoBehaviour
         Notice(turnOutNotice);
         yield return new WaitForSeconds(2.5f);
         RecordResult(false);
+        if (GameOverSequence.Instance != null)
+        {
+            GameOverSequence.Instance.Begin(GameOverSequence.Kind.TimeOver);   // 그 자리에서 3인칭 게임 오버 연출
+            yield break;
+        }
         yield return FadeAndLoad();
     }
 

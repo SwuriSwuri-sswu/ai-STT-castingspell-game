@@ -98,6 +98,16 @@ public class PlayerHealth : MonoBehaviour
         return healed;
     }
 
+    // 바로 쓰러뜨리기 (게임 오버 테스트용)
+    public void Kill(string reason = "")
+    {
+        if (IsDead) return;
+        Debug.Log($"[플레이어] {reason} → 바로 쓰러짐");
+        CurrentHP = 0f;
+        OnHealthChanged?.Invoke(CurrentHP, maxHP);
+        Die();
+    }
+
     // ── 게임 오버 ──
     private void Die()
     {
@@ -121,6 +131,13 @@ public class PlayerHealth : MonoBehaviour
             GameManager.Instance.SetState(GameState.GameOver);
         }
 
+        // 씬에 GameOverSequence가 있으면 그 자리에서 3인칭 게임 오버 연출 (없으면 예전처럼 EndingScene으로)
+        if (global::GameOverSequence.Instance != null)
+        {
+            global::GameOverSequence.Instance.Begin(GameResult.IsBossFight ? global::GameOverSequence.Kind.BossDefeat
+                                                                            : global::GameOverSequence.Kind.GameOver);
+            return;
+        }
         StartCoroutine(GameOverSequence());
     }
 

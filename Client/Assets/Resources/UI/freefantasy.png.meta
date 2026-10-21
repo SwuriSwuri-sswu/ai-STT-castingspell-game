@@ -118,7 +118,7 @@ TextureImporter:
         width: 40
         height: 13
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -140,7 +140,7 @@ TextureImporter:
         width: 40
         height: 13
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -149,6 +149,28 @@ TextureImporter:
       bones: []
       spriteID: 9763899961835254b8f65fd90a6ae452
       internalID: -1689029940
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: freefantasy_2
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 96
+        width: 71
+        height: 112
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9ebcf7ee21a345344963e5917a446cc2
+      internalID: -1210726556
       vertices: []
       indices: 
       edges: []
@@ -169,6 +191,7 @@ TextureImporter:
     nameFileIdTable:
       freefantasy_0: 1045429653
       freefantasy_1: -1689029940
+      freefantasy_2: -1210726556
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

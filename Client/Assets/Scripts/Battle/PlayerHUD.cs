@@ -35,6 +35,10 @@ public class PlayerHUD : MonoBehaviour
     public Image hitFlash;
     [Range(0f, 1f)] public float flashAlpha = 0.35f;
     public float flashFadeTime = 0.45f;
+    [Tooltip("쓰러진 뒤 붉은 화면이 서서히 사라지는 시간 (초). 0 = 계속 붉게 유지")]
+    public float deathRedFadeTime = 0f;
+    [Tooltip("쓰러질 때 붉은 화면의 진하기 (맞을 때 번쩍임 Flash Alpha와 따로)")]
+    [Range(0f, 1f)] public float deathRedAlpha = 0.18f;
     [Tooltip("체력이 이 비율 이하면 화면이 은은하게 붉게 맥박")]
     [Range(0f, 1f)] public float lowHpThreshold = 0.3f;
     [Range(0f, 1f)] public float lowHpPulseAlpha = 0.15f;
@@ -69,6 +73,7 @@ public class PlayerHUD : MonoBehaviour
     private float shownDelay = 1f;
     private float delayWaitTimer;
     private float flashTimer = 999f;
+    private float deadTimer;
     private Coroutine shakeRoutine, barShakeRoutine, popupRoutine, healPulseRoutine;
     private Color damagePopupColor = Color.white;
     private Vector3 barBaseScale = Vector3.one;
@@ -145,7 +150,13 @@ public class PlayerHUD : MonoBehaviour
             {
                 pulse = lowHpPulseAlpha * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * lowHpPulseSpeed));
             }
-            if (hp != null && hp.IsDead) pulse = flashAlpha; // 쓰러지면 붉은 화면 유지
+            if (hp != null && hp.IsDead)
+            {
+                // 쓰러지면 붉게 → 게임 오버 화면이 나오는 동안 서서히 사라짐
+                deadTimer += Time.unscaledDeltaTime;
+                pulse = deathRedFadeTime > 0f ? deathRedAlpha * Mathf.Clamp01(1f - deadTimer / deathRedFadeTime) : deathRedAlpha;
+                flash = 0f;
+            }
             SetAlpha(hitFlash, Mathf.Max(flash, pulse));
         }
 

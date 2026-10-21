@@ -1,23 +1,23 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
-// Ä«¸Ş¶ó ¿òÂñ (ÁÖ¹®À» ½ÃÀüÇÏ´Â ¼ø°£ µî)
-// µû·Î ºÙÀÏ ÇÊ¿ä ¾øÀ½: CameraKick.Kick(...)À» ºÎ¸£¸é Main Camera¿¡ ÀÚµ¿À¸·Î ºÙÀ½
-// ´Ù¸¥ ½ºÅ©¸³Æ®(º¸½ºÀü ÀÔÀå ¿¬Ãâ µî)°¡ Ä«¸Ş¶ó¸¦ ¿òÁ÷ÀÌ°í ÀÖ¾îµµ ±× À§Ä¡¸¦ ±âÁØÀ¸·Î »ìÂ¦ Èçµé°í ¿ø·¡´ë·Î µÒ
+// ì¹´ë©”ë¼ ì›€ì°” (ì£¼ë¬¸ì„ ì‹œì „í•˜ëŠ” ìˆœê°„ ë“±)
+// ë”°ë¡œ ë¶™ì¼ í•„ìš” ì—†ìŒ: CameraKick.Kick(...)ì„ ë¶€ë¥´ë©´ Main Cameraì— ìë™ìœ¼ë¡œ ë¶™ìŒ
+// ë‹¤ë¥¸ ìŠ¤í¬ë¦½íŠ¸(ë³´ìŠ¤ì „ ì…ì¥ ì—°ì¶œ ë“±)ê°€ ì¹´ë©”ë¼ë¥¼ ì›€ì§ì´ê³  ìˆì–´ë„ ê·¸ ìœ„ì¹˜ë¥¼ ê¸°ì¤€ìœ¼ë¡œ ì‚´ì§ í”ë“¤ê³  ì›ë˜ëŒ€ë¡œ ë‘ 
 public class CameraKick : MonoBehaviour
 {
     private float timer, duration;
     private float strength;
-    private Vector3 dir;          // ÀÌ¹ø ¿òÂñÀÇ ¹æÇâ (·£´ı)
-    private bool shakeMode;       // true = ¸Â¾ÒÀ» ¶§Ã³·³ ´ú´ú Èçµé¸² / false = ½ÃÀüÇÒ ¶§Ã³·³ ÇÑ ¹ø ¿òÂñ
+    private Vector3 dir;          // ì´ë²ˆ ì›€ì°”ì˜ ë°©í–¥ (ëœë¤)
+    private bool shakeMode;       // true = ë§ì•˜ì„ ë•Œì²˜ëŸ¼ ëœëœ í”ë“¤ë¦¼ / false = ì‹œì „í•  ë•Œì²˜ëŸ¼ í•œ ë²ˆ ì›€ì°”
     private bool applied;
     private Vector3 basePos, appliedPos;
     private Quaternion baseRot, appliedRot;
 
-    /// <param name="strength">¼¼±â (0.5 = ¾àÇÏ°Ô, 1 = º¸Åë, 2 = °­ÇÏ°Ô)</param>
-    /// <param name="time">Áö¼Ó ½Ã°£ (ÃÊ)</param>
+    /// <param name="strength">ì„¸ê¸° (0.5 = ì•½í•˜ê²Œ, 1 = ë³´í†µ, 2 = ê°•í•˜ê²Œ)</param>
+    /// <param name="time">ì§€ì† ì‹œê°„ (ì´ˆ)</param>
     public static void Kick(float strength = 1f, float time = 0.18f) => Get()?.Begin(strength, time, false);
 
-    /// <summary>¸Â¾ÒÀ» ¶§Ã³·³ Âª°Ô ´ú´ú Èçµé¸²</summary>
+    /// <summary>ë§ì•˜ì„ ë•Œì²˜ëŸ¼ ì§§ê²Œ ëœëœ í”ë“¤ë¦¼</summary>
     public static void Shake(float strength = 1f, float time = 0.3f) => Get()?.Begin(strength, time, true);
 
     private static CameraKick Get()
@@ -32,8 +32,8 @@ public class CameraKick : MonoBehaviour
     private void Begin(float s, float time, bool shake)
     {
         if (s <= 0f) return;
-        if (shake || timer <= 0f) shakeMode = shake;   // Èçµé¸²ÀÌ ¿òÂñº¸´Ù ¿ì¼±
-        // ÀÌ¹Ì Èçµé¸®´Â ÁßÀÌ¸é ´õ ¼¾ ÂÊÀ¸·Î
+        if (shake || timer <= 0f) shakeMode = shake;   // í”ë“¤ë¦¼ì´ ì›€ì°”ë³´ë‹¤ ìš°ì„ 
+        // ì´ë¯¸ í”ë“¤ë¦¬ëŠ” ì¤‘ì´ë©´ ë” ì„¼ ìª½ìœ¼ë¡œ
         strength = timer > 0f ? Mathf.Max(strength * (timer / Mathf.Max(0.01f, duration)), s) : s;
         duration = Mathf.Max(0.05f, time);
         timer = duration;
@@ -44,7 +44,7 @@ public class CameraKick : MonoBehaviour
     {
         Transform t = transform;
 
-        // Áö³­ ÇÁ·¹ÀÓ¿¡ ÁØ Èçµé¸²À» °È¾î³¿ (±×»çÀÌ ´Ù¸¥ ½ºÅ©¸³Æ®°¡ Ä«¸Ş¶ó¸¦ ¿Å°åÀ¸¸é ±× °ªÀ» ±×´ë·Î µÒ)
+        // ì§€ë‚œ í”„ë ˆì„ì— ì¤€ í”ë“¤ë¦¼ì„ ê±·ì–´ëƒ„ (ê·¸ì‚¬ì´ ë‹¤ë¥¸ ìŠ¤í¬ë¦½íŠ¸ê°€ ì¹´ë©”ë¼ë¥¼ ì˜®ê²¼ìœ¼ë©´ ê·¸ ê°’ì„ ê·¸ëŒ€ë¡œ ë‘ )
         if (applied)
         {
             if (t.position == appliedPos) t.position = basePos;
@@ -60,7 +60,7 @@ public class CameraKick : MonoBehaviour
         baseRot = t.rotation;
         if (shakeMode)
         {
-            // ¸ÂÀ½: ¹«ÀÛÀ§·Î ´ú´ú (³¡À¸·Î °¥¼ö·Ï ¾àÇØÁü)
+            // ë§ìŒ: ë¬´ì‘ìœ„ë¡œ ëœëœ (ëìœ¼ë¡œ ê°ˆìˆ˜ë¡ ì•½í•´ì§)
             float a = k * strength;
             Vector3 euler = new Vector3(Random.Range(-1f, 1f) * 1.2f, Random.Range(-1f, 1f) * 1.2f, Random.Range(-1f, 1f) * 1.8f) * a;
             t.rotation = baseRot * Quaternion.Euler(euler);
@@ -68,8 +68,8 @@ public class CameraKick : MonoBehaviour
         }
         else
         {
-            float e = k * k * Mathf.Sin((1f - k) * Mathf.PI * 6f);   // ºü¸£°Ô Æ¢¾ú´Ù°¡ Àæ¾Æµê
-            // À§·Î »ìÂ¦ µé¸®¸ç µÚ·Î ¹Ğ¸®´Â ¿òÂñ + ¾à°£ÀÇ ÁÂ¿ì ±â¿ï±â (°¢µµ ´ÜÀ§)
+            float e = k * k * Mathf.Sin((1f - k) * Mathf.PI * 6f);   // ë¹ ë¥´ê²Œ íŠ€ì—ˆë‹¤ê°€ ì¦ì•„ë“¦
+            // ìœ„ë¡œ ì‚´ì§ ë“¤ë¦¬ë©° ë’¤ë¡œ ë°€ë¦¬ëŠ” ì›€ì°” + ì•½ê°„ì˜ ì¢Œìš° ê¸°ìš¸ê¸° (ê°ë„ ë‹¨ìœ„)
             Vector3 euler = new Vector3(-dir.y * 1.2f, dir.x * 0.6f, dir.z * 0.8f) * (e * strength);
             t.rotation = baseRot * Quaternion.Euler(euler);
             t.position = basePos - t.forward * (0.03f * e * strength);

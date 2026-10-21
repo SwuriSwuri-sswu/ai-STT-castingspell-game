@@ -1,48 +1,48 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 
-// ÁöÆÎÀÌ ³¡ Point Light ¿¬Ãâ (WandTipÀÇ Point Light¿¡ ºÙÀÌ±â)
-//   Æò¼Ò   : Áö±İ Inspector¿¡ ¸ÂÃç µĞ ¹à±â¡¤¹üÀ§¡¤»ö ±×´ë·Î
-//   ¿µÃ¢ Áß : (Space¸¦ ´©¸£°í ¸»ÇÏ´Â µ¿¾È) ¾ÆÁÖ »ìÂ¦ Ä¿Á³´Ù ÀÛ¾ÆÁ³´Ù
-//   ½ÃÀü   : ½ºÆç ¼Ó¼º »öÀ¸·Î ÇÑ ¹ø Å©°Ô ¹øÂ½ ¡æ ¿ø·¡´ë·Î
+// ì§€íŒ¡ì´ ë Point Light ì—°ì¶œ (WandTipì˜ Point Lightì— ë¶™ì´ê¸°)
+//   í‰ì†Œ   : ì§€ê¸ˆ Inspectorì— ë§ì¶° ë‘” ë°ê¸°Â·ë²”ìœ„Â·ìƒ‰ ê·¸ëŒ€ë¡œ
+//   ì˜ì°½ ì¤‘ : (Spaceë¥¼ ëˆ„ë¥´ê³  ë§í•˜ëŠ” ë™ì•ˆ) ì•„ì£¼ ì‚´ì§ ì»¤ì¡Œë‹¤ ì‘ì•„ì¡Œë‹¤
+//   ì‹œì „   : ìŠ¤í  ì†ì„± ìƒ‰ìœ¼ë¡œ í•œ ë²ˆ í¬ê²Œ ë²ˆì© â†’ ì›ë˜ëŒ€ë¡œ
 [RequireComponent(typeof(Light))]
 public class WandTipLight : MonoBehaviour
 {
-    [Header("¿µÃ¢ Áß (¼û½¬µí Ä¿Á³´Ù ÀÛ¾ÆÁü)")]
-    [Tooltip("¿µÃ¢ Áß ¹à±â¡¤¹üÀ§°¡ Ä¿Áö´Â Á¤µµ (0.15 = ÃÖ´ë 15%)")]
+    [Header("ì˜ì°½ ì¤‘ (ìˆ¨ì‰¬ë“¯ ì»¤ì¡Œë‹¤ ì‘ì•„ì§)")]
+    [Tooltip("ì˜ì°½ ì¤‘ ë°ê¸°Â·ë²”ìœ„ê°€ ì»¤ì§€ëŠ” ì •ë„ (0.15 = ìµœëŒ€ 15%)")]
     [Range(0f, 1f)] public float chantPulse = 0.15f;
-    [Tooltip("1ÃÊ¿¡ Ä¿Á³´Ù ÀÛ¾ÆÁö´Â È½¼ö")]
+    [Tooltip("1ì´ˆì— ì»¤ì¡Œë‹¤ ì‘ì•„ì§€ëŠ” íšŸìˆ˜")]
     public float chantSpeed = 2.5f;
-    [Tooltip("¿µÃ¢ÀÌ ½ÃÀÛ¡¤³¡³¯ ¶§ ºÎµå·´°Ô ¹Ù²î´Â ½Ã°£ (ÃÊ)")]
+    [Tooltip("ì˜ì°½ì´ ì‹œì‘Â·ëë‚  ë•Œ ë¶€ë“œëŸ½ê²Œ ë°”ë€ŒëŠ” ì‹œê°„ (ì´ˆ)")]
     public float chantFade = 0.2f;
-    [Tooltip("¸»À» ³¡³»°í ¼­¹ö ÆÇÁ¤À» ±â´Ù¸®´Â µ¿¾È¿¡µµ °è¼Ó ¿òÁ÷ÀÌ±â")]
+    [Tooltip("ë§ì„ ëë‚´ê³  ì„œë²„ íŒì •ì„ ê¸°ë‹¤ë¦¬ëŠ” ë™ì•ˆì—ë„ ê³„ì† ì›€ì§ì´ê¸°")]
     public bool pulseWhileWaiting = true;
 
-    [Header("½ÃÀü ¹øÂ½ÀÓ (¼Ó¼º »ö)")]
-    [Tooltip("¹øÂ½ÀÏ ¶§ ¹à±â ¹èÀ² (Æò¼Ò ¹à±â ¡¿ ÀÌ °ª)")]
+    [Header("ì‹œì „ ë²ˆì©ì„ (ì†ì„± ìƒ‰)")]
+    [Tooltip("ë²ˆì©ì¼ ë•Œ ë°ê¸° ë°°ìœ¨ (í‰ì†Œ ë°ê¸° Ã— ì´ ê°’)")]
     public float flashIntensity = 4f;
-    [Tooltip("¹øÂ½ÀÏ ¶§ ¹üÀ§ ¹èÀ² (Æò¼Ò ¹üÀ§ ¡¿ ÀÌ °ª)")]
+    [Tooltip("ë²ˆì©ì¼ ë•Œ ë²”ìœ„ ë°°ìœ¨ (í‰ì†Œ ë²”ìœ„ Ã— ì´ ê°’)")]
     public float flashRange = 2f;
-    [Tooltip("¹øÂ½ÀÓÀÌ Ä¿Áö´Â ½Ã°£ (ÃÊ)")]
+    [Tooltip("ë²ˆì©ì„ì´ ì»¤ì§€ëŠ” ì‹œê°„ (ì´ˆ)")]
     public float flashRise = 0.06f;
-    [Tooltip("¹øÂ½ÀÓÀÌ »ç¶óÁö´Â ½Ã°£ (ÃÊ)")]
+    [Tooltip("ë²ˆì©ì„ì´ ì‚¬ë¼ì§€ëŠ” ì‹œê°„ (ì´ˆ)")]
     public float flashFall = 0.45f;
-    [Tooltip("¹øÂ½ÀÓ µÚ »öÀÌ ¿ø·¡ »öÀ¸·Î µ¹¾Æ¿À´Â ½Ã°£ (ÃÊ)")]
+    [Tooltip("ë²ˆì©ì„ ë’¤ ìƒ‰ì´ ì›ë˜ ìƒ‰ìœ¼ë¡œ ëŒì•„ì˜¤ëŠ” ì‹œê°„ (ì´ˆ)")]
     public float colorReturn = 0.3f;
 
-    [Header("¿¬°á (ºñ¿ì¸é ÀÚµ¿À¸·Î Ã£À½)")]
+    [Header("ì—°ê²° (ë¹„ìš°ë©´ ìë™ìœ¼ë¡œ ì°¾ìŒ)")]
     public VoiceSender voiceSender;
 
     private Light tipLight;
     private float baseIntensity;
     private float baseRange;
     private Color baseColor;
-    private float chantBlend;     // 0 = Æò¼Ò, 1 = ¿µÃ¢ Áß
-    private float flashBlend;     // 0 = Æò¼Ò, 1 = ¹øÂ½ÀÓ ÃÖ´ë
+    private float chantBlend;     // 0 = í‰ì†Œ, 1 = ì˜ì°½ ì¤‘
+    private float flashBlend;     // 0 = í‰ì†Œ, 1 = ë²ˆì©ì„ ìµœëŒ€
     private Color flashColor;
-    private float colorBlend;     // 0 = ¿ø·¡ »ö, 1 = ¼Ó¼º »ö
+    private float colorBlend;     // 0 = ì›ë˜ ìƒ‰, 1 = ì†ì„± ìƒ‰
     private Coroutine flashRoutine;
-    private float onWeight = 1f, onTarget = 1f, onSpeed = 2f;   // ÄÑÁü Á¤µµ (º¸½ºÀü ÀÔÀå µ¿¾È ²¨ µÒ)
+    private float onWeight = 1f, onTarget = 1f, onSpeed = 2f;   // ì¼œì§ ì •ë„ (ë³´ìŠ¤ì „ ì…ì¥ ë™ì•ˆ êº¼ ë‘ )
     private SkillManager subscribed;
 
     private void Awake()
@@ -79,14 +79,14 @@ public class WandTipLight : MonoBehaviour
 
     private void Update()
     {
-        if (subscribed == null) Subscribe();   // SkillManager°¡ ´Ê°Ô »ı±ä °æ¿ì
+        if (subscribed == null) Subscribe();   // SkillManagerê°€ ëŠ¦ê²Œ ìƒê¸´ ê²½ìš°
 
         bool chanting = voiceSender != null &&
                         (voiceSender.IsRecording || (pulseWhileWaiting && voiceSender.IsWaitingForResult));
         float target = chanting ? 1f : 0f;
         chantBlend = Mathf.MoveTowards(chantBlend, target, Time.deltaTime / Mathf.Max(0.01f, chantFade));
 
-        // ¿µÃ¢: 0 ~ chantPulse »çÀÌ·Î ºÎµå·´°Ô ¿À¸£³»¸²
+        // ì˜ì°½: 0 ~ chantPulse ì‚¬ì´ë¡œ ë¶€ë“œëŸ½ê²Œ ì˜¤ë¥´ë‚´ë¦¼
         float wave = (Mathf.Sin(Time.time * chantSpeed * Mathf.PI * 2f) + 1f) * 0.5f;
         float chantMul = 1f + chantPulse * wave * chantBlend;
 
@@ -105,7 +105,7 @@ public class WandTipLight : MonoBehaviour
         Flash(EnemyController.ElementColor(spell.elementType));
     }
 
-    /// <summary>ºû ÄÑ±â/²ô±â. fadeTime 0 = Áï½Ã (º¸½ºÀü: ÀÔÀå µ¿¾È ²û ¡æ ÀüÅõ ½ÃÀÛ ¶§ ÄÔ)</summary>
+    /// <summary>ë¹› ì¼œê¸°/ë„ê¸°. fadeTime 0 = ì¦‰ì‹œ (ë³´ìŠ¤ì „: ì…ì¥ ë™ì•ˆ ë” â†’ ì „íˆ¬ ì‹œì‘ ë•Œ ì¼¬)</summary>
     public void SetOn(bool on, float fadeTime = 0.5f)
     {
         onTarget = on ? 1f : 0f;
@@ -114,7 +114,7 @@ public class WandTipLight : MonoBehaviour
         if (tipLight != null) tipLight.enabled = onWeight > 0.001f || on;
     }
 
-    // ´Ù¸¥ ½ºÅ©¸³Æ®¿¡¼­ Á÷Á¢ ¹øÂ½ÀÌ°Ô ÇÒ ¶§µµ »ç¿ë °¡´É
+    // ë‹¤ë¥¸ ìŠ¤í¬ë¦½íŠ¸ì—ì„œ ì§ì ‘ ë²ˆì©ì´ê²Œ í•  ë•Œë„ ì‚¬ìš© ê°€ëŠ¥
     public void Flash(Color color)
     {
         flashColor = color;
