@@ -39,6 +39,8 @@ public class BossController : MonoBehaviour
     [Range(0f, 1f)] public float phase3At = 0.33f;
     [Tooltip("페이즈 1·2·3의 보스 속성 (약점 = 이 속성을 이기는 속성)")]
     public MagicElement[] phaseElements = { MagicElement.Water, MagicElement.Fire, MagicElement.Grass };
+    [Tooltip("판마다 페이즈 속성 순서를 무작위로 섞기 (마법진·아우라·체력바 색은 그 속성에 맞춰 자동으로 바뀜)")]
+    public bool randomPhaseOrder = true;
 
     [Header("공격력 (페이즈 1·2·3)")]
     public float[] basicDamage = { 6f, 8f, 10f };
@@ -306,6 +308,7 @@ public class BossController : MonoBehaviour
         Enemy.deathFallbackDuration = 3f;
         Enemy.destroyDelayAfterDeath = 9999f; // 쓰러진 채로 남아 있게 (씬이 바뀔 때까지)
         Enemy.OnDamaged += HandleDamaged;
+        if (randomPhaseOrder) ShufflePhaseElements();
 
         Animator animator = Enemy.anim != null ? Enemy.anim : GetComponentInChildren<Animator>();
         if (animator != null)
@@ -320,6 +323,20 @@ public class BossController : MonoBehaviour
             relay.Init(this, animator);
         }
         basePos = transform.position;
+    }
+
+    // 페이즈 속성 순서 섞기 (Inspector 값은 그대로 두고 이번 판에서만)
+    private void ShufflePhaseElements()
+    {
+        if (phaseElements == null || phaseElements.Length < 2) return;
+        MagicElement[] order = (MagicElement[])phaseElements.Clone();
+        for (int i = order.Length - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (order[i], order[j]) = (order[j], order[i]);
+        }
+        phaseElements = order;
+        Debug.Log($"[Boss] 이번 판 속성 순서: {string.Join(" → ", order)}");
     }
 
     private void Start()
