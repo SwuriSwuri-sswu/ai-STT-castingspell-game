@@ -262,6 +262,9 @@ public class GameOverSequence : MonoBehaviour
     // ---------- 결과 문구 ----------
     private static string ResultText(Kind kind)
     {
+        // [추가] 결과창이 뜰 때 기록 자동 저장
+        ResultRecordStore.SaveResult(GameResult.Kills, GameResult.LearnedSpells, GameResult.PlayTimeText, GameResult.Score);
+
         if (kind == Kind.GameOver || !GameResult.IsBossFight)
         {
             return $"Monsters defeated  {GameResult.Kills}\n" +
