@@ -5,8 +5,8 @@
 문장에 섞여 나오는 방식으로 바꾸려면 부분 구간 탐색이 필요하며, 그때는
 정확도 보정도 함께 의미를 잃으므로 데미지 계산 쪽도 같이 손봐야 한다.
 
-단독 실행하면 스킬명 충돌 검사와 샘플 판정 결과를 출력한다.
-    python3 skill_matcher.py
+스킬 목록은 Unity 가 skill_list 메시지로 보내며 parse_skill_list() 가 검사한다.
+서버에는 기본 스킬 목록이 없다. 목록을 받기 전의 판정 요청은 NO_SKILL_LIST 오류가 된다.
 """
 
 import re
@@ -22,7 +22,7 @@ from dataclasses import dataclass
 MATCH_THRESHOLD = 0.50
 
 # 1위와 2위 스킬의 점수 차가 이보다 작으면 모호하다고 보고 불발시킨다.
-# 스킬을 추가할 때마다 check_skill_collisions() 로 여유를 확인할 것.
+# 이름이 비슷한 스킬 쌍은 find_collisions() 가 찾는다 (스킬 목록을 받을 때 서버 로그에 경고로 남는다).
 AMBIGUITY_GAP = 0.15
 
 # 문장 맨 앞에 붙는 간투사. "어 화염구" 처럼 말했을 때 점수가 깎이는 것을 막는다.
@@ -30,37 +30,16 @@ LEADING_FILLERS = ("어", "아", "음", "그", "저")
 
 
 # ─────────────────────────────────────────────────────────────
-# 스킬 정의
+# Whisper 힌트
 # ─────────────────────────────────────────────────────────────
 
-# aliases 에는 테스트 중 반복 관측된 오인식 표기를 추가한다.
-SKILLS = {
-    "strike": {
-        "name": "때리기",
-        "base_damage": 1000,
-        "aliases": ["때리기"],
-    },
-    "guard": {
-        "name": "막아주기",
-        "base_damage": 800,
-        "aliases": ["막아주기"],
-    },
-    "blast": {
-        "name": "날리기",
-        "base_damage": 900,
-        "aliases": ["날리기"],
-    },
-}
 
-
-def build_initial_prompt(skills: dict | None = None) -> str:
+def build_initial_prompt(skills: dict) -> str:
     """Whisper 에 넘길 initial_prompt.
 
     프롬프트에 등장한 어휘 쪽으로 디코딩이 편향되므로 고유 스킬명 인식률이 오른다.
     다만 엉뚱한 소리에도 스킬명을 갖다 붙일 수 있다는 부작용이 있다.
-    skills 를 주지 않으면 기본 SKILLS 를 사용한다.
     """
-    skills = SKILLS if skills is None else skills
     return ", ".join(info["name"] for info in skills.values())
 
 
@@ -125,14 +104,12 @@ class MatchResult:
 # ─────────────────────────────────────────────────────────────
 
 
-def match_skill(text: str, skills: dict | None = None) -> MatchResult:
+def match_skill(text: str, skills: dict) -> MatchResult:
     """인식 텍스트에서 스킬을 판별한다.
 
     match 값은 게이트 통과 여부와 무관하게 항상 채워지므로
     불발 원인을 확인하는 데 쓸 수 있다.
-    skills 를 주지 않으면 기본 SKILLS 를 사용한다.
     """
-    skills = SKILLS if skills is None else skills
 
     norm = normalize(text)
     if not norm:
@@ -181,7 +158,7 @@ class SkillListError(ValueError):
 
 
 def parse_skill_list(items) -> dict:
-    """Unity 가 보낸 skills 배열을 검사해 SKILLS 와 같은 형태의 dict 로 바꾼다.
+    """Unity 가 보낸 skills 배열을 검사해 매칭에 쓰는 dict 로 바꾼다.
 
     입력: [{"id": "...", "name": "...", "aliases": ["..."]}, ...]
     출력: {id: {"name": ..., "aliases": [name, 별칭...]}}
@@ -228,52 +205,3 @@ def find_collisions(skills: dict, warn_at: float = 0.6) -> list[str]:
             if s >= warn_at:
                 out.append(f"{a} <-> {b} 유사도 {s:.2f}")
     return out
-
-
-# ─────────────────────────────────────────────────────────────
-# 자체 점검
-# ─────────────────────────────────────────────────────────────
-
-
-def check_skill_collisions(warn_at: float = 0.6) -> None:
-    """스킬명끼리 얼마나 비슷한지 전수 출력.
-
-    높게 나오는 쌍이 있으면 임계값을 손보는 것보다 스킬명 자체를 바꾸는 편이 확실하다.
-    """
-    ids = list(SKILLS)
-    print(f"--- 스킬명 상호 유사도 (경고 기준 {warn_at}) ---")
-    worst = 0.0
-    for i in range(len(ids)):
-        for j in range(i + 1, len(ids)):
-            a, b = SKILLS[ids[i]]["name"], SKILLS[ids[j]]["name"]
-            s = _ratio(normalize(a), normalize(b))
-            worst = max(worst, s)
-            flag = "   <-- 위험" if s >= warn_at else ""
-            print(f"  {a} <-> {b} : {s:.3f}{flag}")
-    print(f"  최고치 {worst:.3f}\n")
-
-
-if __name__ == "__main__":
-    check_skill_collisions()
-
-    samples = [
-        "때리기",
-        "때리기!",
-        "어 때리기",
-        "대리기",  # 오인식 ㄸ -> ㄷ
-        "막아주기",
-        "막아 주기",  # 공백은 normalize 가 제거하므로 위와 동일 취급
-        "날리기",
-        "날리끼",  # 오인식 경음화
-        "오늘 점심 뭐 먹지",
-        "저기 저놈한테 날리기 써",  # FULL 모드에서는 불발이 정상
-    ]
-
-    print(f"--- 판정 (임계값 {MATCH_THRESHOLD}, 모호성 간격 {AMBIGUITY_GAP}) ---")
-    for s in samples:
-        r = match_skill(s)
-        if r.ok:
-            tag = f"{SKILLS[r.skill_id]['name']} (보정계수 {normalized_match(r.match):.2f})"
-        else:
-            tag = f"불발 [{r.reject_reason}]"
-        print(f"  {s:<22} -> {tag:<26} match={r.match:.3f} 2nd={r.second_match:.3f}")

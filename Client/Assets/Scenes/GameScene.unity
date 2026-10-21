@@ -1238,7 +1238,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 72393938}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd65006f5338cf34a88aef639bed8469, type: 3}
   m_Name: 
@@ -1253,7 +1253,7 @@ MonoBehaviour:
   dropItemPrefab: {fileID: 9009495989836976630, guid: ad5534dabd1333e419fc48a593487964, type: 3}
   dropOffset: {x: 0, y: 1, z: 0}
   cameraDropDistance: 4
-  show: 1
+  show: 0
   screenPosition: {x: 10, y: 260}
   width: 480
   waveHeight: 100

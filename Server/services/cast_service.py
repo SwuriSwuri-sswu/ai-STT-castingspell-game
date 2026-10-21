@@ -80,7 +80,7 @@ class CastService:
     def __init__(self, warmup: bool = True):
         # 단계별 시간을 로그로 남긴다 (voice_runtime.startup 의 [1/2] 안에서 찍힘)
         t0 = time.perf_counter()
-        self.stt = SpeechRecognizer(initial_prompt=sm.build_initial_prompt())
+        self.stt = SpeechRecognizer()   # 힌트(initial_prompt)는 요청마다 이 연결의 스킬 목록으로 넘긴다
         log.info("  Whisper 모델 불러오기 (%s, %s, %s, 스레드 %d): %.2f초 (처음 실행이면 내려받기 포함)",
                  MODEL_SIZE, DEVICE, COMPUTE_TYPE, CPU_THREADS, time.perf_counter() - t0)
         if warmup:
@@ -100,23 +100,24 @@ class CastService:
         t = np.arange(TARGET_SR, dtype=np.float32) / TARGET_SR
         analyze_array((0.1 * np.sin(2 * np.pi * 220 * t)).astype(np.float32), TARGET_SR)
 
-    def token_limit(self, skills: dict | None = None) -> TokenLimit:
+    def token_limit(self, skills: dict) -> TokenLimit:
         """이 스펠 목록에 맞는 생성 길이 제한. 판정은 별칭으로도 맞추므로 이름과 별칭을 모두 넣어 가장 긴 것을 찾는다.
 
         같은 목록이면 저장해 둔 값을 쓴다. 스펠 목록을 받을 때(websocket.receive_skill_list) 미리 한 번 계산된다.
         """
-        skills = sm.SKILLS if skills is None else skills
         phrases = [p for info in skills.values() for p in (info["name"], *info.get("aliases", []))]
         return self.stt.token_limit(phrases)
 
-    def partial_text(self, audio: np.ndarray, skills: dict | None = None) -> str:
+    def partial_text(self, audio: np.ndarray, skills: dict | None) -> str:
         """중간 자막(/streaming)용 받아쓰기. 판정·음향 분석 없이 들린 글자만 돌려준다.
 
         audio: 16kHz 모노 float32 (stream_session.to_16k 의 출력)
         잡음으로 판단되면(no_speech 가 높으면) 빈 문자열을 돌려줘, 엉뚱한 글자가 자막에 뜨지 않게 한다.
+        스킬 목록을 아직 받지 못했으면(skills 가 None) 받아쓰지 않고 빈 문자열을 돌려준다.
         나중에 중간 자막만 다른 엔진(혼합 방식)으로 바꿀 때는 이 함수만 교체한다.
         """
-        skills = sm.SKILLS if skills is None else skills
+        if not skills:
+            return ""
         stt = self.stt.transcribe(audio, initial_prompt=sm.build_initial_prompt(skills),
                                   max_new_tokens=self.token_limit(skills).limit)
         if stt.no_speech > MAX_NO_SPEECH_PROB:
@@ -126,10 +127,11 @@ class CastService:
     def process(self, wav: bytes, request_id=None, skills: dict | None = None) -> dict:
         """동기 함수. 서버에서는 asyncio.to_thread 로 호출한다.
 
-        skills: 이 연결에서 Unity 가 보낸 스킬 목록. None 이면 기본 SKILLS.
+        skills: 이 연결에서 Unity 가 보낸 스킬 목록. 없으면(None) CastError(NO_SKILL_LIST).
         입력이 잘못됐으면 CastError 를 던진다.
         """
-        skills = sm.SKILLS if skills is None else skills
+        if not skills:
+            raise CastError("NO_SKILL_LIST", "스킬 목록(skill_list)을 받기 전입니다")
         t0 = time.perf_counter()
 
         # ① 디코딩 (한 번만)

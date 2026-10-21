@@ -44,7 +44,7 @@ public class VoiceSocket : MonoBehaviour
         // 해금, 초기화 때 재전송 (SkillManager.Instance 는 Awake 에서 정해지므로 Start 에서 사용할 수 있다)
         subscribedSkill = SkillManager.Instance;
         if (subscribedSkill != null) subscribedSkill.SpellsChanged += SendSkillList;
-        else Debug.LogError("[WS] 씬에 SkillManager 가 없습니다. 스펠 목록을 보낼 수 없습니다 (서버 기본 스킬로 판정).");
+        else Debug.LogError("[WS] 씬에 SkillManager 가 없습니다. 스펠 목록을 보낼 수 없습니다 (판정 요청은 서버에서 NO_SKILL_LIST 오류로 돌아옴).");
         ws.OnError += e => Debug.LogError("[WS] 오류: " + e);
         ws.OnClose += code => Debug.Log("[WS] 연결 종료: " + code);
         ws.OnMessage += bytes => HandleMessage(Encoding.UTF8.GetString(bytes));
