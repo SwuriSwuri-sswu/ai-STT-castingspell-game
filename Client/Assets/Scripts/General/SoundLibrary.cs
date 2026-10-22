@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// °ÔÀÓ¿¡¼­ ¾²´Â ¸ğµç ¼Ò¸®¸¦ ¸ğ¾Æ µÎ´Â ¿¡¼Â (Assets/Resources/SoundLibrary.asset ÇÏ³ª¸¸ ÀÖÀ¸¸é µÊ)
-//   ¸¸µé±â¡¤Ã¤¿ì±â: ¸Ş´º Tools ¡æ Sound ¡æ "»ç¿îµå ¶óÀÌºê·¯¸® ÀÚµ¿ Ã¤¿ì±â"
-//   ¡æ ÆÄÀÏ ÀÌ¸§(¿¹: SFX_Chant_Start)ÀÌ °°Àº ¿Àµğ¿À¸¦ Ã£¾Æ ¾Æ·¡ Ä­¿¡ ¾Ë¾Æ¼­ ³Ö¾î ÁÜ
-//   ¼Ò¸®¸¦ ¹Ù²Ù°í ½ÍÀ¸¸é Ä­¿¡ ´Ù¸¥ ÆÄÀÏÀ» ²ø¾î´Ù ³õ±â¸¸ ÇÏ¸é µÊ (ÄÚµå ¼öÁ¤ X)
+// ê²Œì„ì—ì„œ ì“°ëŠ” ëª¨ë“  ì†Œë¦¬ë¥¼ ëª¨ì•„ ë‘ëŠ” ì—ì…‹ (Assets/Resources/SoundLibrary.asset í•˜ë‚˜ë§Œ ìˆìœ¼ë©´ ë¨)
+//   ë§Œë“¤ê¸°Â·ì±„ìš°ê¸°: ë©”ë‰´ Tools â†’ Sound â†’ "ì‚¬ìš´ë“œ ë¼ì´ë¸ŒëŸ¬ë¦¬ ìë™ ì±„ìš°ê¸°"
+//   â†’ íŒŒì¼ ì´ë¦„(ì˜ˆ: SFX_Chant_Start)ì´ ê°™ì€ ì˜¤ë””ì˜¤ë¥¼ ì°¾ì•„ ì•„ë˜ ì¹¸ì— ì•Œì•„ì„œ ë„£ì–´ ì¤Œ
+//   ì†Œë¦¬ë¥¼ ë°”ê¾¸ê³  ì‹¶ìœ¼ë©´ ì¹¸ì— ë‹¤ë¥¸ íŒŒì¼ì„ ëŒì–´ë‹¤ ë†“ê¸°ë§Œ í•˜ë©´ ë¨ (ì½”ë“œ ìˆ˜ì • X)
 [CreateAssetMenu(fileName = "SoundLibrary", menuName = "Sound/Sound Library")]
 public class SoundLibrary : ScriptableObject
 {
-    // ÀÚµ¿ Ã¤¿ì±â¿ë: ÀÌ ÀÌ¸§ÀÇ ÆÄÀÏ (¹è¿­ÀÌ¸é "ÀÌ¸§_1", "ÀÌ¸§_2", "ÀÌ¸§_ice" Ã³·³ ÀÌ¸§_À¸·Î ½ÃÀÛÇÏ´Â ÆÄÀÏ ÀüºÎ)
+    // ìë™ ì±„ìš°ê¸°ìš©: ì´ ì´ë¦„ì˜ íŒŒì¼ (ë°°ì—´ì´ë©´ "ì´ë¦„_1", "ì´ë¦„_2", "ì´ë¦„_ice" ì²˜ëŸ¼ ì´ë¦„_ìœ¼ë¡œ ì‹œì‘í•˜ëŠ” íŒŒì¼ ì „ë¶€)
     [AttributeUsage(AttributeTargets.Field)]
     public class FileAttribute : Attribute
     {
@@ -17,15 +17,15 @@ public class SoundLibrary : ScriptableObject
         public FileAttribute(string name) { this.name = name; }
     }
 
-    [Header("Å©±â (0~1, ¼³Á¤ È­¸éÀÇ º¼·ı¿¡ °öÇØÁü)")]
+    [Header("í¬ê¸° (0~1, ì„¤ì • í™”ë©´ì˜ ë³¼ë¥¨ì— ê³±í•´ì§)")]
     [Range(0f, 1f)] public float bgmVolume = 0.45f;
     [Range(0f, 1f)] public float ambienceVolume = 0.3f;
     [Range(0f, 1f)] public float sfxVolume = 0.85f;
     [Range(0f, 1f)] public float uiVolume = 0.6f;
     [Range(0f, 1f)] public float typingVolume = 0.3f;
-    [Tooltip("Å¸ÀÌÇÎÀÌ ÀÌ ½Ã°£(ÃÊ) ³Ñ°Ô ¸ØÃß¸é Å¸ÀÌÇÎ ¼Ò¸®µµ ¸ØÃã (ÁÙ¹Ù²Ş¡¤¹®´Ü ³¡¿¡¼­ Àá±ñ Á¶¿ëÇØÁü)")]
+    [Tooltip("íƒ€ì´í•‘ì´ ì´ ì‹œê°„(ì´ˆ) ë„˜ê²Œ ë©ˆì¶”ë©´ íƒ€ì´í•‘ ì†Œë¦¬ë„ ë©ˆì¶¤ (ì¤„ë°”ê¿ˆÂ·ë¬¸ë‹¨ ëì—ì„œ ì ê¹ ì¡°ìš©í•´ì§)")]
     public float typingStopGap = 0.14f;
-    [Tooltip("ÆÄÀÏ¸¶´Ù Å©±â µû·Î ¸ÂÃß±â (³Ê¹« Å©°Å³ª ÀÛÀº ÆÄÀÏ¸¸ ³Ö±â)")]
+    [Tooltip("íŒŒì¼ë§ˆë‹¤ í¬ê¸° ë”°ë¡œ ë§ì¶”ê¸° (ë„ˆë¬´ í¬ê±°ë‚˜ ì‘ì€ íŒŒì¼ë§Œ ë„£ê¸°)")]
     public List<ClipVolume> clipVolumes = new List<ClipVolume>();
 
     [Serializable]
@@ -35,23 +35,23 @@ public class SoundLibrary : ScriptableObject
         [Range(0f, 2f)] public float volume = 1f;
     }
 
-    [Header("´À³¦")]
-    [Tooltip("È¿°úÀ½ ³ô³·ÀÌ¸¦ ¸Å¹ø »ìÂ¦ ´Ù¸£°Ô (0.08 = ¡¾8%). °°Àº ¼Ò¸®°¡ ¹İº¹µÅµµ ´ú Áú¸²")]
+    [Header("ëŠë‚Œ")]
+    [Tooltip("íš¨ê³¼ìŒ ë†’ë‚®ì´ë¥¼ ë§¤ë²ˆ ì‚´ì§ ë‹¤ë¥´ê²Œ (0.08 = Â±8%). ê°™ì€ ì†Œë¦¬ê°€ ë°˜ë³µë¼ë„ ëœ ì§ˆë¦¼")]
     [Range(0f, 0.3f)] public float pitchVariation = 0.08f;
-    [Tooltip("¿µÃ¢(Space) Áß BGM¡¤È¯°æÀ½ Å©±â (0.3 = 30%·Î ÁÙÀÓ). ¸¶ÀÌÅ©¿¡ À½¾ÇÀÌ ´ú µé¾î°¨")]
+    [Tooltip("ì˜ì°½(Space) ì¤‘ BGMÂ·í™˜ê²½ìŒ í¬ê¸° (0.3 = 30%ë¡œ ì¤„ì„). ë§ˆì´í¬ì— ìŒì•…ì´ ëœ ë“¤ì–´ê°")]
     [Range(0f, 1f)] public float duckWhileChanting = 0.3f;
-    [Tooltip("BGMÀÌ ¹Ù²ğ ¶§ ¼­·Î ¼¯ÀÌ´Â ½Ã°£ (ÃÊ)")]
+    [Tooltip("BGMì´ ë°”ë€” ë•Œ ì„œë¡œ ì„ì´ëŠ” ì‹œê°„ (ì´ˆ)")]
     public float bgmFadeTime = 1.2f;
-    [Tooltip("°ÔÀÓ ¿À¹ö BGM ¹İº¹ Àç»ı (ÂªÀº È¿°úÀ½ °°Àº °îÀÌ¸é ²ô±â)")]
+    [Tooltip("ê²Œì„ ì˜¤ë²„ BGM ë°˜ë³µ ì¬ìƒ (ì§§ì€ íš¨ê³¼ìŒ ê°™ì€ ê³¡ì´ë©´ ë„ê¸°)")]
     public bool gameOverBgmLoop = false;
-    [Tooltip("¿£µù: Á¡¼ö(°á°ú ¹®±¸)°¡ ´Ù ³ª¿À°í ¸î ÃÊ µÚ¿¡ ¿£µù BGMÀ» ½ÃÀÛÇÒÁö")]
+    [Tooltip("ì—”ë”©: ì ìˆ˜(ê²°ê³¼ ë¬¸êµ¬)ê°€ ë‹¤ ë‚˜ì˜¤ê³  ëª‡ ì´ˆ ë’¤ì— ì—”ë”© BGMì„ ì‹œì‘í• ì§€")]
     public float endingBgmDelay = 0.5f;
-    [Tooltip("»ó¼º ÀûÁßÀ½À» Æø¹ßÀ½º¸´Ù ÀÌ¸¸Å­ ´Ê°Ô (ÃÊ). µ¿½Ã¿¡ ³ª¸é ¹¯Èû")]
+    [Tooltip("ìƒì„± ì ì¤‘ìŒì„ í­ë°œìŒë³´ë‹¤ ì´ë§Œí¼ ëŠ¦ê²Œ (ì´ˆ). ë™ì‹œì— ë‚˜ë©´ ë¬»í˜")]
     public float effectivenessDelay = 0.12f;
-    [Tooltip("º¸½º°¡ ¸ÂÀ» ¶§ ¸÷ ÇÇ°İÀ½ ³ôÀÌ (³·À»¼ö·Ï ¹¬Á÷)")]
+    [Tooltip("ë³´ìŠ¤ê°€ ë§ì„ ë•Œ ëª¹ í”¼ê²©ìŒ ë†’ì´ (ë‚®ì„ìˆ˜ë¡ ë¬µì§)")]
     public float bossHitPitch = 0.75f;
 
-    [Header("¾À ÀÌ¸§")]
+    [Header("ì”¬ ì´ë¦„")]
     public string titleScene = "TitleScene";
     public string gameScene = "GameScene";
     public string bossScene = "BossScene";
@@ -60,37 +60,37 @@ public class SoundLibrary : ScriptableObject
     [Header("BGM")]
     [File("BGM_Title")] public AudioClip bgmTitle;
     [File("BGM_Stage1")] public AudioClip bgmStage1;
-    [Tooltip("º¸½ºÀü ÀÔÀå(°É¾î µé¾î°¡´Â µ¿¾È) ~ ¾È³»Ã¢±îÁö")]
+    [Tooltip("ë³´ìŠ¤ì „ ì…ì¥(ê±¸ì–´ ë“¤ì–´ê°€ëŠ” ë™ì•ˆ) ~ ì•ˆë‚´ì°½ê¹Œì§€")]
     [File("BGM_BossEntrance")] public AudioClip bgmBossEntrance;
     [File("BGM_Boss")] public AudioClip bgmBoss;
     [File("BGM_BossPhase3")] public AudioClip bgmBossPhase3;
     [File("BGM_GameOver")] public AudioClip bgmGameOver;
     [File("BGM_Ending")] public AudioClip bgmEnding;
 
-    [Header("È¯°æÀ½ (¹İº¹)")]
-    [Tooltip("GameScene È¶ºÒ")]
+    [Header("í™˜ê²½ìŒ (ë°˜ë³µ)")]
+    [Tooltip("GameScene íšƒë¶ˆ")]
     [File("AMB_Torch")] public AudioClip ambTorch;
-    [Tooltip("BossScene ¼º ¾È")]
+    [Tooltip("BossScene ì„± ì•ˆ")]
     [File("AMB_BossCastle")] public AudioClip ambBossCastle;
 
-    [Header("¿µÃ¢¡¤½ÃÀü")]
+    [Header("ì˜ì°½Â·ì‹œì „")]
     [File("SFX_Chant_Start")] public AudioClip chantStart;
-    [Tooltip("ÆÇÁ¤ ¼º°ø '¶ì¸µ'")]
+    [Tooltip("íŒì • ì„±ê³µ 'ë ë§'")]
     [File("SFX_Cast_Success")] public AudioClip castSuccess;
     [File("SFX_Cast_Fail")] public AudioClip castFail;
-    [Tooltip("½ºÆç SpellDataÀÇ Cast Sound°¡ ºñ¾î ÀÖÀ» ¶§ ¼Ó¼ºº°·Î ÀÌ Áß ÇÏ³ª")]
+    [Tooltip("ìŠ¤í  SpellDataì˜ Cast Soundê°€ ë¹„ì–´ ìˆì„ ë•Œ ì†ì„±ë³„ë¡œ ì´ ì¤‘ í•˜ë‚˜")]
     [File("SFX_Cast_Normal")] public AudioClip[] castNormal;
     [File("SFX_Cast_Fire")] public AudioClip[] castFire;
     [File("SFX_Cast_Water")] public AudioClip[] castWater;
     [File("SFX_Cast_Grass")] public AudioClip[] castGrass;
 
-    [Header("ÀûÁß Æø¹ß (SpellDataÀÇ Hit Sound°¡ ºñ¾î ÀÖÀ» ¶§ ¼Ó¼ºº°·Î ÀÌ Áß ÇÏ³ª)")]
-    [File("SFX_Hit_Explosion_Æã")] public AudioClip[] hitNormal;
+    [Header("ì ì¤‘ í­ë°œ (SpellDataì˜ Hit Soundê°€ ë¹„ì–´ ìˆì„ ë•Œ ì†ì„±ë³„ë¡œ ì´ ì¤‘ í•˜ë‚˜)")]
+    [File("SFX_Hit_Explosion_í‘")] public AudioClip[] hitNormal;
     [File("SFX_Hit_Explosion_Fire")] public AudioClip[] hitFire;
     [File("SFX_Hit_Explosion_Water")] public AudioClip[] hitWater;
     [File("SFX_Hit_Explosion_Grass")] public AudioClip[] hitGrass;
 
-    [Header("ÀüÅõ")]
+    [Header("ì „íˆ¬")]
     [File("SFX_Monster_Appear")] public AudioClip monsterAppear;
     [File("SFX_Monster_Hit")] public AudioClip monsterHit;
     [File("SFX_Monster_Die")] public AudioClip monsterDie;
@@ -99,11 +99,11 @@ public class SoundLibrary : ScriptableObject
     [File("SFX_NotEffective")] public AudioClip notEffective;
     [File("SFX_Spell_Get")] public AudioClip spellGet;
 
-    [Header("º¸½ºÀü")]
+    [Header("ë³´ìŠ¤ì „")]
     [File("SFX_Turn_Player")] public AudioClip turnPlayer;
     [File("SFX_Turn_Boss")] public AudioClip turnBoss;
     [File("SFX_Boss_Shoot")] public AudioClip bossShoot;
-    [Tooltip("º¸½º ¸¶¹ı Æø¹ß (ÀÌ Áß ÇÏ³ª¸¦ ¹«ÀÛÀ§·Î). SFX_Boss_Explosion, SFX_Boss_Explosion_2 ...")]
+    [Tooltip("ë³´ìŠ¤ ë§ˆë²• í­ë°œ (ì´ ì¤‘ í•˜ë‚˜ë¥¼ ë¬´ì‘ìœ„ë¡œ). SFX_Boss_Explosion, SFX_Boss_Explosion_2 ...")]
     [File("SFX_Boss_Explosion")] public AudioClip[] bossExplosions;
     [File("SFX_Boss_Ground")] public AudioClip bossGround;
     [File("SFX_Boss_Charge")] public AudioClip bossCharge;
@@ -112,23 +112,23 @@ public class SoundLibrary : ScriptableObject
     [File("SFX_Boss_Stun")] public AudioClip bossStun;
     [File("SFX_Boss_Die")] public AudioClip bossDie;
     [File("SFX_Minion_Portal")] public AudioClip minionPortal;
-    [Tooltip("º¸½ºÀü ÀÔÀå ¶§ °È´Â ¹ß¼Ò¸® (ÀÌ Áß ÇÏ³ª¸¦ ¹«ÀÛÀ§·Î). SFX_Footstep_1, SFX_Footstep_2 ...")]
+    [Tooltip("ë³´ìŠ¤ì „ ì…ì¥ ë•Œ ê±·ëŠ” ë°œì†Œë¦¬ (ì´ ì¤‘ í•˜ë‚˜ë¥¼ ë¬´ì‘ìœ„ë¡œ). SFX_Footstep_1, SFX_Footstep_2 ...")]
     [File("SFX_Footstep")] public AudioClip[] footsteps;
 
-    [Header("UI¡¤¿¬Ãâ")]
-    [Tooltip("¸ğµç ¹öÆ° Å¬¸¯ (µû·Î ¿¬°áÇÒ ÇÊ¿ä ¾øÀ½)")]
+    [Header("UIÂ·ì—°ì¶œ")]
+    [Tooltip("ëª¨ë“  ë²„íŠ¼ í´ë¦­ (ë”°ë¡œ ì—°ê²°í•  í•„ìš” ì—†ìŒ)")]
     [File("SFX_UI_Click")] public AudioClip uiClick;
-    [Tooltip("¹öÆ°¿¡ ¸¶¿ì½º¸¦ ¿Ã¸± ¶§ (ºñ¿ö µÎ¸é ¼Ò¸® ¾øÀ½)")]
+    [Tooltip("ë²„íŠ¼ì— ë§ˆìš°ìŠ¤ë¥¼ ì˜¬ë¦´ ë•Œ (ë¹„ì›Œ ë‘ë©´ ì†Œë¦¬ ì—†ìŒ)")]
     [File("SFX_UI_Hover")] public AudioClip uiHover;
     [File("SFX_UI_BookOpen")] public AudioClip bookOpen;
-    [Tooltip("ºñ¿ö µÎ¸é Book Open ¼Ò¸®¸¦ ¾¸")]
+    [Tooltip("ë¹„ì›Œ ë‘ë©´ Book Open ì†Œë¦¬ë¥¼ ì”€")]
     [File("SFX_UI_BookClose")] public AudioClip bookClose;
-    [Tooltip("°á°ú ¹®±¸ Å¸ÀÌÇÎ")]
+    [Tooltip("ê²°ê³¼ ë¬¸êµ¬ íƒ€ì´í•‘")]
     [File("SFX_UI_Typing")] public AudioClip typing;
     [File("SFX_GameOver_Fall")] public AudioClip gameOverFall;
     [File("SFX_Victory")] public AudioClip victory;
 
-    // ---------- ÄÚµå¿¡¼­ »ç¿ë ----------
+    // ---------- ì½”ë“œì—ì„œ ì‚¬ìš© ----------
     private Dictionary<AudioClip, float> volumeCache;
 
     public float VolumeOf(AudioClip clip)
@@ -143,7 +143,7 @@ public class SoundLibrary : ScriptableObject
         return volumeCache.TryGetValue(clip, out float v) ? v : 1f;
     }
 
-    private void OnValidate() => volumeCache = null;   // Inspector¿¡¼­ ¹Ù²Ù¸é ¹Ù·Î ¹İ¿µ
+    private void OnValidate() => volumeCache = null;   // Inspectorì—ì„œ ë°”ê¾¸ë©´ ë°”ë¡œ ë°˜ì˜
 
     public AudioClip[] CastFor(MagicElement e)
     {

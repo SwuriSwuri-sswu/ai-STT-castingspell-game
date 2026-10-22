@@ -6,21 +6,21 @@ using System.Text;
 using UnityEditor;
 using UnityEngine;
 
-// ¸Ş´º Tools ¡æ Sound
-//   »ç¿îµå ¶óÀÌºê·¯¸® ÀÚµ¿ Ã¤¿ì±â : Assets/Resources/SoundLibrary.assetÀ» ¸¸µé°í(¾øÀ¸¸é),
-//                                  ÆÄÀÏ ÀÌ¸§ÀÌ °°Àº ¿Àµğ¿À¸¦ Ã£¾Æ ºó Ä­À» Ã¤¿ò (ÀÌ¹Ì ³Ö¾î µĞ Ä­Àº °Çµå¸®Áö ¾ÊÀ½)
-//   ¿Àµğ¿À °¡Á®¿À±â ¼³Á¤ ¸ÂÃß±â   : BGM_ / AMB_ ÆÄÀÏÀº Streaming(¸Ş¸ğ¸® Àı¾à), SFX_ ÆÄÀÏÀº ¹Ù·Î Àç»ıµÇ°Ô
+// ë©”ë‰´ Tools â†’ Sound
+//   ì‚¬ìš´ë“œ ë¼ì´ë¸ŒëŸ¬ë¦¬ ìë™ ì±„ìš°ê¸° : Assets/Resources/SoundLibrary.assetì„ ë§Œë“¤ê³ (ì—†ìœ¼ë©´),
+//                                  íŒŒì¼ ì´ë¦„ì´ ê°™ì€ ì˜¤ë””ì˜¤ë¥¼ ì°¾ì•„ ë¹ˆ ì¹¸ì„ ì±„ì›€ (ì´ë¯¸ ë„£ì–´ ë‘” ì¹¸ì€ ê±´ë“œë¦¬ì§€ ì•ŠìŒ)
+//   ì˜¤ë””ì˜¤ ê°€ì ¸ì˜¤ê¸° ì„¤ì • ë§ì¶”ê¸°   : BGM_ / AMB_ íŒŒì¼ì€ Streaming(ë©”ëª¨ë¦¬ ì ˆì•½), SFX_ íŒŒì¼ì€ ë°”ë¡œ ì¬ìƒë˜ê²Œ
 public static class SoundLibraryTool
 {
     private const string LibraryPath = "Assets/Resources/SoundLibrary.asset";
 
-    [MenuItem("Tools/Sound/»ç¿îµå ¶óÀÌºê·¯¸® ÀÚµ¿ Ã¤¿ì±â")]
+    [MenuItem("Tools/Sound/ì‚¬ìš´ë“œ ë¼ì´ë¸ŒëŸ¬ë¦¬ ìë™ ì±„ìš°ê¸°")]
     public static void AutoFill()
     {
         SoundLibrary lib = FindOrCreate();
         Dictionary<string, List<AudioClip>> clips = AllClips();
 
-        Undo.RecordObject(lib, "Sound Library ÀÚµ¿ Ã¤¿ì±â");
+        Undo.RecordObject(lib, "Sound Library ìë™ ì±„ìš°ê¸°");
         int filled = 0;
         List<string> missing = new List<string>();
         foreach (FieldInfo f in typeof(SoundLibrary).GetFields(BindingFlags.Public | BindingFlags.Instance))
@@ -31,8 +31,8 @@ public static class SoundLibraryTool
 
             if (f.FieldType == typeof(AudioClip))
             {
-                if (f.GetValue(lib) as AudioClip != null) continue;   // ÀÌ¹Ì ³Ö¾î µĞ Ä­
-                // °°Àº ÀÌ¸§ ¡æ ¾øÀ¸¸é "ÀÌ¸§_¹«¾ù" (¿¹: SFX_Cast_Success_¾Õ¿¡°Å¸¸)
+                if (f.GetValue(lib) as AudioClip != null) continue;   // ì´ë¯¸ ë„£ì–´ ë‘” ì¹¸
+                // ê°™ì€ ì´ë¦„ â†’ ì—†ìœ¼ë©´ "ì´ë¦„_ë¬´ì—‡" (ì˜ˆ: SFX_Cast_Success_ì•ì—ê±°ë§Œ)
                 AudioClip found = clips.TryGetValue(key, out List<AudioClip> list) ? list[0]
                     : clips.Where(kv => kv.Key.StartsWith(key + "_")).OrderBy(kv => kv.Key).Select(kv => kv.Value[0]).FirstOrDefault();
                 if (found != null) { f.SetValue(lib, found); filled++; }
@@ -40,8 +40,8 @@ public static class SoundLibraryTool
             }
             else if (f.FieldType == typeof(AudioClip[]))
             {
-                // "ÀÌ¸§" ¶Ç´Â "ÀÌ¸§_¹«¾ù" (¿¹: SFX_Cast_Fire_1, SFX_Cast_Water_ice)
-                //   ÀÌ¹Ì µé¾î ÀÖ´Â °ÍÀº ±×´ë·Î µÎ°í, »õ·Î Ãß°¡µÈ ÆÄÀÏ¸¸ µÚ¿¡ ºÙÀÓ
+                // "ì´ë¦„" ë˜ëŠ” "ì´ë¦„_ë¬´ì—‡" (ì˜ˆ: SFX_Cast_Fire_1, SFX_Cast_Water_ice)
+                //   ì´ë¯¸ ë“¤ì–´ ìˆëŠ” ê²ƒì€ ê·¸ëŒ€ë¡œ ë‘ê³ , ìƒˆë¡œ ì¶”ê°€ëœ íŒŒì¼ë§Œ ë’¤ì— ë¶™ì„
                 List<AudioClip> current = ((f.GetValue(lib) as AudioClip[]) ?? new AudioClip[0]).Where(c => c != null).ToList();
                 List<AudioClip> found = clips.Where(kv => kv.Key == key || kv.Key.StartsWith(key + "_"))
                                              .OrderBy(kv => kv.Key)
@@ -57,7 +57,7 @@ public static class SoundLibraryTool
         Selection.activeObject = lib;
         EditorGUIUtility.PingObject(lib);
 
-        // ¾îµğ¿¡µµ ¿¬°áµÇÁö ¾ÊÀº BGM_/AMB_/SFX_ ÆÄÀÏ (SpellDataÀÇ Cast¡¤Hit Sound¿¡ ³ÖÀº °ÍÀº »ç¿ë ÁßÀ¸·Î Ä§)
+        // ì–´ë””ì—ë„ ì—°ê²°ë˜ì§€ ì•Šì€ BGM_/AMB_/SFX_ íŒŒì¼ (SpellDataì˜ CastÂ·Hit Soundì— ë„£ì€ ê²ƒì€ ì‚¬ìš© ì¤‘ìœ¼ë¡œ ì¹¨)
         HashSet<AudioClip> used = new HashSet<AudioClip>();
         foreach (FieldInfo f in typeof(SoundLibrary).GetFields(BindingFlags.Public | BindingFlags.Instance))
         {
@@ -76,23 +76,23 @@ public static class SoundLibraryTool
             .Select(c => c.name).OrderBy(n => n).ToList();
 
         StringBuilder sb = new StringBuilder();
-        sb.AppendLine($"»õ·Î Ã¤¿î Ä­¡¤ÆÄÀÏ: {filled}°³ (ÀÌ¹Ì µé¾î ÀÖ´Â Ä­Àº ±×´ë·Î µÒ)");
+        sb.AppendLine($"ìƒˆë¡œ ì±„ìš´ ì¹¸Â·íŒŒì¼: {filled}ê°œ (ì´ë¯¸ ë“¤ì–´ ìˆëŠ” ì¹¸ì€ ê·¸ëŒ€ë¡œ ë‘ )");
         if (missing.Count > 0)
         {
-            sb.AppendLine($"\n¸ø Ã£Àº ÆÄÀÏ ({missing.Count}°³, ¾ø¾îµµ µÇ´Â °ÍÀº ¹«½Ã):");
+            sb.AppendLine($"\nëª» ì°¾ì€ íŒŒì¼ ({missing.Count}ê°œ, ì—†ì–´ë„ ë˜ëŠ” ê²ƒì€ ë¬´ì‹œ):");
             foreach (string m in missing) sb.AppendLine("  " + m);
         }
         if (unused.Count > 0)
         {
-            sb.AppendLine($"\n¾ÆÁ÷ ¾îµğ¿¡µµ ¿¬°áµÇÁö ¾ÊÀº ÆÄÀÏ ({unused.Count}°³):");
+            sb.AppendLine($"\nì•„ì§ ì–´ë””ì—ë„ ì—°ê²°ë˜ì§€ ì•Šì€ íŒŒì¼ ({unused.Count}ê°œ):");
             foreach (string u in unused) sb.AppendLine("  " + u);
-            sb.AppendLine("¡æ ½ºÆç Àü¿ëÀÌ¸é SpellDataÀÇ Cast/Hit Sound¿¡, ¾Æ´Ï¸é ¶óÀÌºê·¯¸® Ä­¿¡ Á÷Á¢ ²ø¾î´Ù ³Ö±â");
+            sb.AppendLine("â†’ ìŠ¤í  ì „ìš©ì´ë©´ SpellDataì˜ Cast/Hit Soundì—, ì•„ë‹ˆë©´ ë¼ì´ë¸ŒëŸ¬ë¦¬ ì¹¸ì— ì§ì ‘ ëŒì–´ë‹¤ ë„£ê¸°");
         }
-        Debug.Log("[Sound] ÀÚµ¿ Ã¤¿ì±â\n" + sb);
-        EditorUtility.DisplayDialog("»ç¿îµå ¶óÀÌºê·¯¸®", sb.ToString(), "È®ÀÎ");
+        Debug.Log("[Sound] ìë™ ì±„ìš°ê¸°\n" + sb);
+        EditorUtility.DisplayDialog("ì‚¬ìš´ë“œ ë¼ì´ë¸ŒëŸ¬ë¦¬", sb.ToString(), "í™•ì¸");
     }
 
-    [MenuItem("Tools/Sound/¿Àµğ¿À °¡Á®¿À±â ¼³Á¤ ¸ÂÃß±â")]
+    [MenuItem("Tools/Sound/ì˜¤ë””ì˜¤ ê°€ì ¸ì˜¤ê¸° ì„¤ì • ë§ì¶”ê¸°")]
     public static void FixImportSettings()
     {
         int changed = 0;
@@ -115,11 +115,11 @@ public static class SoundLibraryTool
             imp.SaveAndReimport();
             changed++;
         }
-        Debug.Log($"[Sound] °¡Á®¿À±â ¼³Á¤ ¸ÂÃã: {changed}°³ (BGM_/AMB_ = Streaming, SFX_ = Decompress On Load)");
-        EditorUtility.DisplayDialog("¿Àµğ¿À °¡Á®¿À±â ¼³Á¤", $"{changed}°³ ÆÄÀÏÀ» ¸ÂÃè½À´Ï´Ù.", "È®ÀÎ");
+        Debug.Log($"[Sound] ê°€ì ¸ì˜¤ê¸° ì„¤ì • ë§ì¶¤: {changed}ê°œ (BGM_/AMB_ = Streaming, SFX_ = Decompress On Load)");
+        EditorUtility.DisplayDialog("ì˜¤ë””ì˜¤ ê°€ì ¸ì˜¤ê¸° ì„¤ì •", $"{changed}ê°œ íŒŒì¼ì„ ë§ì·„ìŠµë‹ˆë‹¤.", "í™•ì¸");
     }
 
-    [MenuItem("Tools/Sound/»ç¿îµå ¶óÀÌºê·¯¸® ¿­±â")]
+    [MenuItem("Tools/Sound/ì‚¬ìš´ë“œ ë¼ì´ë¸ŒëŸ¬ë¦¬ ì—´ê¸°")]
     public static void Open()
     {
         SoundLibrary lib = FindOrCreate();
@@ -135,11 +135,11 @@ public static class SoundLibraryTool
         lib = ScriptableObject.CreateInstance<SoundLibrary>();
         AssetDatabase.CreateAsset(lib, LibraryPath);
         AssetDatabase.SaveAssets();
-        Debug.Log("[Sound] " + LibraryPath + " ¸¦ ¸¸µé¾ú½À´Ï´Ù.");
+        Debug.Log("[Sound] " + LibraryPath + " ë¥¼ ë§Œë“¤ì—ˆìŠµë‹ˆë‹¤.");
         return lib;
     }
 
-    // ÆÄÀÏ ÀÌ¸§(´ë¼Ò¹®ÀÚ¡¤¾ÕµÚ °ø¹é ¹«½Ã) ¡æ ¿Àµğ¿À ¸ñ·Ï
+    // íŒŒì¼ ì´ë¦„(ëŒ€ì†Œë¬¸ìÂ·ì•ë’¤ ê³µë°± ë¬´ì‹œ) â†’ ì˜¤ë””ì˜¤ ëª©ë¡
     private static Dictionary<string, List<AudioClip>> AllClips()
     {
         Dictionary<string, List<AudioClip>> map = new Dictionary<string, List<AudioClip>>();

@@ -93,6 +93,12 @@ public class VoiceSender : MonoBehaviour
     public Func<bool> CanAccept { get; set; }
 
     public bool IsRecording => collecting;
+
+    /// <summary>
+    /// 이 씬에서 플레이어가 녹음 키(기본 스페이스바)를 한 번이라도 눌렀는지.
+    /// AutoDetect 모드에서는 첫 발화가 시작되면 true. 일반 몬스터(EnemyController)는 이 값이 true가 된 뒤에야 공격한다.
+    /// </summary>
+    public bool HasStartedTalking { get; private set; }
     public bool IsWaitingForResult => waitingForResult;
     public string LastInfo => lastInfo;              // 마지막 발화 정보 (디버그 표시용)
 
@@ -300,7 +306,11 @@ public class VoiceSender : MonoBehaviour
 
     void UpdatePushToTalk()
     {
-        if (Input.GetKeyDown(pushToTalkKey)) TryBeginPushToTalk();
+        if (Input.GetKeyDown(pushToTalkKey))
+        {
+            HasStartedTalking = true;   // 녹음이 거절돼도(적이 아직 도착 전 등) 키를 누른 것으로 친다
+            TryBeginPushToTalk();
+        }
 
         // GetKeyUp 대신 '지금 눌려 있는지'로 확인한다. 키를 뗀 프레임을 놓쳐도 녹음이 끝나지 않는 일이 없다
         if (pttHeld && !Input.GetKey(pushToTalkKey)) ReleasePushToTalk();
@@ -460,6 +470,7 @@ public class VoiceSender : MonoBehaviour
         utterance.Clear();
         if (preroll != null) utterance.AddRange(preroll);
         collecting = true;
+        HasStartedTalking = true;   // AutoDetect 모드 대비 (키 없이 말로 시작한 경우)
         CurrentRequestId = $"unity-mic-{++requestCounter}";   // RecordingStarted 전에 정해야 자막 쪽이 새 번호를 본다
         BeginStream(preroll);
         Debug.Log($"[MIC] 발화 시작 ({CurrentRequestId})");
@@ -632,7 +643,7 @@ public class VoiceSender : MonoBehaviour
     }
 
     /// <summary>
-    /// 이미 쓸모없어진(늦게 도착한) 결과인지. VoiceRecorder(자막·시전)와 PlayerHealth(벌칙)가 결과를 쓰기 전에 확인한다.
+    /// 늦게 도착한 결과 확인. VoiceRecorder(자막·시전)가 결과를 쓰기 전에 확인한다.
     ///  - 시간 초과로 기다리기를 포기한 요청의 결과
     ///  - 그 뒤에 새 주문을 말해서 가장 최근 요청이 아닌 결과
     /// 미리 기억해 둔 정보만 보므로, 어느 스크립트가 결과를 먼저 받아도 같은 답이 나온다.

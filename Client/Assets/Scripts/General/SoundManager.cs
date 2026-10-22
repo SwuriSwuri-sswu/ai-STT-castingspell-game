@@ -6,15 +6,15 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-// ¼Ò¸® Àç»ı ´ã´ç (¾À¿¡ ºÙÀÏ ÇÊ¿ä ¾øÀ½: °ÔÀÓÀÌ ½ÃÀÛµÇ¸é ½º½º·Î »ı°Ü¼­ ¾ÀÀÌ ¹Ù²î¾îµµ À¯ÁöµÊ)
-//   - ¼Ò¸® ¸ñ·Ï: Assets/Resources/SoundLibrary.asset (¾øÀ¸¸é ¾Æ¹« ¼Ò¸®µµ ¾È ³² + °æ°í ÇÑ ¹ø)
-//   - ¾À¸¶´Ù BGM¡¤È¯°æÀ½ ÀÚµ¿ Àç»ı (Title / Game / Boss). ¿£µù¡¤°ÔÀÓ ¿À¹ö¡¤º¸½º ÆäÀÌÁî´Â °¢ ½ºÅ©¸³Æ®°¡ ¹Ù²Ş
-//   - ¿µÃ¢(Space) Áß¿¡´Â BGM¡¤È¯°æÀ½À» ÁÙÀÓ
-//   - ¸ğµç ¹öÆ° Å¬¸¯À½ ÀÚµ¿
-//   - Å©±â = SoundLibrary Å©±â ¡¿ ¼³Á¤ È­¸é º¼·ı ½½¶óÀÌ´õ(VolumeSlider) / BGM ²ô±â¡¤À½¼Ò°Å(GameSettingManager)µµ µû¸§
-//     ½½¶óÀÌ´õ´Â Ã³À½ ½ÇÇàÇÒ ¶§ °¡¿îµ¥(= SoundLibrary Å©±â ±×´ë·Î), ±× µÚ·Î´Â ¸¶Áö¸·¿¡ ¸ÂÃá °ªÀ» ÀÌ ÄÄÇ»ÅÍ¿¡ ÀúÀåÇØ µÒ
-//     ³¡±îÁö ¿Ã¸®¸é 2¹è / ³»¸®¸é 0
-//   ¡Ø GameSettingManagerÀÇ Default Bgm / Scene Bgms Ä­Àº ºñ¿ö µÎ±â (BGMÀÌ µÎ ¹ø ³ª¿È)
+// ì†Œë¦¬ ì¬ìƒ ë‹´ë‹¹ (ì”¬ì— ë¶™ì¼ í•„ìš” ì—†ìŒ: ê²Œì„ì´ ì‹œì‘ë˜ë©´ ìŠ¤ìŠ¤ë¡œ ìƒê²¨ì„œ ì”¬ì´ ë°”ë€Œì–´ë„ ìœ ì§€ë¨)
+//   - ì†Œë¦¬ ëª©ë¡: Assets/Resources/SoundLibrary.asset (ì—†ìœ¼ë©´ ì•„ë¬´ ì†Œë¦¬ë„ ì•ˆ ë‚¨ + ê²½ê³  í•œ ë²ˆ)
+//   - ì”¬ë§ˆë‹¤ BGMÂ·í™˜ê²½ìŒ ìë™ ì¬ìƒ (Title / Game / Boss). ì—”ë”©Â·ê²Œì„ ì˜¤ë²„Â·ë³´ìŠ¤ í˜ì´ì¦ˆëŠ” ê° ìŠ¤í¬ë¦½íŠ¸ê°€ ë°”ê¿ˆ
+//   - ì˜ì°½(Space) ì¤‘ì—ëŠ” BGMÂ·í™˜ê²½ìŒì„ ì¤„ì„
+//   - ëª¨ë“  ë²„íŠ¼ í´ë¦­ìŒ ìë™
+//   - í¬ê¸° = SoundLibrary í¬ê¸° Ã— ì„¤ì • í™”ë©´ ë³¼ë¥¨ ìŠ¬ë¼ì´ë”(VolumeSlider) / BGM ë„ê¸°Â·ìŒì†Œê±°(GameSettingManager)ë„ ë”°ë¦„
+//     ìŠ¬ë¼ì´ë”ëŠ” ì²˜ìŒ ì‹¤í–‰í•  ë•Œ ê°€ìš´ë°(= SoundLibrary í¬ê¸° ê·¸ëŒ€ë¡œ), ê·¸ ë’¤ë¡œëŠ” ë§ˆì§€ë§‰ì— ë§ì¶˜ ê°’ì„ ì´ ì»´í“¨í„°ì— ì €ì¥í•´ ë‘ 
+//     ëê¹Œì§€ ì˜¬ë¦¬ë©´ 2ë°° / ë‚´ë¦¬ë©´ 0
+//   â€» GameSettingManagerì˜ Default Bgm / Scene Bgms ì¹¸ì€ ë¹„ì›Œ ë‘ê¸° (BGMì´ ë‘ ë²ˆ ë‚˜ì˜´)
 [DefaultExecutionOrder(-90)]
 public class SoundManager : MonoBehaviour
 {
@@ -32,7 +32,7 @@ public class SoundManager : MonoBehaviour
     private readonly List<AudioSource> sfx = new List<AudioSource>();
     private int nextSfx;
     private readonly Dictionary<AudioClip, float> lastPlayed = new Dictionary<AudioClip, float>();
-    private AudioSource typeSrc;          // Å¸ÀÌÇÎ Àü¿ë (°ãÃÄ¼­ ÁöÁöÁ÷°Å¸®Áö ¾Ê°Ô ÇÑ ÁÙ·Î¸¸)
+    private AudioSource typeSrc;          // íƒ€ì´í•‘ ì „ìš© (ê²¹ì³ì„œ ì§€ì§€ì§ê±°ë¦¬ì§€ ì•Šê²Œ í•œ ì¤„ë¡œë§Œ)
     private float lastTypeTime = -10f, typeW;
     private VoiceSender voice;
     private float voiceSearchTimer;
@@ -40,7 +40,7 @@ public class SoundManager : MonoBehaviour
     private readonly List<RaycastResult> hits = new List<RaycastResult>();
     private static bool warned;
 
-    // ---------- ½ÃÀÛ ----------
+    // ---------- ì‹œì‘ ----------
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     private static void Boot()
     {
@@ -48,7 +48,7 @@ public class SoundManager : MonoBehaviour
         SoundLibrary l = Resources.Load<SoundLibrary>("SoundLibrary");
         if (l == null)
         {
-            if (!warned) Debug.LogWarning("[Sound] Assets/Resources/SoundLibrary.assetÀÌ ¾ø¾î ¼Ò¸®°¡ ³ªÁö ¾Ê½À´Ï´Ù. ¸Ş´º Tools ¡æ Sound ¡æ »ç¿îµå ¶óÀÌºê·¯¸® ÀÚµ¿ Ã¤¿ì±â¸¦ ´­·¯ ÁÖ¼¼¿ä.");
+            if (!warned) Debug.LogWarning("[Sound] Assets/Resources/SoundLibrary.assetì´ ì—†ì–´ ì†Œë¦¬ê°€ ë‚˜ì§€ ì•ŠìŠµë‹ˆë‹¤. ë©”ë‰´ Tools â†’ Sound â†’ ì‚¬ìš´ë“œ ë¼ì´ë¸ŒëŸ¬ë¦¬ ìë™ ì±„ìš°ê¸°ë¥¼ ëˆŒëŸ¬ ì£¼ì„¸ìš”.");
             warned = true;
             return;
         }
@@ -99,23 +99,23 @@ public class SoundManager : MonoBehaviour
         ApplyScene(scene.name);
     }
 
-    // ¾Àº° BGM¡¤È¯°æÀ½
+    // ì”¬ë³„ BGMÂ·í™˜ê²½ìŒ
     private void ApplyScene(string scene)
     {
         if (lib == null) return;
         if (scene == lib.titleScene) { SetBgm(lib.bgmTitle, true, -1f); SetAmb(null); }
         else if (scene == lib.gameScene) { SetBgm(lib.bgmStage1, true, -1f); SetAmb(lib.ambTorch); }
         else if (scene == lib.bossScene) { SetBgm(lib.bgmBossEntrance, true, -1f); SetAmb(lib.ambBossCastle); }
-        else if (scene == lib.endingScene) { SetBgm(null, true, 1f); SetAmb(null); }   // ¿£µùÀº EndingSceneController°¡ Æ²¾î ÁÜ
+        else if (scene == lib.endingScene) { SetBgm(null, true, 1f); SetAmb(null); }   // ì—”ë”©ì€ EndingSceneControllerê°€ í‹€ì–´ ì¤Œ
     }
 
-    // ---------- ¸Å ÇÁ·¹ÀÓ: Å©±â Á¶Àı ----------
+    // ---------- ë§¤ í”„ë ˆì„: í¬ê¸° ì¡°ì ˆ ----------
     private void Update()
     {
         if (lib == null) return;
         float dt = Time.unscaledDeltaTime;
 
-        // ¿µÃ¢ Áß BGM ÁÙÀÌ±â
+        // ì˜ì°½ ì¤‘ BGM ì¤„ì´ê¸°
         if (voice == null)
         {
             voiceSearchTimer -= dt;
@@ -140,7 +140,7 @@ public class SoundManager : MonoBehaviour
         UpdateUiSounds();
     }
 
-    // ±ä Å¸ÀÌÇÎ ¼Ò¸®(¹İº¹ Àç»ı Áß): ±ÛÀÚ°¡ ¸ØÃß¸é ºü¸£°Ô ÁÙ¿©¼­ ¸ØÃã
+    // ê¸´ íƒ€ì´í•‘ ì†Œë¦¬(ë°˜ë³µ ì¬ìƒ ì¤‘): ê¸€ìê°€ ë©ˆì¶”ë©´ ë¹ ë¥´ê²Œ ì¤„ì—¬ì„œ ë©ˆì¶¤
     private void UpdateTyping(float dt)
     {
         if (typeSrc == null || !typeSrc.isPlaying || !typeSrc.loop) return;
@@ -151,9 +151,9 @@ public class SoundManager : MonoBehaviour
     }
 
     // =========================================================
-    // ¼³Á¤ È­¸é º¼·ı ½½¶óÀÌ´õ (VolumeSlider°¡ »ç¿ë)
-    //   0 ~ 1, °¡¿îµ¥(0.5) = SoundLibrary¿¡ ¸ÂÃá Å©±â ±×´ë·Î
-    //   Ã³À½ ½ÇÇàÇÏ¸é °¡¿îµ¥, ¹Ù²Ù¸é ÀÌ ÄÄÇ»ÅÍ¿¡ ÀúÀå (PlayerPrefs) ¡æ ´ÙÀ½¿¡ ÄÑµµ ±× °ª
+    // ì„¤ì • í™”ë©´ ë³¼ë¥¨ ìŠ¬ë¼ì´ë” (VolumeSliderê°€ ì‚¬ìš©)
+    //   0 ~ 1, ê°€ìš´ë°(0.5) = SoundLibraryì— ë§ì¶˜ í¬ê¸° ê·¸ëŒ€ë¡œ
+    //   ì²˜ìŒ ì‹¤í–‰í•˜ë©´ ê°€ìš´ë°, ë°”ê¾¸ë©´ ì´ ì»´í“¨í„°ì— ì €ì¥ (PlayerPrefs) â†’ ë‹¤ìŒì— ì¼œë„ ê·¸ ê°’
     // =========================================================
     public enum VolumeKind { Master, Bgm, Sfx }
     private const float DefaultVolume = 0.5f;
@@ -174,7 +174,7 @@ public class SoundManager : MonoBehaviour
         sfxSlider = PlayerPrefs.GetFloat(KeyOf(VolumeKind.Sfx), DefaultVolume);
     }
 
-    /// <summary>ÀúÀåµÈ º¼·ıÀ» Áö¿ì°í Ã³À½ »óÅÂ(°¡¿îµ¥)·Î</summary>
+    /// <summary>ì €ì¥ëœ ë³¼ë¥¨ì„ ì§€ìš°ê³  ì²˜ìŒ ìƒíƒœ(ê°€ìš´ë°)ë¡œ</summary>
     public static void ResetVolumes()
     {
         foreach (VolumeKind k in System.Enum.GetValues(typeof(VolumeKind))) PlayerPrefs.DeleteKey(KeyOf(k));
@@ -182,7 +182,7 @@ public class SoundManager : MonoBehaviour
         volumesLoaded = false;
     }
 
-    /// <summary>¹Ù²Û º¼·ıÀ» µğ½ºÅ©¿¡ ±â·Ï (¼³Á¤Ã¢À» ´İÀ» ¶§ VolumeSlider°¡ ºÎ¸§)</summary>
+    /// <summary>ë°”ê¾¼ ë³¼ë¥¨ì„ ë””ìŠ¤í¬ì— ê¸°ë¡ (ì„¤ì •ì°½ì„ ë‹«ì„ ë•Œ VolumeSliderê°€ ë¶€ë¦„)</summary>
     public static void SaveVolumes() => PlayerPrefs.Save();
 
     public static float GetVolume(VolumeKind kind)
@@ -209,9 +209,9 @@ public class SoundManager : MonoBehaviour
         }
     }
 
-    private static float Gain(float slider) => slider * 2f;   // °¡¿îµ¥ = 1¹è, ³¡ = 2¹è
+    private static float Gain(float slider) => slider * 2f;   // ê°€ìš´ë° = 1ë°°, ë = 2ë°°
 
-    // À½¼Ò°Å¡¤BGM ²ô±â´Â GameSettingManager (¾øÀ¸¸é ¹«½Ã)
+    // ìŒì†Œê±°Â·BGM ë„ê¸°ëŠ” GameSettingManager (ì—†ìœ¼ë©´ ë¬´ì‹œ)
     private static bool Muted => GameSettingManager.Instance != null && GameSettingManager.Instance.isMuted;
 
     private static float SfxSetting()
@@ -229,7 +229,7 @@ public class SoundManager : MonoBehaviour
         return Gain(masterSlider) * Gain(bgmSlider);
     }
 
-    // ---------- ¹öÆ° Å¬¸¯¡¤¿Ã¸®±â ----------
+    // ---------- ë²„íŠ¼ í´ë¦­Â·ì˜¬ë¦¬ê¸° ----------
     private void UpdateUiSounds()
     {
         EventSystem es = EventSystem.current;
@@ -256,15 +256,15 @@ public class SoundManager : MonoBehaviour
     }
 
     // =========================================================
-    // È¿°úÀ½
+    // íš¨ê³¼ìŒ
     // =========================================================
-    /// <summary>È¿°úÀ½ Àç»ı. °°Àº ¼Ò¸®¸¦ minIntervalÃÊ ¾È¿¡ ¶Ç ºÎ¸£¸é ¹«½Ã (¿©·¯ ¸¶¸®°¡ µ¿½Ã¿¡ ¸ÂÀ» ¶§ µî)</summary>
+    /// <summary>íš¨ê³¼ìŒ ì¬ìƒ. ê°™ì€ ì†Œë¦¬ë¥¼ minIntervalì´ˆ ì•ˆì— ë˜ ë¶€ë¥´ë©´ ë¬´ì‹œ (ì—¬ëŸ¬ ë§ˆë¦¬ê°€ ë™ì‹œì— ë§ì„ ë•Œ ë“±)</summary>
     public static void Play(AudioClip clip, float volume = 1f, float pitch = 1f, bool vary = true, float minInterval = 0.06f)
     {
         if (Lib != null) PlayRaw(clip, volume * Lib.sfxVolume, pitch, vary, minInterval);
     }
 
-    // volume = ÃÖÁ¾ Å©±â (¼³Á¤ È­¸é º¼·ı¸¸ ´õ °öÇÔ)
+    // volume = ìµœì¢… í¬ê¸° (ì„¤ì • í™”ë©´ ë³¼ë¥¨ë§Œ ë” ê³±í•¨)
     private static void PlayRaw(AudioClip clip, float volume, float pitch, bool vary, float minInterval)
     {
         SoundManager m = Instance;
@@ -281,13 +281,13 @@ public class SoundManager : MonoBehaviour
         s.Play();
     }
 
-    /// <summary>SoundLibrary¿¡¼­ °ñ¶ó Àç»ı: SoundManager.Play(L => L.playerHit)</summary>
+    /// <summary>SoundLibraryì—ì„œ ê³¨ë¼ ì¬ìƒ: SoundManager.Play(L => L.playerHit)</summary>
     public static void Play(Func<SoundLibrary, AudioClip> pick, float volume = 1f, float pitch = 1f, bool vary = true, float minInterval = 0.06f)
     {
         if (Lib != null) Play(pick(Lib), volume, pitch, vary, minInterval);
     }
 
-    /// <summary>¸ñ·Ï Áß ÇÏ³ª¸¦ ¹«ÀÛÀ§·Î</summary>
+    /// <summary>ëª©ë¡ ì¤‘ í•˜ë‚˜ë¥¼ ë¬´ì‘ìœ„ë¡œ</summary>
     public static void PlayAny(Func<SoundLibrary, AudioClip[]> pick, float volume = 1f, float pitch = 1f)
     {
         if (Lib != null) PlayAny(pick(Lib), volume, pitch);
@@ -298,7 +298,7 @@ public class SoundManager : MonoBehaviour
         Play(PickRandom(clips), volume, pitch);
     }
 
-    /// <summary>delayÃÊ(½ÇÁ¦ ½Ã°£) µÚ¿¡ Àç»ı</summary>
+    /// <summary>delayì´ˆ(ì‹¤ì œ ì‹œê°„) ë’¤ì— ì¬ìƒ</summary>
     public static void PlayDelayed(AudioClip clip, float delay, float volume = 1f, float pitch = 1f)
     {
         if (Instance == null || clip == null) return;
@@ -312,15 +312,15 @@ public class SoundManager : MonoBehaviour
         Play(clip, volume, pitch);
     }
 
-    /// <summary>UI ¼Ò¸® (³ô³·ÀÌ º¯È­ ¾øÀ½)</summary>
+    /// <summary>UI ì†Œë¦¬ (ë†’ë‚®ì´ ë³€í™” ì—†ìŒ)</summary>
     public static void PlayUI(AudioClip clip)
     {
         if (Lib != null) PlayRaw(clip, Lib.uiVolume, 1f, false, 0.03f);
     }
 
-    /// <summary>Å¸ÀÌÇÎ ÇÑ ±ÛÀÚ (³Ê¹« ÃÎÃÎÇÏ¸é ¾Ë¾Æ¼­ °Ç³Ê¶Ü)</summary>
-    //   ÂªÀº ¼Ò¸®(µş±ï ÇÑ ¹ø)¸é ±ÛÀÚ¸¶´Ù »õ·Î Àç»ı (¾Õ ¼Ò¸®´Â ²÷°í) ¡æ °ãÄ¡Áö ¾ÊÀ½
-    //   ±ä ¼Ò¸®(Å¸ÀÚ Ä¡´Â ¼Ò¸® ³ìÀ½)¸é ±ÛÀÚ°¡ ³ª¿À´Â µ¿¾È ÀÌ¾î¼­ ¹İº¹ ¡æ ÁÙ¹Ù²Ş¡¤¹®´Ü ³¡¿¡¼­ ¸ØÃã
+    /// <summary>íƒ€ì´í•‘ í•œ ê¸€ì (ë„ˆë¬´ ì´˜ì´˜í•˜ë©´ ì•Œì•„ì„œ ê±´ë„ˆëœ€)</summary>
+    //   ì§§ì€ ì†Œë¦¬(ë”¸ê¹ í•œ ë²ˆ)ë©´ ê¸€ìë§ˆë‹¤ ìƒˆë¡œ ì¬ìƒ (ì• ì†Œë¦¬ëŠ” ëŠê³ ) â†’ ê²¹ì¹˜ì§€ ì•ŠìŒ
+    //   ê¸´ ì†Œë¦¬(íƒ€ì ì¹˜ëŠ” ì†Œë¦¬ ë…¹ìŒ)ë©´ ê¸€ìê°€ ë‚˜ì˜¤ëŠ” ë™ì•ˆ ì´ì–´ì„œ ë°˜ë³µ â†’ ì¤„ë°”ê¿ˆÂ·ë¬¸ë‹¨ ëì—ì„œ ë©ˆì¶¤
     public static void Typing()
     {
         SoundManager m = Instance;
@@ -332,19 +332,19 @@ public class SoundManager : MonoBehaviour
         if (clip.length > 0.35f)
         {
             m.lastTypeTime = now;
-            if (s.isPlaying && s.clip == clip && s.loop) return;   // ÀÌ¹Ì ÀÌ¾î¼­ Àç»ı Áß
+            if (s.isPlaying && s.clip == clip && s.loop) return;   // ì´ë¯¸ ì´ì–´ì„œ ì¬ìƒ ì¤‘
             s.Stop();
             s.clip = clip;
             s.loop = true;
             s.pitch = 1f;
-            s.time = UnityEngine.Random.Range(0f, clip.length * 0.7f);   // ¸Å¹ø ´Ù¸¥ ºÎºĞºÎÅÍ
+            s.time = UnityEngine.Random.Range(0f, clip.length * 0.7f);   // ë§¤ë²ˆ ë‹¤ë¥¸ ë¶€ë¶„ë¶€í„°
             m.typeW = 0f;
             s.volume = 0f;
             s.Play();
             return;
         }
 
-        if (now - m.lastTypeTime < 0.045f) return;   // ³Ê¹« ÃÎÃÎÇÏ¸é °Ç³Ê¶Ü
+        if (now - m.lastTypeTime < 0.045f) return;   // ë„ˆë¬´ ì´˜ì´˜í•˜ë©´ ê±´ë„ˆëœ€
         m.lastTypeTime = now;
         float v = m.lib.pitchVariation;
         s.Stop();
@@ -355,22 +355,22 @@ public class SoundManager : MonoBehaviour
         s.Play();
     }
 
-    // ---------- ¸¶¹ı ----------
-    /// <summary>½ÃÀü ¼ø°£ (SpellDataÀÇ Cast Sound ¡æ ¾øÀ¸¸é ¼Ó¼º ±âº»)</summary>
+    // ---------- ë§ˆë²• ----------
+    /// <summary>ì‹œì „ ìˆœê°„ (SpellDataì˜ Cast Sound â†’ ì—†ìœ¼ë©´ ì†ì„± ê¸°ë³¸)</summary>
     public static void PlayCast(SpellData spell)
     {
         if (Lib == null || spell == null) return;
         Play(spell.castSound != null ? spell.castSound : PickRandom(Lib.CastFor(spell.elementType)));
     }
 
-    /// <summary>µ¥¹ÌÁö°¡ µé¾î°¡´Â ¼ø°£ (SpellDataÀÇ Hit Sound ¡æ ¾øÀ¸¸é ¼Ó¼º ±âº»)</summary>
+    /// <summary>ë°ë¯¸ì§€ê°€ ë“¤ì–´ê°€ëŠ” ìˆœê°„ (SpellDataì˜ Hit Sound â†’ ì—†ìœ¼ë©´ ì†ì„± ê¸°ë³¸)</summary>
     public static void PlayHit(SpellData spell)
     {
         if (Lib == null || spell == null) return;
         Play(spell.hitSound != null ? spell.hitSound : PickRandom(Lib.HitFor(spell.elementType)));
     }
 
-    /// <summary>»ó¼º ÀûÁßÀ½ (È¿°ú°¡ ±²ÀåÇß´Ù / º°·Î¿´´Ù). Æø¹ßÀ½º¸´Ù »ìÂ¦ ´Ê°Ô</summary>
+    /// <summary>ìƒì„± ì ì¤‘ìŒ (íš¨ê³¼ê°€ êµ‰ì¥í–ˆë‹¤ / ë³„ë¡œì˜€ë‹¤). í­ë°œìŒë³´ë‹¤ ì‚´ì§ ëŠ¦ê²Œ</summary>
     public static void PlayEffectiveness(float multiplier)
     {
         SoundLibrary l = Lib;
@@ -398,21 +398,21 @@ public class SoundManager : MonoBehaviour
             AudioSource s = sfx[(nextSfx + i) % sfx.Count];
             if (!s.isPlaying) { nextSfx = (nextSfx + i + 1) % sfx.Count; return s; }
         }
-        AudioSource oldest = sfx[nextSfx];   // ÀüºÎ Àç»ı ÁßÀÌ¸é °¡Àå ¿À·¡µÈ °ÍºÎÅÍ µ¤¾î¾¸
+        AudioSource oldest = sfx[nextSfx];   // ì „ë¶€ ì¬ìƒ ì¤‘ì´ë©´ ê°€ì¥ ì˜¤ë˜ëœ ê²ƒë¶€í„° ë®ì–´ì”€
         nextSfx = (nextSfx + 1) % sfx.Count;
         return oldest;
     }
 
     // =========================================================
-    // BGM ¡¤ È¯°æÀ½
+    // BGM Â· í™˜ê²½ìŒ
     // =========================================================
-    /// <summary>BGM ¹Ù²Ù±â (°°Àº °îÀÌ ³ª¿À´Â ÁßÀÌ¸é ±×´ë·Î). fade &lt; 0 ÀÌ¸é SoundLibraryÀÇ BGM Fade Time</summary>
+    /// <summary>BGM ë°”ê¾¸ê¸° (ê°™ì€ ê³¡ì´ ë‚˜ì˜¤ëŠ” ì¤‘ì´ë©´ ê·¸ëŒ€ë¡œ). fade &lt; 0 ì´ë©´ SoundLibraryì˜ BGM Fade Time</summary>
     public static void PlayBgm(Func<SoundLibrary, AudioClip> pick, float fade = -1f, bool loop = true)
     {
         if (Instance != null && Instance.lib != null) Instance.SetBgm(pick(Instance.lib), loop, fade);
     }
 
-    /// <summary>delayÃÊ(½ÇÁ¦ ½Ã°£) µÚ¿¡ BGM ¹Ù²Ù±â</summary>
+    /// <summary>delayì´ˆ(ì‹¤ì œ ì‹œê°„) ë’¤ì— BGM ë°”ê¾¸ê¸°</summary>
     public static void PlayBgmAfter(float delay, Func<SoundLibrary, AudioClip> pick, float fade = -1f, bool loop = true)
     {
         if (Instance == null || Instance.lib == null) return;
@@ -423,16 +423,16 @@ public class SoundManager : MonoBehaviour
     {
         string scene = SceneManager.GetActiveScene().name;
         yield return new WaitForSecondsRealtime(delay);
-        if (SceneManager.GetActiveScene().name == scene) SetBgm(clip, loop, fade);   // ±×»çÀÌ ¾ÀÀÌ ¹Ù²î¾úÀ¸¸é Ãë¼Ò
+        if (SceneManager.GetActiveScene().name == scene) SetBgm(clip, loop, fade);   // ê·¸ì‚¬ì´ ì”¬ì´ ë°”ë€Œì—ˆìœ¼ë©´ ì·¨ì†Œ
     }
 
-    /// <summary>BGM ¼­¼­È÷ ²ô±â</summary>
+    /// <summary>BGM ì„œì„œíˆ ë„ê¸°</summary>
     public static void StopBgm(float fade = -1f)
     {
         if (Instance != null) Instance.SetBgm(null, true, fade);
     }
 
-    /// <summary>È¯°æÀ½ ¹Ù²Ù±â (null = ²ô±â)</summary>
+    /// <summary>í™˜ê²½ìŒ ë°”ê¾¸ê¸° (null = ë„ê¸°)</summary>
     public static void SetAmbience(AudioClip clip, float fade = 1.5f)
     {
         if (Instance != null) Instance.SetAmb(clip, fade);
@@ -444,7 +444,7 @@ public class SoundManager : MonoBehaviour
         if (clip != null && bgmCur.clip == clip && bgmCur.isPlaying) { bgmCur.loop = loop; return; }
         if (clip == null && bgmCur.clip == null) return;
 
-        // Áö±İ °îÀº ¼­¼­È÷ ÁÙ¾îµé°í, »õ °îÀº ¼­¼­È÷ Ä¿Áü
+        // ì§€ê¸ˆ ê³¡ì€ ì„œì„œíˆ ì¤„ì–´ë“¤ê³ , ìƒˆ ê³¡ì€ ì„œì„œíˆ ì»¤ì§
         AudioSource prev = bgmCur;
         bgmCur = bgmOld;
         bgmOld = prev;

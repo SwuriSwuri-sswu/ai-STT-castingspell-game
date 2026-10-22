@@ -16,6 +16,8 @@ public class SpellData : ScriptableObject
     [Header("Basic Info")]
     [Tooltip("STT 결과와 비교할 이름. 띄어쓰기·대소문자는 무시하고 비교합니다.")]
     public string spellName;
+    [Tooltip("도감에 함께 표시할 발음 로마자 (예: 활활 → hwalhwal). 비워 두면 이름만 표시합니다.")]
+    public string pronunciation;
     public MagicElement elementType;
 
     [Tooltip("마법 단계 (노말 기본 스펠은 0 또는 1, 속성 스펠은 1~3)")]

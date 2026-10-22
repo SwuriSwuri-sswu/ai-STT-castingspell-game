@@ -1,47 +1,47 @@
 using UnityEngine;
 
-// ½Ã¿¬ ¸ğµå ¼³Á¤ (Assets/Resources/DemoConfig.asset). ¼³¸íÀº DemoMode.cs ¸Ç À§ Âü°í
+// ì‹œì—° ëª¨ë“œ ì„¤ì • (Assets/Resources/DemoConfig.asset). ì„¤ëª…ì€ DemoMode.cs ë§¨ ìœ„ ì°¸ê³ 
 [CreateAssetMenu(fileName = "DemoConfig", menuName = "Demo/Demo Config")]
 public class DemoConfig : ScriptableObject
 {
-    [Tooltip("ÄÑ¸é ½Ã¿¬ ¸ğµå. main ºê·£Ä¡¿¡¼­´Â ¹İµå½Ã ²¨ µÎ±â")]
+    [Tooltip("ì¼œë©´ ì‹œì—° ëª¨ë“œ. main ë¸Œëœì¹˜ì—ì„œëŠ” ë°˜ë“œì‹œ êº¼ ë‘ê¸°")]
     public bool enabled = false;
 
-    [Header("°ÔÀÓ¾À")]
-    [Tooltip("ÀÎÆ®·Î ÀÌ¾ß±â °Ç³Ê¶Ù°í ¹Ù·Î ½ÃÀÛ")]
+    [Header("ê²Œì„ì”¬")]
+    [Tooltip("ì¸íŠ¸ë¡œ ì´ì•¼ê¸° ê±´ë„ˆë›°ê³  ë°”ë¡œ ì‹œì‘")]
     public bool skipIntro = true;
-    [Tooltip("¸÷ µîÀå ¼ø¼­ (µî±Ş). Ã³Ä¡ ¼ö¸¸Å­ ´ÙÀ½ Ä­À¸·Î. Ä­ÀÌ ¸ğÀÚ¶ó¸é ¸¶Áö¸· µî±Ş ¹İº¹")]
+    [Tooltip("ëª¹ ë“±ì¥ ìˆœì„œ (ë“±ê¸‰). ì²˜ì¹˜ ìˆ˜ë§Œí¼ ë‹¤ìŒ ì¹¸ìœ¼ë¡œ. ì¹¸ì´ ëª¨ìë¼ë©´ ë§ˆì§€ë§‰ ë“±ê¸‰ ë°˜ë³µ")]
     public MonsterRank[] rankSequence = { MonsterRank.Low, MonsterRank.Mid, MonsterRank.High };
-    [Tooltip("(¼±ÅÃ) Æ¯Á¤ ¸÷À» ¼ø¼­´ë·Î ³»º¸³»°í ½ÍÀ¸¸é ¿©±â¿¡. ºñ¿î Ä­Àº À§ µî±Ş¿¡¼­ ¹«ÀÛÀ§")]
+    [Tooltip("(ì„ íƒ) íŠ¹ì • ëª¹ì„ ìˆœì„œëŒ€ë¡œ ë‚´ë³´ë‚´ê³  ì‹¶ìœ¼ë©´ ì—¬ê¸°ì—. ë¹„ìš´ ì¹¸ì€ ìœ„ ë“±ê¸‰ì—ì„œ ë¬´ì‘ìœ„")]
     public EnemyController[] mobSequence = new EnemyController[0];
-    [Tooltip("ÀÌ¸¸Å­ ÀâÀ¸¸é º¸½º¾ÀÀ¸·Î ÀÌµ¿")]
+    [Tooltip("ì´ë§Œí¼ ì¡ìœ¼ë©´ ë³´ìŠ¤ì”¬ìœ¼ë¡œ ì´ë™")]
     [Min(1)] public int stage1Kills = 3;
-    [Tooltip("½ÃÀÛÇÒ ¶§ Àá°¡ µÑ ½ºÆç (Ã¹ ¸÷À» ÀâÀ¸¸é ÀÌ ½ºÆçÀÌ µå¶ø). ºñ¿ì¸é ±âº» ÇØ±İÀÌ ¾Æ´Ñ ½ºÆç Áß ¸¶Áö¸· °Í")]
+    [Tooltip("ì‹œì‘í•  ë•Œ ì ê°€ ë‘˜ ìŠ¤í  (ì²« ëª¹ì„ ì¡ìœ¼ë©´ ì´ ìŠ¤í ì´ ë“œë). ë¹„ìš°ë©´ ê¸°ë³¸ í•´ê¸ˆì´ ì•„ë‹Œ ìŠ¤í  ì¤‘ ë§ˆì§€ë§‰ ê²ƒ")]
     public SpellData lockedSpell;
-    [Tooltip("ÇÃ·¹ÀÌ¾î Ã¼·ÂÀÌ 1 ¹ØÀ¸·Î ³»·Á°¡Áö ¾ÊÀ½ (¸Â´Â ¿¬Ãâ¡¤Ã¼·Â °¨¼Ò´Â ±×´ë·Î)")]
+    [Tooltip("í”Œë ˆì´ì–´ ì²´ë ¥ì´ 1 ë°‘ìœ¼ë¡œ ë‚´ë ¤ê°€ì§€ ì•ŠìŒ (ë§ëŠ” ì—°ì¶œÂ·ì²´ë ¥ ê°ì†ŒëŠ” ê·¸ëŒ€ë¡œ)")]
     public bool playerInvincible = true;
 
-    [Header("º¸½º¾À")]
-    [Tooltip("ÀÔÀå ¶§ °È´Â ¼Óµµ ¹èÀ²")]
+    [Header("ë³´ìŠ¤ì”¬")]
+    [Tooltip("ì…ì¥ ë•Œ ê±·ëŠ” ì†ë„ ë°°ìœ¨")]
     [Min(0.1f)] public float bossWalkSpeed = 1.6f;
-    [Tooltip("º¸½ºÀü ¾È³»Ã¢ »ı·«")]
+    [Tooltip("ë³´ìŠ¤ì „ ì•ˆë‚´ì°½ ìƒëµ")]
     public bool skipBossTutorial = true;
-    [Tooltip("³» ÅÏ + ¸¶¿Õ ÅÏÀ» ¸î ¹ø ÇÑ µÚ ¸¶¿ÕÀÌ ¾²·¯ÁúÁö")]
+    [Tooltip("ë‚´ í„´ + ë§ˆì™• í„´ì„ ëª‡ ë²ˆ í•œ ë’¤ ë§ˆì™•ì´ ì“°ëŸ¬ì§ˆì§€")]
     [Min(1)] public int bossRounds = 2;
-    [Tooltip("¸¶Áö¸· ¶ó¿îµåÀÇ ¸¶¿Õ ÅÏ Á÷Àü¿¡ ÆäÀÌÁî ÀüÈ¯ ¿¬Ãâ º¸¿© ÁÖ±â")]
+    [Tooltip("ë§ˆì§€ë§‰ ë¼ìš´ë“œì˜ ë§ˆì™• í„´ ì§ì „ì— í˜ì´ì¦ˆ ì „í™˜ ì—°ì¶œ ë³´ì—¬ ì£¼ê¸°")]
     public bool showPhaseChange = true;
-    [Tooltip("³» ÅÏ Á¦ÇÑ ½Ã°£ (ÃÊ). À½¼º ÆÇÁ¤ÀÌ ´À¸± ¼ö ÀÖÀ¸´Ï ³Ë³ËÇÏ°Ô")]
+    [Tooltip("ë‚´ í„´ ì œí•œ ì‹œê°„ (ì´ˆ). ìŒì„± íŒì •ì´ ëŠë¦´ ìˆ˜ ìˆìœ¼ë‹ˆ ë„‰ë„‰í•˜ê²Œ")]
     public float playerTurnTime = 20f;
 
-    [Header("ºñ»ó Å° (¸¶ÀÌÅ©¡¤¼­¹ö°¡ ¾È µÉ ¶§)")]
+    [Header("ë¹„ìƒ í‚¤ (ë§ˆì´í¬Â·ì„œë²„ê°€ ì•ˆ ë  ë•Œ)")]
     public bool emergencyKeys = true;
-    [Tooltip("Áö±İ Àû¿¡°Ô »ó¼ºÀÌ ÁÁÀº ½ºÆç ½ÃÀü")]
+    [Tooltip("ì§€ê¸ˆ ì ì—ê²Œ ìƒì„±ì´ ì¢‹ì€ ìŠ¤í  ì‹œì „")]
     public KeyCode bestSpellKey = KeyCode.F1;
-    [Tooltip("¾Æ¹« ½ºÆçÀÌ³ª ½ÃÀü")]
+    [Tooltip("ì•„ë¬´ ìŠ¤í ì´ë‚˜ ì‹œì „")]
     public KeyCode anySpellKey = KeyCode.F2;
 
-    [Header("±â·Ï")]
-    [Tooltip("°ÔÀÓÀ» ÄÓ ¶§¸¶´Ù µµ°¨¡¤º¸½º Å¬¸®¾î¡¤ÀÎÆ®·Î º» ±â·ÏÀ» Áö¿ò (¸®Çã¼³ ÈÄ¿¡µµ ¸Å¹ø °°Àº ½Ã¿¬)")]
+    [Header("ê¸°ë¡")]
+    [Tooltip("ê²Œì„ì„ ì¼¤ ë•Œë§ˆë‹¤ ë„ê°Â·ë³´ìŠ¤ í´ë¦¬ì–´Â·ì¸íŠ¸ë¡œ ë³¸ ê¸°ë¡ì„ ì§€ì›€ (ë¦¬í—ˆì„¤ í›„ì—ë„ ë§¤ë²ˆ ê°™ì€ ì‹œì—°)")]
     public bool resetRecordsOnLaunch = true;
     public string gameSceneName = "GameScene";
 }

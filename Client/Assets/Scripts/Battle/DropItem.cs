@@ -289,7 +289,7 @@ public class DropItem : MonoBehaviour
                 string name = spell.spellName + "!";
                 if (colorSpellNameInNotice)
                 {
-                    name = $"<color=#{ColorUtility.ToHtmlStringRGB(GetTierColor())}>{name}</color>";
+                    name = $"<color=#{ColorUtility.ToHtmlStringRGB(EnemyController.ElementColor(spell.elementType))}>{name}</color>";
                 }
                 BattleUIManager.Instance.ShowNotice($"New spell learned: {name}");
             }

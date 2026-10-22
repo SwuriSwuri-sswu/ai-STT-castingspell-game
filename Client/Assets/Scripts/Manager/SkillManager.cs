@@ -514,29 +514,45 @@ public class SkillManager : MonoBehaviour
     // =========================================================
     // [3] 드랍할 스펠 선택
     // =========================================================
-    // 해당 속성에서 아직 배우지 않은 스펠 중 가중치 랜덤으로 하나 선택.
-    // 약한 스펠(낮은 단계)일수록 가중치가 커서 자주 나옵니다. 남은 게 없으면 null
+    // 속성별 단계 해금 + 속성 균등 드랍
+    // - 각 속성은 낮은 단계를 다 배워야 다음 단계가 나옴 (예: 물 1단계 3개 → 물 2단계 해금)
+    // - 어떤 속성이 나올지는 남은 스펠이 있는 속성 중 균등 (몹 속성과 무관)
+    // - 고른 속성의 현재 단계 스펠 중 균등하게 하나. 남은 게 없으면 null
     public SpellData PickDropSpell(MagicElement element)
     {
-        if (element == MagicElement.Normal) return null; // 노말 스펠은 기본 지급
+        if (element == MagicElement.Normal) return null; // 노말 몹은 드랍 없음
 
-        float totalWeight = 0f;
-        List<SpellData> candidates = new List<SpellData>();
+        // 1) 속성별로 '아직 안 배운 가장 낮은 단계' 찾기
+        Dictionary<MagicElement, int> currentTier = new Dictionary<MagicElement, int>();
         foreach (SpellData spell in spellDatabase)
         {
-            if (spell == null || spell.elementType != element || IsUnlocked(spell)) continue;
-            candidates.Add(spell);
-            totalWeight += spell.ResolveDropWeight();
+            if (!IsDropCandidate(spell)) continue;
+            if (!currentTier.TryGetValue(spell.elementType, out int tier) || spell.tier < tier)
+            {
+                currentTier[spell.elementType] = spell.tier;
+            }
         }
-        if (candidates.Count == 0) return null;
+        if (currentTier.Count == 0) return null; // 전부 배움
 
-        float roll = UnityEngine.Random.Range(0f, totalWeight);
-        foreach (SpellData spell in candidates)
+        // 2) 남은 속성 중 균등하게 하나
+        List<MagicElement> elements = new List<MagicElement>(currentTier.Keys);
+        MagicElement picked = elements[UnityEngine.Random.Range(0, elements.Count)];
+
+        // 3) 그 속성의 현재 단계 스펠 중 균등하게 하나
+        List<SpellData> pool = new List<SpellData>();
+        foreach (SpellData spell in spellDatabase)
         {
-            roll -= spell.ResolveDropWeight();
-            if (roll <= 0f) return spell;
+            if (IsDropCandidate(spell) && spell.elementType == picked && spell.tier == currentTier[picked])
+            {
+                pool.Add(spell);
+            }
         }
-        return candidates[candidates.Count - 1];
+        return pool[UnityEngine.Random.Range(0, pool.Count)];
+    }
+
+    private bool IsDropCandidate(SpellData spell)
+    {
+        return spell != null && spell.elementType != MagicElement.Normal && !IsUnlocked(spell);
     }
 
     // 기존 GameManager.AddMonsterKill()에서 호출하던 함수.

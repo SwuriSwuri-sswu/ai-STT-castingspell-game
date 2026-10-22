@@ -1,14 +1,14 @@
 using UnityEditor;
 using UnityEngine;
 
-// ¸Ş´º Tools ¡æ Demo
-//   ½Ã¿¬ ¸ğµå ÄÑ±â / ²ô±â : Assets/Resources/DemoConfig.assetÀÇ Enabled¸¦ ¹Ù²Ş (¿¡¼ÂÀÌ ¾øÀ¸¸é ¸¸µê)
-//   ½Ã¿¬ ¼³Á¤ ¿­±â        : DemoConfig ¿¡¼Â ¼±ÅÃ
+// ë©”ë‰´ Tools â†’ Demo
+//   ì‹œì—° ëª¨ë“œ ì¼œê¸° / ë„ê¸° : Assets/Resources/DemoConfig.assetì˜ Enabledë¥¼ ë°”ê¿ˆ (ì—ì…‹ì´ ì—†ìœ¼ë©´ ë§Œë“¦)
+//   ì‹œì—° ì„¤ì • ì—´ê¸°        : DemoConfig ì—ì…‹ ì„ íƒ
 public static class DemoModeTool
 {
     private const string AssetPath = "Assets/Resources/DemoConfig.asset";
-    private const string MenuOn = "Tools/Demo/½Ã¿¬ ¸ğµå ÄÑ±â";
-    private const string MenuOff = "Tools/Demo/½Ã¿¬ ¸ğµå ²ô±â (º»°ÔÀÓ)";
+    private const string MenuOn = "Tools/Demo/ì‹œì—° ëª¨ë“œ ì¼œê¸°";
+    private const string MenuOff = "Tools/Demo/ì‹œì—° ëª¨ë“œ ë„ê¸° (ë³¸ê²Œì„)";
 
     [MenuItem(MenuOn)]
     private static void TurnOn() => Set(true);
@@ -22,7 +22,7 @@ public static class DemoModeTool
     [MenuItem(MenuOff, true)]
     private static bool CanTurnOff() { DemoConfig c = Load(); return c != null && c.enabled; }
 
-    [MenuItem("Tools/Demo/½Ã¿¬ ¼³Á¤ ¿­±â")]
+    [MenuItem("Tools/Demo/ì‹œì—° ì„¤ì • ì—´ê¸°")]
     private static void Open()
     {
         DemoConfig c = FindOrCreate();
@@ -33,15 +33,15 @@ public static class DemoModeTool
     private static void Set(bool on)
     {
         DemoConfig c = FindOrCreate();
-        Undo.RecordObject(c, on ? "½Ã¿¬ ¸ğµå ÄÑ±â" : "½Ã¿¬ ¸ğµå ²ô±â");
+        Undo.RecordObject(c, on ? "ì‹œì—° ëª¨ë“œ ì¼œê¸°" : "ì‹œì—° ëª¨ë“œ ë„ê¸°");
         c.enabled = on;
         EditorUtility.SetDirty(c);
         AssetDatabase.SaveAssets();
         Selection.activeObject = c;
-        Debug.Log(on ? "<color=#FFCC00>[Demo] ½Ã¿¬ ¸ğµå ÄÑÁü (simulation ºê·£Ä¡ Àü¿ë)</color>"
-                     : "[Demo] ½Ã¿¬ ¸ğµå ²¨Áü (º»°ÔÀÓ)");
-        EditorUtility.DisplayDialog("½Ã¿¬ ¸ğµå", on ? "½Ã¿¬ ¸ğµå¸¦ Ä×½À´Ï´Ù.\nmain ºê·£Ä¡¿¡ ÀÌ »óÅÂ·Î ¿Ã¸®Áö ¸¶¼¼¿ä!"
-                                                  : "½Ã¿¬ ¸ğµå¸¦ ²°½À´Ï´Ù. (º»°ÔÀÓ)", "È®ÀÎ");
+        Debug.Log(on ? "<color=#FFCC00>[Demo] ì‹œì—° ëª¨ë“œ ì¼œì§ (simulation ë¸Œëœì¹˜ ì „ìš©)</color>"
+                     : "[Demo] ì‹œì—° ëª¨ë“œ êº¼ì§ (ë³¸ê²Œì„)");
+        EditorUtility.DisplayDialog("ì‹œì—° ëª¨ë“œ", on ? "ì‹œì—° ëª¨ë“œë¥¼ ì¼°ìŠµë‹ˆë‹¤.\nmain ë¸Œëœì¹˜ì— ì´ ìƒíƒœë¡œ ì˜¬ë¦¬ì§€ ë§ˆì„¸ìš”!"
+                                                  : "ì‹œì—° ëª¨ë“œë¥¼ ê»ìŠµë‹ˆë‹¤. (ë³¸ê²Œì„)", "í™•ì¸");
     }
 
     private static DemoConfig Load() => AssetDatabase.LoadAssetAtPath<DemoConfig>(AssetPath);

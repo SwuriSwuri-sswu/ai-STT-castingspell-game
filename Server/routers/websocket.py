@@ -25,9 +25,11 @@ async def send_json(ws: WebSocket, obj: dict) -> None:
 
 
 async def judge(wav: bytes, request_id, skills: dict | None) -> dict:
-    """WAV 하나를 판정해 cast_result 또는 error dict 를 반환한다. skills 가 None 이면 기본 스킬."""
+    """WAV 하나를 판정해 cast_result 또는 error dict 를 반환한다. skills 가 None 이면 NO_SKILL_LIST 오류."""
     if voice_runtime.service is None or voice_runtime.sem is None:
         return build_error("NOT_READY", "음성 판정 모델이 아직 준비되지 않았습니다", request_id)
+    if not skills:   # 스킬 목록을 받기 전이면 모델 사용권을 기다리지 않고 바로 돌려준다
+        return build_error("NO_SKILL_LIST", "스킬 목록(skill_list)을 받기 전입니다", request_id)
 
     # 동시 판정 수 제한. 모델을 기다리는 동안은 pending_finals 로 표시해,
     # /streaming 의 중간 받아쓰기가 새로 시작해 최종 판정을 늦추지 않게 한다 (최종 판정 우선).
@@ -117,7 +119,7 @@ async def voice_streaming(websocket: WebSocket):
     log.info("[WS] 자막용 스트리밍 연결됨 (실시간 자막 엔진: %s)", voice_runtime.partial_engine() or "꺼짐")
 
     session: StreamSession | None = None   # 지금 받고 있는 발화
-    skills: dict | None = None            # 이 연결에서 받은 스킬 목록 (중간 받아쓰기 힌트)
+    skills: dict | None = None            # 이 연결에서 받은 스킬 목록 (중간 받아쓰기 힌트). None 이면 Whisper 중간 자막을 내지 않는다
     no_stream_notified = False            # NO_STREAM 오류는 발화 사이에 한 번만 알린다
     running: set[asyncio.Task] = set()    # 진행 중인 중간 받아쓰기 (참조 유지용)
 
@@ -166,6 +168,8 @@ async def voice_streaming(websocket: WebSocket):
         """중간 받아쓰기 차례이고 모델이 비어 있으면 시작한다."""
         s = session
         if s is None or not s.partial_due():
+            return
+        if not skills:   # 스킬 목록을 받기 전에는 중간 받아쓰기를 하지 않는다
             return
         if voice_runtime.service is None or voice_runtime.sem is None:
             return
@@ -343,7 +347,7 @@ async def voice_streaming(websocket: WebSocket):
 # 프로토콜
 #   (선택) 텍스트 {"type": "skill_list", "skills": [{"id", "name", "aliases"}, ...]}
 #          → 응답 {"type": "skill_list_ack", "count", "warnings"} 또는 error(BAD_SKILL_LIST)
-#          이 연결에서 판정할 스킬 목록. 다시 보내면 교체된다. 보내지 않으면 기본 스킬.
+#          이 연결에서 판정할 스킬 목록. 다시 보내면 교체된다. 보내지 않으면 판정 요청에 error(NO_SKILL_LIST).
 #   요청: (선택) 텍스트 {"type": "cast_header", "request_id": "..."} → 바이너리 WAV 1개 = 발화 1개
 #   응답: 텍스트 JSON 1개 ("cast_result" 또는 "error")
 # ---------------------------------------------------------
@@ -352,7 +356,7 @@ async def voice_analyzing(websocket: WebSocket):
     await websocket.accept()
     log.info("[WS] 스킬 분석용 연결됨")
     pending_id = None   # cast_header 로 받은 request_id. 다음 WAV 에 한 번만 쓴다
-    skills = None       # 이 연결에서 받은 스킬 목록. None 이면 기본 스킬
+    skills = None       # 이 연결에서 받은 스킬 목록. None 이면 판정하지 않는다 (NO_SKILL_LIST)
 
     try:
         while True:
