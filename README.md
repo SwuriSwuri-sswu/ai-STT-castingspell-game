@@ -13,7 +13,7 @@
 
 게임은 `TitleScene → GameScene(스테이지 1) → BossScene(스테이지 2, 마왕전) → EndingScene` 흐름으로 구성되어 있습니다. 말하는 동안에는 서버가 보내는 중간 받아쓰기 결과가 실시간 자막(발음 로마자)으로 표시됩니다.
 
-저장소는 Unity 프로젝트(`Client`), 게임 서버 및 음성 판정 서버(`Server`), 초기 음성 판정 프로토타입(`AI/Pipeline_v2`)으로 나뉩니다.
+저장소는 Unity 프로젝트(`Client`)와 게임 서버 및 음성 판정 서버(`Server`)로 나뉩니다.
 
 ## 문제 정의
 
@@ -135,8 +135,6 @@ sequenceDiagram
 
 **게임 서버 계층**은 FastAPI REST API와 SQLite로 세션, 저장 데이터, 환경설정을 관리합니다. 모든 요청은 `access-token` 헤더로 검증하고, 세션별 요청은 `session-id` 헤더로 구분합니다. 응답은 `status/code/message/data` 형식으로 통일했고, 예외도 공통 핸들러에서 같은 형식으로 반환합니다. (`Server/handlers.py`, `Server/exceptions.py`)
 
-`AI/Pipeline_v2`는 FastAPI로 통합하기 전의 **독립 실행형 판정 프로토타입**입니다. `websockets` 기반 서버(포트 8765), 점검용 클라이언트, 녹음 스크립트로 구성되어 있으며, 이후 `Server/services/`로 옮겨지며 확장된 것으로 보입니다. (커밋 기록 기준 추정, 확인 필요)
-
 ## 핵심 구현 포인트
 
 ### 1. 자모 단위 유사도와 2단계 게이트로 스펠 판정
@@ -218,15 +216,6 @@ py -3.11 -m venv .venv
 2. `Assets/Scenes/TitleScene.unity`를 열고 Play합니다. (빌드 설정의 시작 씬은 확인 필요)
 3. 서버 주소는 씬의 `VoiceSocket`, `VoiceStreamSocket`, `NetworkManager` 컴포넌트에 `127.0.0.1:8000`으로 설정되어 있습니다.
 
-### (선택) 음성 판정 프로토타입 단독 실행
-```bash
-cd AI/Pipeline_v2
-pip install -r requirements.txt
-python ws_server.py            # ws://localhost:8765
-python ws_test.py a.wav        # 녹음 파일 판정 결과 확인
-python record_wav.py test.wav  # 2초 녹음 (sounddevice 필요)
-```
-
 ### (선택) 스킬명 충돌 검사
 ```bash
 cd Server/services
@@ -251,13 +240,12 @@ ai-STT-castingspell-game/
 │       │   └── TitleScene/ EndingScene/ General/ Editor/
 │       ├── Spells/                 # 스펠 에셋 (Normal, Fire, Water, Grass × Tier 1~3)
 │       └── Prefabs/ Animations/ Sounds/ Resources/
-├── Server/                         # FastAPI 게임 서버 + 음성 판정 서버
-│   ├── main.py                     # 앱 진입점, REST API, 인증
-│   ├── routers/websocket.py        # /ws/voice/streaming, /ws/voice/analyzing
-│   ├── services/                   # STT, Vosk, 음향 분석, 스킬 매칭, 스트림 세션, 로마자
-│   ├── models.py / schemas.py      # SQLAlchemy 모델, Pydantic 스키마
-│   └── database.py / handlers.py / exceptions.py
-└── AI/Pipeline_v2/                 # 독립 실행형 음성 판정 프로토타입 및 점검 스크립트
+└── Server/                         # FastAPI 게임 서버 + 음성 판정 서버
+    ├── main.py                     # 앱 진입점, REST API, 인증
+    ├── routers/websocket.py        # /ws/voice/streaming, /ws/voice/analyzing
+    ├── services/                   # STT, Vosk, 음향 분석, 스킬 매칭, 스트림 세션, 로마자
+    ├── models.py / schemas.py      # SQLAlchemy 모델, Pydantic 스키마
+    └── database.py / handlers.py / exceptions.py
 ```
 
 ## 배운 점

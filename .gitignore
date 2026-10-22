@@ -130,3 +130,6 @@ __pycache__/
 !Client/Assets/Sounds/*.wav.meta
 
 Server/game.db
+.DS_Store
+Thumbs.db
+.env
